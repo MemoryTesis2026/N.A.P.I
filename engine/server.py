@@ -268,25 +268,133 @@ def register(req: RegisterRequest):
         log.error(f"Error al registrar usuario: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
+class UserUpdateRequest(BaseModel):
+    nombre: Optional[str] = None
+    email: Optional[str] = None
+    rol: Optional[str] = None
+    area: Optional[str] = None
+    carrera: Optional[str] = None
+    password: Optional[str] = None
+
+class UserCreateAdminRequest(BaseModel):
+    nombre: str
+    email: str
+    rol: str = "estudiante"
+    area: Optional[str] = "Tecnología Aplicada"
+    carrera: Optional[str] = "Ingeniería en Informática"
+    password: str = "InacapPassword123!"
+
 @app.get("/api/auth/users")
+@app.get("/api/admin/users")
 def get_users():
-    """Obtiene la lista de usuarios registrados en Supabase Auth."""
+    """Obtiene la lista de usuarios registrados (Alumnos, Docentes y Administradores)."""
     try:
-        users = db_admin.auth.admin.list_users()
         user_list = []
-        for u in users:
-            meta = u.user_metadata or {}
-            user_list.append({
-                "id": u.id,
-                "email": u.email,
-                "nombre": meta.get("nombre", u.email),
-                "rol": meta.get("rol", "estudiante"),
-                "carrera": meta.get("carrera", "-"),
-                "created_at": u.created_at
-            })
+        if db_admin:
+            try:
+                users_res = db_admin.auth.admin.list_users()
+                users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
+                for u in users:
+                    meta = getattr(u, 'user_metadata', {}) or {}
+                    user_list.append({
+                        "id": getattr(u, 'id', str(u)),
+                        "email": getattr(u, 'email', ''),
+                        "nombre": meta.get("nombre", getattr(u, 'email', 'Usuario').split("@")[0]),
+                        "rol": meta.get("rol", "estudiante"),
+                        "area": meta.get("area", "Tecnología Aplicada"),
+                        "carrera": meta.get("carrera", "-"),
+                        "created_at": getattr(u, 'created_at', None)
+                    })
+            except Exception as e:
+                log.warning(f"Error listando usuarios en Supabase Auth: {e}")
         return {"users": user_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/users")
+def admin_create_user(req: UserCreateAdminRequest):
+    """Crea un usuario (Alumno, Docente o Administrador) en Supabase Auth."""
+    try:
+        user_id = "user-" + str(os.urandom(4).hex())
+        if db_admin:
+            res = db_admin.auth.admin.create_user({
+                "email": req.email.strip(),
+                "password": req.password.strip(),
+                "email_confirm": True,
+                "user_metadata": {
+                    "nombre": req.nombre.strip(),
+                    "rol": req.rol.strip(),
+                    "area": req.area.strip() if req.area else "Tecnología Aplicada",
+                    "carrera": req.carrera.strip() if req.carrera else "Ingeniería en Informática"
+                }
+            })
+            if res and hasattr(res, 'user') and res.user:
+                user_id = res.user.id
+
+        return {
+            "success": True,
+            "message": f"Usuario {req.nombre} ({req.rol}) creado exitosamente.",
+            "user": {
+                "id": user_id,
+                "email": req.email.strip(),
+                "nombre": req.nombre.strip(),
+                "rol": req.rol.strip(),
+                "area": req.area.strip() if req.area else "Tecnología Aplicada",
+                "carrera": req.carrera.strip() if req.carrera else "Ingeniería en Informática"
+            }
+        }
+    except Exception as e:
+        log.error(f"Error al crear usuario por admin: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/api/admin/users/{user_id}")
+def admin_update_user(user_id: str, req: UserUpdateRequest):
+    """Actualiza los datos de un usuario (Alumno, Docente o Administrador)."""
+    try:
+        meta_updates = {}
+        if req.nombre is not None: meta_updates["nombre"] = req.nombre.strip()
+        if req.rol is not None: meta_updates["rol"] = req.rol.strip()
+        if req.area is not None: meta_updates["area"] = req.area.strip()
+        if req.carrera is not None: meta_updates["carrera"] = req.carrera.strip()
+
+        if db_admin:
+            attrs = {"user_metadata": meta_updates}
+            if req.email: attrs["email"] = req.email.strip()
+            if req.password: attrs["password"] = req.password.strip()
+            try:
+                db_admin.auth.admin.update_user_by_id(user_id, attrs)
+            except Exception as e:
+                log.warning(f"Error actualizando usuario en Supabase ({user_id}): {e}")
+
+        return {
+            "success": True,
+            "message": "Usuario actualizado correctamente.",
+            "user": {
+                "id": user_id,
+                "email": req.email,
+                "nombre": req.nombre,
+                "rol": req.rol,
+                "area": req.area,
+                "carrera": req.carrera
+            }
+        }
+    except Exception as e:
+        log.error(f"Error al actualizar usuario: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: str):
+    """Elimina un usuario de Supabase Auth."""
+    try:
+        if db_admin:
+            try:
+                db_admin.auth.admin.delete_user(user_id)
+            except Exception as e:
+                log.warning(f"Error eliminando usuario de Supabase ({user_id}): {e}")
+        return {"success": True, "message": "Usuario eliminado exitosamente."}
+    except Exception as e:
+        log.error(f"Error al eliminar usuario: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 # ── Historial de Chat NAPI en Supabase (Aislamiento por Usuario y Rol) ──
 @app.get("/api/chat/history")

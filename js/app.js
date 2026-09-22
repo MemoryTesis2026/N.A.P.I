@@ -1,34 +1,105 @@
 /* ═══════════════════════════════════════════
    ArchivaIA – app.js
    Lógica principal · INACAP Sede Maipú
-   Paleta: Blue & Cyan Tech Intelligence
+   Paleta: Red & Slate INACAP Tech Intelligence
 ═══════════════════════════════════════════ */
+
+// ──────────────────────────────────────────
+//  ESTRUCTURA OFICIAL DE ÁREAS Y CARRERAS INACAP
+// ──────────────────────────────────────────
+const AREAS_CARRERAS = {
+  "Administración y Servicios": [
+    "Administración Pública",
+    "Administración de Empresas",
+    "Comercio Exterior",
+    "Contabilidad General",
+    "Contador Público",
+    "Ingeniería en Administración de Empresas",
+    "Ingeniería en Comercio Exterior",
+    "Técnico en Administración Pública",
+    "Administración Gastronómica",
+    "Gastronomía",
+    "Informática Biomédica",
+    "Técnico en Enfermería",
+    "Técnico en Farmacia",
+    "Técnico en Odontología",
+    "Gestión Turística",
+    "Hotelería y Servicios",
+    "Ingeniería en Gestión Turística"
+  ],
+  "Energía y Sostenibilidad": [
+    "Ingeniería Agrícola",
+    "Ingeniería en Medioambiente y Sustentabilidad",
+    "Tecnología en Análisis Químico",
+    "Técnico Agrícola",
+    "Técnico en Medioambiente y Sustentabilidad",
+    "Construcción Civil",
+    "Ingeniería en Geomensura y Geomática",
+    "Técnico en Construcción",
+    "Técnico en Topografía y Geomática",
+    "Ingeniería Eléctrica",
+    "Ingeniería en Climatización y Refrigeración",
+    "Ingeniería en Energía",
+    "Técnico en Climatización y Refrigeración",
+    "Técnico en Electricidad Industrial",
+    "Técnico en Energías Renovables"
+  ],
+  "Mantenimiento y Logística": [
+    "Ingeniería en Logística",
+    "Técnico en Logística",
+    "Ingeniería en Mantenimiento Industrial",
+    "Ingeniería en Maquinaria Pesada y Vehículos Automotrices",
+    "Ingeniería en Mecatrónica",
+    "Ingeniería en Mecánica y Electromovilidad Automotriz",
+    "Mecánica Automotriz en Maquinaria Pesada",
+    "Técnico en Mantenimiento Industrial",
+    "Técnico en Mecatrónica",
+    "Técnico en Mecánica y Electromovilidad Automotriz",
+    "Ingeniería en Mantenimiento de Plantas Mineras",
+    "Ingeniería en Metalurgia",
+    "Ingeniería en Minas",
+    "Técnico en Mantenimiento de Plantas Mineras",
+    "Técnico en Metalurgia Extractiva",
+    "Técnico en Minería",
+    "Técnico en Prevención de Riesgos y Gestión de Emergencias"
+  ],
+  "Tecnología Aplicada": [
+    "Electrónica",
+    "Ingeniería en Automatización y Robótica",
+    "Ingeniería en Electrónica y Sistemas Inteligentes",
+    "Técnico en Automatización y Robótica",
+    "Animación Digital y Videojuegos",
+    "Diseño Digital Profesional",
+    "Diseño Digital y Web",
+    "Diseño de Moda Profesional",
+    "Producción de Moda y Tecnología",
+    "Analista Programador",
+    "Ingeniería en Ciberseguridad",
+    "Ingeniería en Informática",
+    "Ingeniería en Telecomunicaciones y Servicios Digitales",
+    "Técnico en Telecomunicaciones y Servicios Digitales"
+  ]
+};
 
 // ──────────────────────────────────────────
 //  DATASET — 12 Proyectos Sede Maipú
 // ──────────────────────────────────────────
 const PROJECTS = [
-  { id:1, nombre:"Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", carrera:"Electricidad y Electrónica", anio:2025, autores:"Diego Álvarez, Valentina Cruz", desc:"Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack:["ESP32","MQTT","Node.js","React","MongoDB","TensorFlow Lite"], estado:"Público", nota:6.7 },
-  { id:2, nombre:"App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", carrera:"Informática / Ing. en Computación", anio:2025, autores:"Camila Herrera, Francisco Sepúlveda", desc:"App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack:["React Native","FastAPI","PostgreSQL","Docker","AWS S3"], estado:"Público", nota:6.8 },
-  { id:3, nombre:"Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", carrera:"Informática / Ing. en Computación", anio:2024, autores:"Matías Rojas, Sofía Morales, Ignacio Vega", desc:"E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack:["Next.js","Python","Scikit-learn","Redis","Transbank API","MySQL"], estado:"Público", nota:6.9 },
-  { id:4, nombre:"Diagnóstico Predictivo de Vibraciones en Motores Diésel", carrera:"Mecánica Automotriz e Industrial", anio:2025, autores:"Pablo Fuentes, Andrés Muñoz", desc:"Telemetría mecánica con FFT y acelerómetros MEMS para prevención de desalineaciones y desbalances en maquinaria pesada industrial.", stack:["Python","SciPy","InfluxDB","Grafana","Raspberry Pi 4","Twilio API"], estado:"Público", nota:6.7 },
-  { id:5, nombre:"Dashboard BI y Predicción RFM para Retail Maipú", carrera:"Administración de Empresas", anio:2024, autores:"Javiera Contreras, Rodrigo Sánchez", desc:"Inteligencia de negocios para retail local: consolida ERP, segmenta clientes por RFM y proyecta ventas estacionales con modelos predictivos.", stack:["Power BI","SQL Server","Python","Excel VBA","Azure Synapse"], estado:"Público", nota:6.5 },
-  { id:6, nombre:"Simulador Inmersivo WebGL de Circuitos Eléctricos Trifásicos", carrera:"Electricidad y Electrónica", anio:2023, autores:"Nicolás Torres, Ángela Ramírez", desc:"Plataforma 3D interactiva en el navegador para ensayar tableros eléctricos trifásicos con multímetro virtual y cálculo de caídas de tensión seguro.", stack:["Three.js","WebRTC","Python Flask","SQLite","Tailwind CSS"], estado:"Público", nota:6.6 },
-  { id:7, nombre:"Gestor Documental y Trazabilidad Aduanera para Embarques Marítimos", carrera:"Comercio Internacional", anio:2024, autores:"Carolina Espinoza, Luis Medina", desc:"Automatización de carpeta de importaciones con cálculo de aranceles Ad-Valorem, validación de Certificados de Origen y tracking GPS de contenedores.", stack:["Vue.js","Laravel","MySQL","Google Maps API","PDF.js"], estado:"Público", nota:6.4 },
-  { id:8, nombre:"Control de Acceso Biométrico por Reconocimiento Facial con Edge AI", carrera:"Informática / Ing. en Computación", anio:2024, autores:"Maximiliano Bravo, Renata Castillo", desc:"Seguridad física con validación facial en tiempo real usando embeddings DeepFace, generación de informes de asistencia e integración con relé electromagnético.", stack:["Python","DeepFace","OpenCV","Django","PostgreSQL","Raspberry Pi"], estado:"Público", nota:7.0 },
-  { id:9, nombre:"Asistente Conversacional NLP para Mantenimiento de Maquinaria Pesada", carrera:"Mecánica Automotriz e Industrial", anio:2025, autores:"Emilia Castro, Daniel Flores", desc:"Chatbot técnico especializado en manuales de talleres mecánicos que diagnóstica fallas hidráulicas y eléctricas mediante procesamiento de lenguaje natural.", stack:["Python","spaCy","Rasa Core","React","MongoDB","FastAPI"], estado:"En Revisión", nota:6.3 },
-  { id:10, nombre:"Software BIM y Estimación Presupuestaria para Edificación", carrera:"Edificación y Construcción", anio:2024, autores:"Felipe Gutiérrez, Sebastián Vargas", desc:"Extrae cantidades de obra de archivos IFC/Revit y genera presupuestos de materiales automatizados según normativas chilenas.", stack:["Autodesk Forge","Node.js","Python","PostgreSQL","Three.js"], estado:"Público", nota:6.8 },
-  { id:11, nombre:"Rover Teleoperado para Minería Subterránea con Sensores de Gas", carrera:"Minería y Metalurgia", anio:2025, autores:"Gonzalo Parra, Tamara Henríquez", desc:"Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack:["Arduino","ROS 2","Python","React","WebSockets"], estado:"Público", nota:6.9 },
-  { id:12, nombre:"Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", carrera:"Administración de Empresas", anio:2023, autores:"Bastián Morales, Camila Silva", desc:"Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack:["React","Express.js","PostgreSQL","Chart.js","Node.js"], estado:"Público", nota:6.5 }
+  { id:1, nombre:"Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", area:"Tecnología Aplicada", carrera:"Ingeniería en Electrónica y Sistemas Inteligentes", anio:2025, autores:"Diego Álvarez, Valentina Cruz", desc:"Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack:["ESP32","MQTT","Node.js","React","MongoDB","TensorFlow Lite"], estado:"Público", nota:6.7 },
+  { id:2, nombre:"App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", area:"Tecnología Aplicada", carrera:"Ingeniería en Informática", anio:2025, autores:"Camila Herrera, Francisco Sepúlveda", desc:"App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack:["React Native","FastAPI","PostgreSQL","Docker","AWS S3"], estado:"Público", nota:6.8 },
+  { id:3, nombre:"Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", area:"Tecnología Aplicada", carrera:"Ingeniería en Informática", anio:2024, autores:"Matías Rojas, Sofía Morales, Ignacio Vega", desc:"E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack:["Next.js","Python","Scikit-learn","Redis","Transbank API","MySQL"], estado:"Público", nota:6.9 },
+  { id:4, nombre:"Diagnóstico Predictivo de Vibraciones en Motores Diésel", area:"Mantenimiento y Logística", carrera:"Ingeniería en Mantenimiento Industrial", anio:2025, autores:"Pablo Fuentes, Andrés Muñoz", desc:"Telemetría mecánica con FFT y acelerómetros MEMS para prevención de desalineaciones y desbalances en maquinaria pesada industrial.", stack:["Python","SciPy","InfluxDB","Grafana","Raspberry Pi 4","Twilio API"], estado:"Público", nota:6.7 },
+  { id:5, nombre:"Dashboard BI y Predicción RFM para Retail Maipú", area:"Administración y Servicios", carrera:"Ingeniería en Administración de Empresas", anio:2024, autores:"Javiera Contreras, Rodrigo Sánchez", desc:"Inteligencia de negocios para retail local: consolida ERP, segmenta clientes por RFM y proyecta ventas estacionales con modelos predictivos.", stack:["Power BI","SQL Server","Python","Excel VBA","Azure Synapse"], estado:"Público", nota:6.5 },
+  { id:6, nombre:"Simulador Inmersivo WebGL de Circuitos Eléctricos Trifásicos", area:"Energía y Sostenibilidad", carrera:"Ingeniería Eléctrica", anio:2023, autores:"Nicolás Torres, Ángela Ramírez", desc:"Plataforma 3D interactiva en el navegador para ensayar tableros eléctricos trifásicos con multímetro virtual y cálculo de caídas de tensión seguro.", stack:["Three.js","WebRTC","Python Flask","SQLite","Tailwind CSS"], estado:"Público", nota:6.6 },
+  { id:7, nombre:"Gestor Documental y Trazabilidad Aduanera para Embarques Marítimos", area:"Administración y Servicios", carrera:"Ingeniería en Comercio Exterior", anio:2024, autores:"Carolina Espinoza, Luis Medina", desc:"Automatización de carpeta de importaciones con cálculo de aranceles Ad-Valorem, validación de Certificados de Origen y tracking GPS de contenedores.", stack:["Vue.js","Laravel","MySQL","Google Maps API","PDF.js"], estado:"Público", nota:6.4 },
+  { id:8, nombre:"Control de Acceso Biométrico por Reconocimiento Facial con Edge AI", area:"Tecnología Aplicada", carrera:"Ingeniería en Informática", anio:2024, autores:"Maximiliano Bravo, Renata Castillo", desc:"Seguridad física con validación facial en tiempo real usando embeddings DeepFace, generación de informes de asistencia e integración con relé electromagnético.", stack:["Python","DeepFace","OpenCV","Django","PostgreSQL","Raspberry Pi"], estado:"Público", nota:7.0 },
+  { id:9, nombre:"Asistente Conversacional NLP para Mantenimiento de Maquinaria Pesada", area:"Mantenimiento y Logística", carrera:"Ingeniería en Maquinaria Pesada y Vehículos Automotrices", anio:2025, autores:"Emilia Castro, Daniel Flores", desc:"Chatbot técnico especializado en manuales de talleres mecánicos que diagnóstica fallas hidráulicas y eléctricas mediante procesamiento de lenguaje natural.", stack:["Python","spaCy","Rasa Core","React","MongoDB","FastAPI"], estado:"En Revisión", nota:6.3 },
+  { id:10, nombre:"Software BIM y Estimación Presupuestaria para Edificación", area:"Energía y Sostenibilidad", carrera:"Construcción Civil", anio:2024, autores:"Felipe Gutiérrez, Sebastián Vargas", desc:"Extrae cantidades de obra de archivos IFC/Revit y genera presupuestos de materiales automatizados según normativas chilenas.", stack:["Autodesk Forge","Node.js","Python","PostgreSQL","Three.js"], estado:"Público", nota:6.8 },
+  { id:11, nombre:"Rover Teleoperado para Minería Subterránea con Sensores de Gas", area:"Mantenimiento y Logística", carrera:"Ingeniería en Minas", anio:2025, autores:"Gonzalo Parra, Tamara Henríquez", desc:"Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack:["Arduino","ROS 2","Python","React","WebSockets"], estado:"Público", nota:6.9 },
+  { id:12, nombre:"Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", area:"Energía y Sostenibilidad", carrera:"Ingeniería en Medioambiente y Sustentabilidad", anio:2023, autores:"Bastián Morales, Camila Silva", desc:"Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack:["React","Express.js","PostgreSQL","Chart.js","Node.js"], estado:"Público", nota:6.5 }
 ];
 
-const CARRERAS = [
-  "Informática / Ing. en Computación","Mecánica Automotriz e Industrial",
-  "Electricidad y Electrónica","Administración de Empresas",
-  "Comercio Internacional","Edificación y Construcción","Minería y Metalurgia"
-];
-
-const shortC = c => c.split('/')[0].trim();
+const shortC = c => c ? c.split('/')[0].trim() : '';
 
 // ──────────────────────────────────────────
 //  CONFIGURACIÓN DE API Y ESTADO GLOBAL
@@ -44,11 +115,85 @@ const API_BASE_URL = (() => {
   return '/api';
 })();
 
-let currentRole = 'docente';
+let currentRole = 'docente'; // 'estudiante', 'docente', 'administrador'
 let napiOpen = false;
 let editingId = null;
 let visPublic = true;
 let currentModal = null;
+let currentUser = null;
+
+// ──────────────────────────────────────────
+//  HELPERS PARA DROPDOWNS EN CASCADA (ÁREA -> CARRERA)
+// ──────────────────────────────────────────
+function populateCarreraDropdown(areaSelectId, carreraSelectId, includeAllOption = false, selectedVal = '') {
+  const areaSelect = document.getElementById(areaSelectId);
+  const carSelect = document.getElementById(carreraSelectId);
+  if (!carSelect) return;
+
+  const area = areaSelect ? areaSelect.value : '';
+  carSelect.innerHTML = '';
+
+  if (includeAllOption) {
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = 'Todas las Carreras';
+    carSelect.appendChild(optAll);
+  }
+
+  let list = [];
+  if (area && AREAS_CARRERAS[area]) {
+    list = AREAS_CARRERAS[area];
+  } else if (!area && includeAllOption) {
+    // Si no hay área seleccionada y se permite 'Todas', consolidar todas las carreras
+    const allSet = new Set();
+    Object.values(AREAS_CARRERAS).forEach(arr => arr.forEach(c => allSet.add(c)));
+    list = Array.from(allSet).sort();
+  } else {
+    // Área por defecto: primera área
+    const firstKey = Object.keys(AREAS_CARRERAS)[0];
+    list = AREAS_CARRERAS[firstKey] || [];
+  }
+
+  list.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    if (selectedVal && selectedVal === c) {
+      opt.selected = true;
+    }
+    carSelect.appendChild(opt);
+  });
+}
+
+function onStudentAreaChange() {
+  populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
+  filterCards();
+}
+
+function onManageAreaChange() {
+  populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
+  filterTable();
+}
+
+function onUploadAreaChange() {
+  populateCarreraDropdown('fArea', 'fCarrera', false);
+}
+
+function onEditAreaChange() {
+  populateCarreraDropdown('editArea', 'editCarrera', false);
+}
+
+function onRegDocenteAreaChange() {
+  populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
+}
+
+function onRegEstudianteAreaChange() {
+  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
+}
+
+function onCrudAreaChange() {
+  populateCarreraDropdown('crudArea', 'crudCarrera', false);
+}
 
 // ══════════════════════════════════════════
 //  MÓDULO 0: LANDING PAGE
@@ -60,7 +205,6 @@ let carouselTimer = null;
 const TOTAL_SLIDES = 3;
 
 function goToSlide(n) {
-  // Quitar clase active del slide actual
   const prev = document.getElementById('slide-' + carouselIndex);
   const prevDot = document.querySelectorAll('.carousel-dot')[carouselIndex];
   if (prev) prev.classList.remove('active');
@@ -88,7 +232,10 @@ function resetCarouselTimer() {
 // ── Modales de Login (desde Landing) ──
 function openLoginModal(role) {
   closeAllModals();
-  const id = role === 'docente' ? 'modalDocente' : 'modalEstudiante';
+  let id = 'modalEstudiante';
+  if (role === 'docente') id = 'modalDocente';
+  else if (role === 'administrador') id = 'modalAdmin';
+
   const el = document.getElementById(id);
   if (el) {
     el.classList.remove('hidden');
@@ -98,7 +245,10 @@ function openLoginModal(role) {
 }
 
 function closeLoginModal(role) {
-  const id = role === 'docente' ? 'modalDocente' : 'modalEstudiante';
+  let id = 'modalEstudiante';
+  if (role === 'docente') id = 'modalDocente';
+  else if (role === 'administrador') id = 'modalAdmin';
+
   const el = document.getElementById(id);
   if (el) {
     el.classList.add('hidden');
@@ -108,7 +258,7 @@ function closeLoginModal(role) {
 }
 
 function closeAllModals() {
-  ['modalDocente','modalEstudiante'].forEach(id => {
+  ['modalDocente','modalEstudiante','modalAdmin'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -118,33 +268,42 @@ function closeAllModals() {
 
 // Cerrar modales al hacer clic en el backdrop
 document.addEventListener('click', function(e) {
-  ['modalDocente','modalEstudiante'].forEach(id => {
+  ['modalDocente','modalEstudiante','modalAdmin'].forEach(id => {
     const el = document.getElementById(id);
     if (el && e.target === el) closeAllModals();
   });
 });
 // Cerrar con Escape
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeAllModals();
+  if (e.key === 'Escape') {
+    closeAllModals();
+    closeUserCrudModal();
+    closeProjModal();
+    closeEdit();
+  }
 });
 
 // ── Estado de Usuario ──
-let currentUser = null;
-
 function updateUserDisplay(user) {
   if (!user) return;
+  
   // Banner de estudiante
   const stName = document.getElementById('studentUserName');
   const stSub  = document.getElementById('studentUserSub');
   if (stName) stName.textContent = user.nombre || user.email;
-  if (stSub) stSub.textContent = `${user.rol === 'docente' ? 'DOCENTE' : 'ALUMNO'} INACAP · ${user.carrera || 'SEDE MAIPÚ'}`;
+  if (stSub) {
+    const roleLabel = user.rol === 'administrador' ? 'ADMINISTRADOR' : user.rol === 'docente' ? 'DOCENTE' : 'ALUMNO';
+    stSub.textContent = `${roleLabel} INACAP · ${user.carrera || 'SEDE MAIPÚ'}`;
+  }
 
   // Sidebar de admin
   const adName = document.getElementById('adminUserName');
   const adRole = document.getElementById('adminUserRole');
   const adAvatar = document.getElementById('adminUserAvatar');
   if (adName) adName.textContent = user.nombre || user.email;
-  if (adRole) adRole.textContent = user.rol === 'docente' ? 'Docente / Admin' : 'Estudiante';
+  if (adRole) {
+    adRole.textContent = user.rol === 'administrador' ? 'Administrador General' : user.rol === 'docente' ? 'Docente / Profesor' : 'Estudiante';
+  }
   if (adAvatar && user.nombre) {
     const initials = user.nombre.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
     adAvatar.textContent = initials || 'IN';
@@ -163,6 +322,9 @@ function toggleRegisterForm(role, show = null) {
   if (shouldShow) {
     regEl.classList.remove('hidden');
     logEl.classList.add('hidden');
+    // Inicializar dropdowns de carrera
+    if (role === 'docente') onRegDocenteAreaChange();
+    else onRegEstudianteAreaChange();
   } else {
     regEl.classList.add('hidden');
     logEl.classList.remove('hidden');
@@ -174,16 +336,15 @@ async function doModalRegister(role) {
   const nombre = document.getElementById(isDoc ? 'regDocenteNombre' : 'regEstudianteNombre')?.value.trim();
   const email  = document.getElementById(isDoc ? 'regDocenteEmail' : 'regEstudianteEmail')?.value.trim();
   const pass   = document.getElementById(isDoc ? 'regDocentePass' : 'regEstudiantePass')?.value.trim();
-  const carrera = isDoc
-    ? 'Informática / Ing. en Computación'
-    : (document.getElementById('regEstudianteCarrera')?.value || 'Informática / Ing. en Computación');
+  const area   = document.getElementById(isDoc ? 'regDocenteArea' : 'regEstudianteArea')?.value || 'Tecnología Aplicada';
+  const carrera = document.getElementById(isDoc ? 'regDocenteCarrera' : 'regEstudianteCarrera')?.value || 'Ingeniería en Informática';
 
   const errEl  = document.getElementById(isDoc ? 'regDocenteError' : 'regEstudianteError');
   const errMsg = document.getElementById(isDoc ? 'regDocenteErrMsg' : 'regEstudianteErrMsg');
 
   if (!nombre || !email || !pass) {
     errEl?.classList.remove('hidden');
-    if (errMsg) errMsg.textContent = 'Por favor completa todos los campos.';
+    if (errMsg) errMsg.textContent = 'Por favor completa todos los campos obligatorios.';
     return;
   }
   if (pass.length < 6) {
@@ -196,12 +357,11 @@ async function doModalRegister(role) {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass, nombre, rol: role, carrera })
+      body: JSON.stringify({ email, password: pass, nombre, rol: role, area, carrera })
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      toast(`✅ Cuenta de ${role} registrada exitosamente en Supabase`);
-      // Llenar datos en el login y acceder automáticamente
+      toast(`✅ Cuenta de ${role} registrada exitosamente`);
       const emailInput = document.getElementById(isDoc ? 'dEmail' : 'eEmail');
       const passInput  = document.getElementById(isDoc ? 'dPass' : 'ePass');
       if (emailInput) emailInput.value = email;
@@ -219,27 +379,38 @@ async function doModalRegister(role) {
 }
 
 async function doModalLogin(role, isDemo = false) {
-  const emailId = role === 'docente' ? 'dEmail' : 'eEmail';
-  const passId  = role === 'docente' ? 'dPass'  : 'ePass';
-  const errId   = role === 'docente' ? 'loginError-d' : 'loginError-e';
-  const errMsgId = role === 'docente' ? 'loginErrMsg-d' : 'loginErrMsg-e';
+  let emailId = 'eEmail';
+  let passId  = 'ePass';
+  let errId   = 'loginError-e';
+  let errMsgId = 'loginErrMsg-e';
+
+  if (role === 'docente') {
+    emailId = 'dEmail'; passId = 'dPass'; errId = 'loginError-d'; errMsgId = 'loginErrMsg-d';
+  } else if (role === 'administrador') {
+    emailId = 'aEmail'; passId = 'aPass'; errId = 'loginError-a'; errMsgId = 'loginErrMsg-a';
+  }
 
   if (isDemo) {
-    document.getElementById(emailId).value = role === 'docente'
-      ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl';
-    document.getElementById(passId).value = 'InacapPassword123!';
+    const emailEl = document.getElementById(emailId);
+    const passEl = document.getElementById(passId);
+    if (role === 'administrador') {
+      if (emailEl) emailEl.value = 'admin.maipu@inacap.cl';
+    } else if (role === 'docente') {
+      if (emailEl) emailEl.value = 'docente.maipu@inacap.cl';
+    } else {
+      if (emailEl) emailEl.value = 'alumno.maipu@inacap.cl';
+    }
+    if (passEl) passEl.value = 'InacapPassword123!';
   }
 
   const email = document.getElementById(emailId)?.value.trim();
   const pass  = document.getElementById(passId)?.value.trim();
-
   const errEl = document.getElementById(errId);
   const errMsg = document.getElementById(errMsgId);
 
   if (!email) { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu correo institucional.'; return; }
   if (!pass)  { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu contraseña.'; return; }
 
-  // Autenticación con Backend / Supabase Auth
   let user = null;
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -251,13 +422,13 @@ async function doModalLogin(role, isDemo = false) {
     if (res.ok && data.success) {
       user = data.user;
     } else {
-      // Si la contraseña ingresada es 1234, admitir como demo
-      if (pass === '1234') {
+      if (pass === '1234' || pass === 'InacapPassword123!') {
         user = {
-          nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
+          nombre: role === 'administrador' ? 'Admin Sede Maipú' : role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
           email: email,
           rol: role,
-          carrera: 'Informática / Ing. en Computación'
+          area: 'Tecnología Aplicada',
+          carrera: 'Ingeniería en Informática'
         };
       } else {
         errEl?.classList.remove('hidden');
@@ -269,14 +440,15 @@ async function doModalLogin(role, isDemo = false) {
     console.warn('Backend offline, usando fallback de sesión:', err);
     if (pass === '1234' || pass === 'InacapPassword123!') {
       user = {
-        nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
+        nombre: role === 'administrador' ? 'Admin Sede Maipú' : role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
         email: email,
         rol: role,
-        carrera: 'Informática / Ing. en Computación'
+        area: 'Tecnología Aplicada',
+        carrera: 'Ingeniería en Informática'
       };
     } else {
       errEl?.classList.remove('hidden');
-      if (errMsg) errMsg.textContent = 'Servidor inaccesible. Puedes usar la demo rápida o verificar el backend.';
+      if (errMsg) errMsg.textContent = 'Servidor inaccesible. Puedes usar la demo rápida o verificar la conexión.';
       return;
     }
   }
@@ -287,11 +459,10 @@ async function doModalLogin(role, isDemo = false) {
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
   updateUserDisplay(currentUser);
 
-  // Limpiar chatbox inmediatamente para aislamiento absoluto de sesión
+  // Limpiar chatbox para aislamiento de sesión
   const box = document.getElementById('chatBox');
   if (box) box.innerHTML = '';
 
-  // Ocultar landing + modal, mostrar panel correspondiente
   closeAllModals();
   clearInterval(carouselTimer);
 
@@ -301,9 +472,9 @@ async function doModalLogin(role, isDemo = false) {
   if (legacyLogin) legacyLogin.style.display = 'none';
 
   setTimeout(() => {
-    if (currentRole === 'docente') {
+    if (currentRole === 'administrador' || currentRole === 'docente') {
       document.getElementById('adminScreen').classList.remove('hidden');
-      initAdmin();
+      initAdmin(currentRole === 'administrador' ? 'users' : 'dashboard');
     } else {
       document.getElementById('studentScreen').classList.remove('hidden');
       initStudent();
@@ -344,7 +515,6 @@ function updateNavActive() {
 
 // ── Inicialización General ──
 document.addEventListener('DOMContentLoaded', () => {
-  // Ocultar pantallas de aplicación
   const adminScreen = document.getElementById('adminScreen');
   const studentScreen = document.getElementById('studentScreen');
   const loginScreen = document.getElementById('loginScreen');
@@ -352,110 +522,44 @@ document.addEventListener('DOMContentLoaded', () => {
   if (studentScreen) studentScreen.classList.add('hidden');
   if (loginScreen) loginScreen.style.display = 'none';
 
-  // Iniciar carrusel automático
+  // Iniciar carrusel
   startCarouselTimer();
 
-  // Scroll activo en navbar
+  // Inicializar dropdowns dependientes
+  populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
+  populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
+  populateCarreraDropdown('fArea', 'fCarrera', false);
+  populateCarreraDropdown('editArea', 'editCarrera', false);
+  populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
+  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
+  populateCarreraDropdown('crudArea', 'crudCarrera', false);
+
   window.addEventListener('scroll', updateNavActive, { passive: true });
 });
 
 // ══════════════════════════════════════════
-//  MÓDULO 1: AUTENTICACIÓN
+//  MÓDULO 1: AUTENTICACIÓN LEGACY & CIERRE DE SESIÓN
 // ══════════════════════════════════════════
 
-function selectRole(role) {
-  currentRole = role;
-  currentUser = {
-    nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
-    email: role === 'docente' ? 'docente.maipu@inacap.cl' : 'flavio.escobar@inacapmail.cl',
-    rol: role,
-    carrera: 'Informática / Ing. en Computación'
-  };
-  localStorage.setItem('napi_user', JSON.stringify(currentUser));
-  updateUserDisplay(currentUser);
-  const box = document.getElementById('chatBox');
-  if (box) box.innerHTML = '';
-  initNapi();
-  document.getElementById('roleDocente')?.classList.toggle('active', role === 'docente');
-  document.getElementById('roleEstudiante')?.classList.toggle('active', role === 'estudiante');
-  const emailInput = document.getElementById('loginEmail');
-  if (emailInput) {
-    emailInput.value = role === 'docente' ? 'docente.maipu@inacap.cl' : 'flavio.escobar@inacapmail.cl';
-  }
-}
-
-function demoLogin(role) { selectRole(role); document.getElementById('loginPass').value='1234'; handleLogin(); }
-
-function togglePass() {
-  const i = document.getElementById('loginPass');
-  i.type = i.type === 'password' ? 'text' : 'password';
-}
-
-function handleLogin() {
-  const email = document.getElementById('loginEmail')?.value.trim() || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'flavio.escobar@inacapmail.cl');
-  const pass  = document.getElementById('loginPass')?.value.trim();
-  if (!pass)  { showError('Ingresa tu contraseña.'); return; }
-  if (pass !== '1234') { showError('Contraseña inválida. Usa "1234" para la demo.'); return; }
-
-  currentUser = {
-    nombre: currentRole === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
-    email: email,
-    rol: currentRole,
-    carrera: 'Informática / Ing. en Computación'
-  };
-  localStorage.setItem('napi_user', JSON.stringify(currentUser));
-
-  const box = document.getElementById('chatBox');
-  if (box) box.innerHTML = '';
-
-  document.getElementById('loginError')?.classList.add('hidden');
-  document.getElementById('loginBtnTxt')?.classList.add('invisible');
-  document.getElementById('loginSpinner')?.classList.remove('hidden');
-  setTimeout(() => {
-    document.getElementById('loginScreen')?.classList.add('hidden');
-    if (currentRole === 'docente') {
-      document.getElementById('adminScreen')?.classList.remove('hidden');
-      initAdmin();
-    } else {
-      document.getElementById('studentScreen')?.classList.remove('hidden');
-      initStudent();
-    }
-    document.getElementById('napiWidget').style.display = 'flex';
-    initNapi();
-    toast(`🔑 Sesión iniciada: ${currentUser.nombre}`);
-  }, 400);
-}
-
-function showError(msg) {
-  document.getElementById('loginErrMsg').textContent = msg;
-  document.getElementById('loginError')?.classList.remove('hidden');
-}
-
 function logout() {
-  // Resetear sesión del usuario
   currentUser = null;
   localStorage.removeItem('napi_user');
 
-  // Ocultar pantallas de plataforma
   document.getElementById('adminScreen')?.classList.add('hidden');
   document.getElementById('studentScreen')?.classList.add('hidden');
   document.getElementById('napiWidget').style.display = 'flex';
   
-  // Limpiar chat box para que el siguiente usuario no vea mensajes previos
   const box = document.getElementById('chatBox');
   if (box) box.innerHTML = '';
 
-  // Cerrar panel de chat y re-iniciar contexto de invitado
   napiOpen = false;
   document.getElementById('chatPanel')?.classList.add('hidden');
   initNapi();
 
-  // Mostrar landing
   const landing = document.getElementById('landingScreen');
   if (landing) {
     landing.style.display = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Reiniciar carrusel
     clearInterval(carouselTimer);
     goToSlide(0);
     startCarouselTimer();
@@ -463,21 +567,41 @@ function logout() {
   toast('👋 Sesión cerrada correctamente');
 }
 
+// ══════════════════════════════════════════
+//  MÓDULO 2: PANEL DOCENTE / ADMINISTRADOR & CRUD USUARIOS
+// ══════════════════════════════════════════
 
-// ══════════════════════════════════════════
-//  MÓDULO 2: PANEL DOCENTE / ADMINISTRADOR
-// ══════════════════════════════════════════
+// ── Estado de Usuarios CRUD ──
+let ADMIN_USERS = [
+  { id: "usr-1", nombre: "Flavio Escobar Mendoza", email: "flavio.escobar@inacapmail.cl", rol: "estudiante", area: "Tecnología Aplicada", carrera: "Ingeniería en Informática", created_at: "2026-03-01" },
+  { id: "usr-2", nombre: "Francisca González", email: "francisca.gonzalez@inacapmail.cl", rol: "estudiante", area: "Tecnología Aplicada", carrera: "Ingeniería en Informática", created_at: "2026-03-02" },
+  { id: "usr-3", nombre: "Prof. Carlos Mendoza", email: "carlos.mendoza@inacap.cl", rol: "docente", area: "Tecnología Aplicada", carrera: "Ingeniería en Automatización y Robótica", created_at: "2025-11-15" },
+  { id: "usr-4", nombre: "Prof. Marcela Rojas", email: "marcela.rojas@inacap.cl", rol: "docente", area: "Administración y Servicios", carrera: "Ingeniería en Administración de Empresas", created_at: "2025-10-20" },
+  { id: "usr-5", nombre: "Admin Sede Maipú", email: "admin.maipu@inacap.cl", rol: "administrador", area: "Tecnología Aplicada", carrera: "Ingeniería en Informática", created_at: "2025-08-01" }
+];
+
 function adminTab(tab) {
-  ['dashboard','upload','manage','reports'].forEach(t => {
+  ['dashboard','users','upload','manage','reports'].forEach(t => {
     document.getElementById('tab-'+t)?.classList.toggle('hidden', t !== tab);
     document.getElementById('nav-'+t)?.classList.toggle('active', t === tab);
   });
-  const titles = { dashboard:'Panel General de Control', upload:'Cargar Nuevo Proyecto', manage:'Gestor del Repositorio', reports:'Métricas e Informes Analíticos' };
-  document.getElementById('adminTitle').textContent = titles[tab] || '';
+  const titles = { 
+    dashboard: 'Panel General de Control', 
+    users: 'Gestión de Usuarios (Alumnos y Docentes)',
+    upload: 'Cargar Nuevo Proyecto', 
+    manage: 'Gestor del Repositorio', 
+    reports: 'Métricas e Informes Analíticos' 
+  };
+  const titleEl = document.getElementById('adminTitle');
+  if (titleEl) titleEl.textContent = titles[tab] || 'Panel Administrativo';
+
+  if (tab === 'users') {
+    loadAdminUsers();
+  }
 }
 
-function initAdmin() {
-  adminTab('dashboard');
+function initAdmin(defaultTab = 'dashboard') {
+  adminTab(defaultTab);
   renderKpis();
   renderCarreraChart();
   renderActivity();
@@ -485,14 +609,252 @@ function initAdmin() {
   renderTable(PROJECTS);
   renderMetrics();
   renderYearBars();
-  document.getElementById('fStack')?.addEventListener('input', function() {
-    const tags = document.getElementById('techTags');
-    if (!tags) return;
-    tags.innerHTML = this.value.split(',').map(s => s.trim()).filter(Boolean)
-      .map(t => `<span class="badge-tech">${t}</span>`).join('');
-  });
+  loadAdminUsers();
+
+  // Asegurar dropdowns de carga
+  populateCarreraDropdown('fArea', 'fCarrera', false);
+  populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
+
+  const stackInput = document.getElementById('fStack');
+  if (stackInput && !stackInput.dataset.bound) {
+    stackInput.dataset.bound = 'true';
+    stackInput.addEventListener('input', function() {
+      const tags = document.getElementById('techTags');
+      if (!tags) return;
+      tags.innerHTML = this.value.split(',').map(s => s.trim()).filter(Boolean)
+        .map(t => `<span class="badge-tech">${t}</span>`).join('');
+    });
+  }
 }
 
+// ── CRUD de Usuarios ──
+async function loadAdminUsers() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/users`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.users && data.users.length > 0) {
+        // Combinar o actualizar con usuarios de la base de datos
+        const existingEmails = new Set(ADMIN_USERS.map(u => u.email.toLowerCase()));
+        data.users.forEach(u => {
+          if (!existingEmails.has(u.email.toLowerCase())) {
+            ADMIN_USERS.push(u);
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Usando catálogo local de usuarios:', err);
+  }
+  renderAdminUsersTable(ADMIN_USERS);
+  updateUserKpis();
+}
+
+function updateUserKpis() {
+  const tot = document.getElementById('kpiUsersTotal');
+  const stu = document.getElementById('kpiUsersStudents');
+  const tea = document.getElementById('kpiUsersTeachers');
+  const adm = document.getElementById('kpiUsersAdmins');
+
+  if (tot) tot.textContent = ADMIN_USERS.length;
+  if (stu) stu.textContent = ADMIN_USERS.filter(u => u.rol === 'estudiante').length;
+  if (tea) tea.textContent = ADMIN_USERS.filter(u => u.rol === 'docente').length;
+  if (adm) adm.textContent = ADMIN_USERS.filter(u => u.rol === 'administrador').length;
+}
+
+function renderAdminUsersTable(list) {
+  const tbody = document.getElementById('usersTableBody');
+  const empty = document.getElementById('usersTableEmpty');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = '';
+    empty?.classList.remove('hidden');
+    return;
+  }
+  empty?.classList.add('hidden');
+
+  tbody.innerHTML = list.map(u => {
+    let roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">📚 Alumno</span>';
+    if (u.rol === 'docente') {
+      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-red-50 text-[#ED1C24] border border-red-200">🎓 Docente</span>';
+    } else if (u.rol === 'administrador') {
+      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-white border border-slate-700">⚙️ Administrador</span>';
+    }
+
+    const initials = (u.nombre || u.email).split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+
+    return `
+    <tr>
+      <td class="px-4 py-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-black flex items-center justify-center shrink-0">
+            ${initials || 'U'}
+          </div>
+          <div>
+            <p class="font-bold text-slate-800 text-xs">${u.nombre || 'Sin nombre'}</p>
+            <p class="text-[11px] text-slate-500">${u.email}</p>
+          </div>
+        </div>
+      </td>
+      <td class="px-4 py-3">${roleBadge}</td>
+      <td class="px-4 py-3 text-xs font-semibold text-slate-700">${u.area || 'Tecnología Aplicada'}</td>
+      <td class="px-4 py-3 text-xs text-slate-600">${u.carrera || '-'}</td>
+      <td class="px-4 py-3">
+        <div class="flex items-center gap-2">
+          <button onclick="openEditUserModal('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 transition-colors" title="Editar Usuario">✏️</button>
+          <button onclick="deleteUserCrud('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors" title="Eliminar Usuario">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterAdminUsersTable() {
+  const search = document.getElementById('userSearchInput')?.value.toLowerCase().trim() || '';
+  const role = document.getElementById('userRoleFilter')?.value || '';
+  const area = document.getElementById('userAreaFilter')?.value || '';
+
+  const filtered = ADMIN_USERS.filter(u => {
+    const matchSearch = !search || 
+      (u.nombre && u.nombre.toLowerCase().includes(search)) || 
+      (u.email && u.email.toLowerCase().includes(search)) ||
+      (u.carrera && u.carrera.toLowerCase().includes(search));
+    const matchRole = !role || u.rol === role;
+    const matchArea = !area || u.area === area;
+    return matchSearch && matchRole && matchArea;
+  });
+
+  renderAdminUsersTable(filtered);
+}
+
+function openCreateUserModal() {
+  document.getElementById('userCrudModalTitle').textContent = 'Registrar Nuevo Usuario';
+  document.getElementById('crudUserId').value = '';
+  document.getElementById('crudNombre').value = '';
+  document.getElementById('crudEmail').value = '';
+  document.getElementById('crudRol').value = 'estudiante';
+  document.getElementById('crudPassword').value = 'InacapPassword123!';
+  document.getElementById('crudArea').value = 'Tecnología Aplicada';
+  onCrudAreaChange();
+
+  document.getElementById('userCrudError')?.classList.add('hidden');
+  document.getElementById('userCrudModal')?.classList.remove('hidden');
+}
+
+function openEditUserModal(userId) {
+  const u = ADMIN_USERS.find(x => x.id === userId);
+  if (!u) return;
+
+  document.getElementById('userCrudModalTitle').textContent = 'Editar Usuario';
+  document.getElementById('crudUserId').value = u.id;
+  document.getElementById('crudNombre').value = u.nombre || '';
+  document.getElementById('crudEmail').value = u.email || '';
+  document.getElementById('crudRol').value = u.rol || 'estudiante';
+  document.getElementById('crudPassword').value = '';
+  document.getElementById('crudArea').value = u.area || 'Tecnología Aplicada';
+  
+  onCrudAreaChange();
+  const carSelect = document.getElementById('crudCarrera');
+  if (carSelect && u.carrera) carSelect.value = u.carrera;
+
+  document.getElementById('userCrudError')?.classList.add('hidden');
+  document.getElementById('userCrudModal')?.classList.remove('hidden');
+}
+
+function closeUserCrudModal() {
+  document.getElementById('userCrudModal')?.classList.add('hidden');
+}
+
+async function submitUserCrud() {
+  const userId = document.getElementById('crudUserId')?.value;
+  const nombre = document.getElementById('crudNombre')?.value.trim();
+  const email  = document.getElementById('crudEmail')?.value.trim();
+  const rol    = document.getElementById('crudRol')?.value;
+  const pass   = document.getElementById('crudPassword')?.value.trim();
+  const area   = document.getElementById('crudArea')?.value;
+  const carrera = document.getElementById('crudCarrera')?.value;
+
+  const errEl = document.getElementById('userCrudError');
+  const errMsg = document.getElementById('userCrudErrMsg');
+
+  if (!nombre || !email) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Nombre y Correo son obligatorios.';
+    return;
+  }
+
+  if (!userId) {
+    // Modo CREACIÓN
+    const newId = 'usr-' + Date.now();
+    const newUser = {
+      id: newId,
+      nombre,
+      email,
+      rol,
+      area,
+      carrera,
+      created_at: new Date().toISOString().split('T')[0]
+    };
+    ADMIN_USERS.unshift(newUser);
+
+    // Sincronizar en background con FastAPI
+    try {
+      fetch(`${API_BASE_URL}/admin/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, rol, area, carrera, password: pass || 'InacapPassword123!' })
+      }).catch(() => {});
+    } catch(e) {}
+
+    toast(`✅ Usuario ${nombre} creado exitosamente`);
+  } else {
+    // Modo EDICIÓN
+    const u = ADMIN_USERS.find(x => x.id === userId);
+    if (u) {
+      u.nombre = nombre;
+      u.email = email;
+      u.rol = rol;
+      u.area = area;
+      u.carrera = carrera;
+
+      try {
+        fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, email, rol, area, carrera, password: pass || undefined })
+        }).catch(() => {});
+      } catch(e) {}
+
+      toast(`✅ Usuario ${nombre} actualizado`);
+    }
+  }
+
+  closeUserCrudModal();
+  filterAdminUsersTable();
+  updateUserKpis();
+}
+
+async function deleteUserCrud(userId) {
+  const u = ADMIN_USERS.find(x => x.id === userId);
+  const name = u ? u.nombre : 'este usuario';
+  if (!confirm(`¿Estás seguro de eliminar a ${name} del sistema?`)) return;
+
+  const idx = ADMIN_USERS.findIndex(x => x.id === userId);
+  if (idx >= 0) {
+    ADMIN_USERS.splice(idx, 1);
+  }
+
+  try {
+    fetch(`${API_BASE_URL}/admin/users/${userId}`, { method: 'DELETE' }).catch(() => {});
+  } catch(e) {}
+
+  filterAdminUsersTable();
+  updateUserKpis();
+  toast(`🗑️ Usuario ${name} eliminado`);
+}
+
+// ── Renderizado de Dashboard y Repositorio ──
 function renderKpis() {
   const totEl = document.getElementById('kpiTotal');
   if (totEl) totEl.textContent = PROJECTS.length;
@@ -517,9 +879,9 @@ function renderCarreraChart() {
 function renderActivity() {
   const acts = [
     {i:'📤', t:'Proyecto cargado: <strong class="text-cyan-700">IoT Telemetría Industrial</strong>', h:'Hace 1h'},
+    {i:'👥', t:'Usuario registrado: <strong class="text-slate-800">Flavio Escobar (Alumno)</strong>', h:'Hace 2h'},
     {i:'🔍', t:'NAPI realizó <strong class="text-cyan-700">14 análisis</strong> hoy', h:'Hace 3h'},
-    {i:'✅', t:'Aprobado: <strong class="text-slate-800">App Móvil Stock QR</strong>', h:'Hace 5h'},
-    {i:'🔒', t:'Solicitud de acceso: <strong class="text-slate-700">Carlos Pérez</strong>', h:'Hace 8h'}
+    {i:'✅', t:'Aprobado: <strong class="text-slate-800">App Móvil Stock QR</strong>', h:'Hace 5h'}
   ];
   const el = document.getElementById('recentActivity');
   if (el) el.innerHTML = acts.map(a=>`
@@ -534,9 +896,9 @@ function renderActivity() {
 
 function renderReviews() {
   const reqs = [
-    {n:'Emilia Castro', p:'Chatbot Orientación Vocacional', c:'Informática'},
-    {n:'Roberto Lima',  p:'App Delivery con Drones',        c:'Mecánica'},
-    {n:'Valentina Ríos',p:'Contabilidad Cloud',             c:'Administración'}
+    {n:'Emilia Castro', p:'Chatbot Orientación Vocacional', c:'Ing. en Informática'},
+    {n:'Roberto Lima',  p:'App Delivery con Drones',        c:'Ing. en Mecatrónica'},
+    {n:'Valentina Ríos',p:'Contabilidad Cloud',             c:'Contador Público'}
   ];
   const el = document.getElementById('reviewList');
   if (el) el.innerHTML = reqs.map(r=>`
@@ -565,7 +927,10 @@ function renderTable(list) {
         <p class="font-bold text-slate-800 text-xs leading-snug" style="max-width:260px">${p.nombre}</p>
         <div class="flex gap-1 flex-wrap mt-1">${p.stack.slice(0,3).map(s=>`<span class="badge-tech">${s}</span>`).join('')}</div>
       </td>
-      <td class="px-4 py-3"><span class="badge-cyan">${shortC(p.carrera)}</span></td>
+      <td class="px-4 py-3">
+        <span class="badge-cyan block truncate max-w-[200px]" title="${p.carrera}">${shortC(p.carrera)}</span>
+        <span class="text-[10px] text-slate-400 block mt-0.5">${p.area || 'General'}</span>
+      </td>
       <td class="px-4 py-3 text-xs font-semibold text-slate-700">${p.anio}</td>
       <td class="px-4 py-3 text-xs text-slate-500">${p.autores}</td>
       <td class="px-4 py-3">
@@ -582,35 +947,49 @@ function renderTable(list) {
 }
 
 function filterTable() {
-  const q = document.getElementById('manageSearch')?.value.toLowerCase()||'';
-  const cat = document.getElementById('manageFilter')?.value.toLowerCase()||'';
-  renderTable(PROJECTS.filter(p=>
-    (!q||p.nombre.toLowerCase().includes(q)||p.autores.toLowerCase().includes(q))&&
-    (!cat||p.carrera.toLowerCase().includes(cat))
-  ));
+  const q    = document.getElementById('manageSearch')?.value.toLowerCase().trim() || '';
+  const area = document.getElementById('manageAreaFilter')?.value.toLowerCase().trim() || '';
+  const car  = document.getElementById('manageCarreraFilter')?.value.toLowerCase().trim() || '';
+
+  renderTable(PROJECTS.filter(p => {
+    const matchQ = !q || p.nombre.toLowerCase().includes(q) || p.autores.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q);
+    const matchArea = !area || (p.area && p.area.toLowerCase().includes(area));
+    const matchCar = !car || p.carrera.toLowerCase().includes(car);
+    return matchQ && matchArea && matchCar;
+  }));
 }
 
 function openEdit(id) {
   editingId = id;
   const p = PROJECTS.find(x=>x.id===id); if(!p) return;
   document.getElementById('editNombre').value  = p.nombre;
+  document.getElementById('editArea').value    = p.area || 'Tecnología Aplicada';
+  onEditAreaChange();
   document.getElementById('editCarrera').value = p.carrera;
   document.getElementById('editEstado').value  = p.estado;
   document.getElementById('editModal').classList.remove('hidden');
 }
+
 function closeEdit() { document.getElementById('editModal').classList.add('hidden'); }
+
 function saveEdit() {
   const p = PROJECTS.find(x=>x.id===editingId); if(!p) return;
   p.nombre  = document.getElementById('editNombre').value;
+  p.area    = document.getElementById('editArea').value;
   p.carrera = document.getElementById('editCarrera').value;
   p.estado  = document.getElementById('editEstado').value;
-  closeEdit(); filterTable(); toast('✅ Proyecto actualizado.');
+  closeEdit(); 
+  filterTable(); 
+  toast('✅ Proyecto actualizado.');
 }
+
 function toggleStatus(id) {
   const p = PROJECTS.find(x=>x.id===id); if(!p) return;
   p.estado = p.estado==='Público'?'Oculto':'Público';
-  filterTable(); toast(`${p.estado==='Público'?'👁️ Visible':'🙈 Oculto'} en el catálogo.`);
+  filterTable(); 
+  toast(`${p.estado==='Público'?'👁️ Visible':'🙈 Oculto'} en el catálogo.`);
 }
+
 function deleteP(id) {
   if (!confirm('¿Eliminar este proyecto del repositorio?')) return;
   const i = PROJECTS.findIndex(x=>x.id===id);
@@ -642,10 +1021,10 @@ function renderMetrics() {
 
   const sum = [
     {l:'Proyectos Registrados',v:PROJECTS.length,i:'📁'},
-    {l:'Carreras Sede Maipú',v:CARRERAS.length,i:'🎓'},
+    {l:'Áreas Académicas INACAP',v:Object.keys(AREAS_CARRERAS).length,i:'🏛️'},
     {l:'Nota Promedio',v:(PROJECTS.reduce((a,p)=>a+p.nota,0)/PROJECTS.length).toFixed(1),i:'⭐'},
     {l:'Consultas NAPI IA',v:184,i:'🤖'},
-    {l:'Estudiantes Activos',v:342,i:'👥'}
+    {l:'Usuarios Registrados',v:ADMIN_USERS.length,i:'👥'}
   ];
   const ss = document.getElementById('sysSummary');
   if (ss) ss.innerHTML = sum.map(s=>`
@@ -674,33 +1053,53 @@ function toggleVis() {
   const lbl = document.getElementById('visLabel');
   if (lbl) { lbl.textContent = visPublic?'Público (Visible para Estudiantes)':'Oculto (Sólo Administración)'; lbl.className = visPublic?'text-xs font-bold text-cyan-700':'text-xs font-bold text-slate-500'; }
 }
+
 function handleFile(e) {
   const f = e.target.files[0]; if(!f) return;
   document.getElementById('uploadDefault').classList.add('hidden');
   document.getElementById('uploadSelected').classList.remove('hidden');
   document.getElementById('fileName').textContent = `${f.name} (${(f.size/1048576).toFixed(1)} MB)`;
 }
+
 function clearForm() {
-  ['fNombre','fCarrera','fAutores','fDesc','fStack'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['fNombre','fAutores','fDesc','fStack'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('techTags').innerHTML='';
   document.getElementById('uploadDefault').classList.remove('hidden');
   document.getElementById('uploadSelected').classList.add('hidden');
 }
+
 function submitProject() {
   const nombre  = document.getElementById('fNombre')?.value.trim();
+  const area    = document.getElementById('fArea')?.value;
   const carrera = document.getElementById('fCarrera')?.value;
   const autores = document.getElementById('fAutores')?.value.trim();
   const desc    = document.getElementById('fDesc')?.value.trim();
+
   if (!nombre||!carrera||!autores||!desc) { toast('⚠️ Completa todos los campos obligatorios.'); return; }
   const stack = document.getElementById('fStack')?.value.split(',').map(s=>s.trim()).filter(Boolean)||['General'];
   const anio  = parseInt(document.getElementById('fAnio')?.value)||2025;
-  PROJECTS.unshift({ id:PROJECTS.length+1, nombre, carrera, anio, autores, desc, stack, estado:visPublic?'Público':'Oculto', nota:6.5 });
+
+  PROJECTS.unshift({ 
+    id: PROJECTS.length + 1, 
+    nombre, 
+    area: area || 'Tecnología Aplicada', 
+    carrera, 
+    anio, 
+    autores, 
+    desc, 
+    stack, 
+    estado: visPublic ? 'Público' : 'Oculto', 
+    nota: 6.5 
+  });
+
   const sb = document.getElementById('uploadSuccess');
   if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'),4000); }
-  clearForm(); filterTable(); renderKpis();
+  clearForm(); 
+  filterTable(); 
+  renderKpis();
   toast('🚀 Proyecto registrado en el repositorio N.A.P.I.');
 
-  // Sincronizar con Supabase y generar embedding en segundo plano
+  // Sincronizar en Supabase
   fetch(`${API_BASE_URL}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -711,15 +1110,16 @@ function submitProject() {
       autores: autores,
       resumen: desc
     })
-  }).then(r => r.json()).then(res => {
-    if (res.success) toast('⚡ Vectorizado y sincronizado en Supabase.');
   }).catch(() => {});
 }
 
 // ══════════════════════════════════════════
-//  MÓDULO 3: PANEL ESTUDIANTE
+//  MÓDULO 3: PANEL ESTUDIANTE & CATÁLOGO
 // ══════════════════════════════════════════
-function initStudent() { renderCards(PROJECTS.filter(p=>p.estado==='Público')); }
+function initStudent() { 
+  populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
+  renderCards(PROJECTS.filter(p=>p.estado==='Público')); 
+}
 
 function renderCards(list) {
   const grid  = document.getElementById('studentGrid');
@@ -755,6 +1155,7 @@ function renderCards(list) {
         </div>
         <div class="mb-2">
           <span class="text-[10px] font-bold text-[#ED1C24] uppercase tracking-wider">${shortC(p.carrera)}</span>
+          <span class="text-[10px] text-slate-400 block">${p.area || ''}</span>
         </div>
         <h3 class="font-black text-slate-800 text-sm leading-snug mb-2 clamp2 group-hover:text-[#ED1C24] transition-colors">${p.nombre}</h3>
         <p class="text-xs text-slate-600 leading-relaxed clamp3 mb-4">${p.desc}</p>
@@ -776,25 +1177,31 @@ function renderCards(list) {
 }
 
 function filterCards() {
-  const q    = document.getElementById('studentSearch')?.value.toLowerCase()||'';
-  const car  = document.getElementById('carFilter')?.value.toLowerCase()||'';
-  const anio = document.getElementById('anioFilter')?.value||'';
-  const sort = document.getElementById('sortFilter')?.value||'newest';
-  let list   = PROJECTS.filter(p=>p.estado==='Público').filter(p=>
-    (!q||p.nombre.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)||p.stack.join(' ').toLowerCase().includes(q))&&
-    (!car||p.carrera.toLowerCase().includes(car))&&
-    (!anio||p.anio.toString()===anio)
-  );
-  if (sort==='oldest') list.sort((a,b)=>a.anio-b.anio);
-  else if (sort==='newest') list.sort((a,b)=>b.anio-a.anio);
-  else if (sort==='az') list.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const q    = document.getElementById('studentSearch')?.value.toLowerCase().trim() || '';
+  const area = document.getElementById('studentAreaFilter')?.value.toLowerCase().trim() || '';
+  const car  = document.getElementById('studentCarreraFilter')?.value.toLowerCase().trim() || '';
+  const anio = document.getElementById('anioFilter')?.value || '';
+  const sort = document.getElementById('sortFilter')?.value || 'newest';
+
+  let list = PROJECTS.filter(p => p.estado === 'Público').filter(p => {
+    const matchQ = !q || p.nombre.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.stack.join(' ').toLowerCase().includes(q) || p.autores.toLowerCase().includes(q);
+    const matchArea = !area || (p.area && p.area.toLowerCase().includes(area));
+    const matchCar = !car || p.carrera.toLowerCase().includes(car);
+    const matchAnio = !anio || p.anio.toString() === anio;
+    return matchQ && matchArea && matchCar && matchAnio;
+  });
+
+  if (sort === 'oldest') list.sort((a,b)=>a.anio-b.anio);
+  else if (sort === 'newest') list.sort((a,b)=>b.anio-a.anio);
+  else if (sort === 'az') list.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
   renderCards(list);
 }
 
 function openProjModal(id) {
   const p = PROJECTS.find(x=>x.id===id); if(!p) return;
   currentModal = p;
-  document.getElementById('mBadge').textContent   = shortC(p.carrera);
+  document.getElementById('mBadge').textContent   = `${p.area ? p.area + ' · ' : ''}${shortC(p.carrera)}`;
   document.getElementById('mTitle').textContent   = p.nombre;
   document.getElementById('mAnio').textContent    = p.anio;
   document.getElementById('mAutores').textContent = p.autores;
@@ -802,6 +1209,7 @@ function openProjModal(id) {
   document.getElementById('mTechs').innerHTML     = p.stack.map(t=>`<span class="badge-cyan px-2.5 py-1 text-xs">${t}</span>`).join('');
   document.getElementById('projModal').classList.remove('hidden');
 }
+
 function closeProjModal() { document.getElementById('projModal').classList.add('hidden'); }
 function requestAccess() { closeProjModal(); toast(`🔒 Solicitud enviada al docente para: "${currentModal?.nombre?.substring(0,35)}..."`); }
 function sendToNapi() {
@@ -810,13 +1218,12 @@ function sendToNapi() {
 }
 
 // ══════════════════════════════════════════
-// ══════════════════════════════════════════
-//  MÓDULO 4: ASISTENTE NAPI CON CHATS EN BASE DE DATOS SUPABASE
+//  MÓDULO 4: ASISTENTE NAPI CON CHATS EN BASE DE DATOS
 // ══════════════════════════════════════════
 
 function getChatStorageKey() {
   if (currentUser && currentUser.email) {
-    const rolePrefix = currentUser.rol === 'docente' ? 'docente' : 'estudiante';
+    const rolePrefix = currentUser.rol || 'guest';
     return `napi_chat_${rolePrefix}_${currentUser.email.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
   }
   if (currentRole) {
@@ -826,7 +1233,7 @@ function getChatStorageKey() {
 }
 
 async function saveChatMessageToDb(sender, message, metadata = null) {
-  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl');
   const role = currentUser?.rol || currentRole || 'estudiante';
   try {
     fetch(`${API_BASE_URL}/chat/message`, {
@@ -851,10 +1258,9 @@ function saveChatHistory() {
 }
 
 async function clearUserChat() {
-  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl');
   const role = currentUser?.rol || currentRole || 'estudiante';
   
-  // 1. Borrar en base de datos Supabase
   try {
     await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`, {
       method: 'DELETE'
@@ -863,7 +1269,6 @@ async function clearUserChat() {
     console.warn('Error borrando chat en BD:', e);
   }
 
-  // 2. Borrar en caché local
   const key = getChatStorageKey();
   localStorage.removeItem(key);
   const box = document.getElementById('chatBox');
@@ -876,26 +1281,23 @@ async function initNapi(forceGreeting = false) {
   const box = document.getElementById('chatBox');
   if (!box) return;
 
-  // Actualizar indicador de privacidad en el header del chat
   const privacyBadge = document.getElementById('chatPrivacyBadge');
   if (privacyBadge) {
     if (currentUser) {
-      const rolName = currentUser.rol === 'docente' ? 'Docente' : 'Estudiante';
+      const rolName = currentUser.rol === 'administrador' ? 'Admin' : currentUser.rol === 'docente' ? 'Docente' : 'Estudiante';
       privacyBadge.textContent = `☁️ Base de Datos · ${currentUser.nombre.split(' ')[0]} (${rolName})`;
     } else {
       privacyBadge.textContent = `☁️ Chat Seguro · INACAP Maipú`;
     }
   }
 
-  // Si se fuerza nuevo saludo, reiniciar directamente
   if (forceGreeting) {
     box.innerHTML = '';
     renderDefaultGreeting();
     return;
   }
 
-  // 1. Intentar cargar historial desde la Base de Datos Supabase
-  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl');
   const role = currentUser?.rol || currentRole || 'estudiante';
 
   try {
@@ -922,7 +1324,6 @@ async function initNapi(forceGreeting = false) {
     console.warn('No se pudo conectar con BD de chat, probando caché local:', err);
   }
 
-  // 2. Respaldo en caché local de este usuario específico
   const key = getChatStorageKey();
   const saved = localStorage.getItem(key);
 
@@ -932,16 +1333,15 @@ async function initNapi(forceGreeting = false) {
     return;
   }
 
-  // 3. Saludo inicial si no hay historial previo en BD
   box.innerHTML = '';
   renderDefaultGreeting();
 }
 
 function renderDefaultGreeting() {
   if (currentUser && currentUser.rol === 'estudiante') {
-    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** en INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te diré qué porcentaje de coincidencia tiene con proyectos anteriores y cómo innovar para que sea único. 🚀`, false);
-  } else if (currentUser && currentUser.rol === 'docente') {
-    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI** en **Modo Docente**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional. 🎓`, false);
+    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te diré qué porcentaje de coincidencia tiene con proyectos anteriores y cómo innovar para que sea único. 🚀`, false);
+  } else if (currentUser && (currentUser.rol === 'docente' || currentUser.rol === 'administrador')) {
+    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI** en **Modo ${currentUser.rol === 'administrador' ? 'Administrador' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional. 🎓`, false);
   } else {
     addNapi(`¡Hola! 👋 Soy **NAPI**, el Asistente Inteligente de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te diré qué porcentaje de coincidencia tiene con otros proyectos y cómo diferenciarte. 🚀`, false);
   }
@@ -1029,7 +1429,6 @@ function getChatHistoryArray() {
   const items = [];
   const nodes = box.querySelectorAll('.bubble-user, .bubble-napi');
   nodes.forEach((n, idx) => {
-    // Excluir el saludo de bienvenida inicial del historial para no contaminar el contexto conversacional
     if (idx === 0 && n.classList.contains('bubble-napi') && n.innerText.includes('¡Hola')) {
       return;
     }
@@ -1047,12 +1446,9 @@ function getChatHistoryArray() {
 
 function analyze(txt, history = []) {
   const lower = txt.toLowerCase();
-  
-  // Palabras a ignorar
   const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'unos', 'unas', 'ver', 'las', 'los', 'que', 'una', 'uno'];
   const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
   
-  // Buscar coincidencia semántica en el catálogo de proyectos institucionales
   let bestMatch = null;
   let maxScore = 0;
 
@@ -1069,9 +1465,8 @@ function analyze(txt, history = []) {
     }
   });
 
-  // Si encontramos un proyecto con coincidencia clara
   if (bestMatch && (maxScore >= 25 || words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w)))) {
-    const finalScore = Math.max(maxScore, 58);
+    const finalScore = Math.max(maxScore, 59.2);
     return `## 💡 Diagnóstico de tu Idea
 
 Tu idea tiene un **${finalScore}% de similitud** con un proyecto anterior en INACAP Sede Maipú:
@@ -1084,14 +1479,13 @@ Tu propuesta coincide en el enfoque de **${bestMatch.stack.slice(0, 3).join(', '
 ## 🚀 ¿Cómo puedes innovar y diferenciarte?
 Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
 1. **Agregar alertas automáticas:** Envío de notificaciones inmediatas al celular (por WhatsApp o Telegram) ante cualquier evento.
-2. **Usar predicción simple con IA:** En vez de solo medir variables actuales, programa un modelo que anticipe fallas antes de que ocurran.
+2. **Usar predicción simple con IA:** En vez de solo medir variables actuales, programa un modelo que anticipe anomalías o eventos futuros.
 3. **Aplicarlo a un caso real en Maipú:** Enfoca las pruebas directamente en un taller, empresa o comercio de la comuna.
 
 ## 🎯 Tu próximo paso
 Revisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
   }
 
-  // Si es un debate, pregunta o repregunta conversacional
   if (history && history.length > 0) {
     if (lower.includes('no se') || lower.includes('parece') || lower.includes('verdad') || lower.includes('razon')) {
       return `¡Buena observación! Si bien pueden compartir conceptos base, la clave está en el **enfoque de valor** que le des:
@@ -1175,11 +1569,10 @@ async function sendMsg() {
   input.value = '';
   const typing = addTyping();
 
-  // 1. Intentar llamar a la API FastAPI + Supabase + Gemini (con memoria conversacional)
   let responded = false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
@@ -1194,14 +1587,12 @@ async function sendMsg() {
       if (typing) typing.remove();
       responded = true;
 
-      // Renderizar respuesta de NAPI
       if (data.analisis) {
         addNapi(data.analisis);
       } else {
         addNapi(analyze(txt, history));
       }
 
-      // Renderizar cards de proyectos de Supabase (solo en propuestas iniciales)
       if (data.similares && data.similares.length > 0 && history.length === 0) {
         data.similares.forEach((sim, idx) => {
           setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
@@ -1213,7 +1604,6 @@ async function sendMsg() {
     console.warn('Backend API /analyze con demora o no disponible:', err);
   }
 
-  // 2. Respaldo directo en frontend con lógica conversacional garantizada
   if (!responded) {
     setTimeout(() => {
       if (typing) typing.remove();
@@ -1227,7 +1617,7 @@ async function sendMsg() {
         let hits = 0;
         words.forEach(w => { if (src.includes(w)) hits += 1; });
         const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
-        return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w))) ? Math.max(pct, 58) : pct };
+        return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w))) ? Math.max(pct, 59.2) : pct };
       }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct)[0];
 
       if (top) {
@@ -1242,13 +1632,13 @@ async function sendMsg() {
 // ══════════════════════════════════════════
 function toast(msg) {
   const el = document.createElement('div');
-  el.style.cssText='position:fixed;bottom:5.5rem;right:1.5rem;z-index:9999;background:#121826;color:#ffffff;border:1px solid #00B5E2;font-size:.8rem;font-weight:600;padding:.75rem 1.25rem;border-radius:.75rem;box-shadow:0 10px 25px rgba(0,0,0,.25);animation:fadeUp .3s ease';
+  el.style.cssText='position:fixed;bottom:5.5rem;right:1.5rem;z-index:9999;background:#121826;color:#ffffff;border:1px solid #ED1C24;font-size:.8rem;font-weight:600;padding:.75rem 1.25rem;border-radius:.75rem;box-shadow:0 10px 25px rgba(0,0,0,.25);animation:fadeUp .3s ease';
   el.textContent=msg; document.body.appendChild(el);
   setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); },3200);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  ['projModal','editModal'].forEach(id=>{
+  ['projModal','editModal','userCrudModal'].forEach(id=>{
     document.getElementById(id)?.addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
   });
 });
