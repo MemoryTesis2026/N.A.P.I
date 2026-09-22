@@ -167,8 +167,29 @@ VALUES
     2024,
     'Fuentes P., Diaz C.'
   )
-ON CONFLICT DO NOTHING;
+-- ─────────────────────────────────────────────────────────────
+-- 8. TABLA DE HISTORIAL DE CHATS (AISLADO POR USUARIO Y ROL)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.napi_chat_history (
+  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_email  TEXT        NOT NULL,
+  user_role   TEXT        NOT NULL DEFAULT 'estudiante',
+  sender      TEXT        NOT NULL, -- 'user' | 'napi' | 'card'
+  message     TEXT        NOT NULL,
+  metadata    JSONB       DEFAULT '{}'::jsonb,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_napi_chat_user ON public.napi_chat_history (user_email, user_role, created_at);
+
+ALTER TABLE public.napi_chat_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Acceso publico lectura/escritura a napi_chat_history"
+  ON public.napi_chat_history
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────
--- FIN DEL SCRIPT v2 (Gemini 768 dims)
+-- FIN DEL SCRIPT v2 (Gemini 768/1536 dims + Chat History)
 -- ─────────────────────────────────────────────────────────────

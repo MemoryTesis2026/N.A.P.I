@@ -72,6 +72,13 @@ class AnalyzeRequest(BaseModel):
     limite: Optional[int] = 4
     carrera: Optional[str] = None
 
+class ChatMessageRequest(BaseModel):
+    email: str
+    role: Optional[str] = "estudiante"
+    sender: str  # "user", "napi", "card"
+    message: str
+    metadata: Optional[dict] = None
+
 class ProjectCreateRequest(BaseModel):
     titulo: str
     resumen: str
@@ -275,6 +282,58 @@ def get_users():
         return {"users": user_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ── Historial de Chat NAPI en Supabase (Aislamiento por Usuario y Rol) ──
+@app.get("/api/chat/history")
+def get_chat_history(email: str, role: Optional[str] = None):
+    """Recupera el historial de chat persistido en Supabase para el usuario y rol específicos."""
+    try:
+        if not db_admin:
+            return {"messages": []}
+        clean_email = email.strip().lower()
+        query = db_admin.table("napi_chat_history").select("*").eq("user_email", clean_email)
+        if role:
+            query = query.eq("user_role", role.strip().lower())
+        res = query.order("created_at", desc=False).execute()
+        return {"messages": res.data or []}
+    except Exception as e:
+        log.warning(f"Error consultando historial de chat en Supabase ({e})")
+        return {"messages": []}
+
+@app.post("/api/chat/message")
+def save_chat_message(req: ChatMessageRequest):
+    """Guarda un mensaje en la base de datos Supabase para mantener los chats aislados en la nube."""
+    try:
+        if not db_admin:
+            return {"success": False, "detail": "Supabase no conectado"}
+        payload = {
+            "user_email": req.email.strip().lower(),
+            "user_role": req.role.strip().lower() if req.role else "estudiante",
+            "sender": req.sender.strip().lower(),
+            "message": req.message,
+            "metadata": req.metadata or {}
+        }
+        res = db_admin.table("napi_chat_history").insert(payload).execute()
+        return {"success": True, "data": res.data[0] if res.data else None}
+    except Exception as e:
+        log.warning(f"Error guardando mensaje en Supabase ({e})")
+        return {"success": False, "error": str(e)}
+
+@app.delete("/api/chat/history")
+def clear_chat_history(email: str, role: Optional[str] = None):
+    """Elimina el historial de chat del usuario en Supabase."""
+    try:
+        if not db_admin:
+            return {"success": False}
+        clean_email = email.strip().lower()
+        query = db_admin.table("napi_chat_history").delete().eq("user_email", clean_email)
+        if role:
+            query = query.eq("user_role", role.strip().lower())
+        query.execute()
+        return {"success": True}
+    except Exception as e:
+        log.warning(f"Error eliminando historial de chat en Supabase ({e})")
+        return {"success": False, "error": str(e)}
 
 # ── Proyectos ──
 @app.get("/api/projects")

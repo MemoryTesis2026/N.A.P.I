@@ -364,6 +364,8 @@ function selectRole(role) {
     carrera: 'Informática / Ing. en Computación'
   };
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
+  const box = document.getElementById('chatBox');
+  if (box) box.innerHTML = '';
   initNapi();
   document.getElementById('roleDocente')?.classList.toggle('active', role === 'docente');
   document.getElementById('roleEstudiante')?.classList.toggle('active', role === 'estudiante');
@@ -393,6 +395,9 @@ function handleLogin() {
     carrera: 'Informática / Ing. en Computación'
   };
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
+
+  const box = document.getElementById('chatBox');
+  if (box) box.innerHTML = '';
 
   document.getElementById('loginError')?.classList.add('hidden');
   document.getElementById('loginBtnTxt')?.classList.add('invisible');
@@ -427,6 +432,10 @@ function logout() {
   document.getElementById('studentScreen')?.classList.add('hidden');
   document.getElementById('napiWidget').style.display = 'flex';
   
+  // Limpiar chat box para que el siguiente usuario no vea mensajes previos
+  const box = document.getElementById('chatBox');
+  if (box) box.innerHTML = '';
+
   // Cerrar panel de chat y re-iniciar contexto de invitado
   napiOpen = false;
   document.getElementById('chatPanel')?.classList.add('hidden');
@@ -792,7 +801,8 @@ function sendToNapi() {
 }
 
 // ══════════════════════════════════════════
-//  MÓDULO 4: ASISTENTE NAPI CON CHATS INDIVIDUALES
+// ══════════════════════════════════════════
+//  MÓDULO 4: ASISTENTE NAPI CON CHATS EN BASE DE DATOS SUPABASE
 // ══════════════════════════════════════════
 
 function getChatStorageKey() {
@@ -806,6 +816,20 @@ function getChatStorageKey() {
   return 'napi_chat_guest';
 }
 
+async function saveChatMessageToDb(sender, message, metadata = null) {
+  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const role = currentUser?.rol || currentRole || 'estudiante';
+  try {
+    fetch(`${API_BASE_URL}/chat/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, role, sender, message, metadata })
+    }).catch(e => console.warn('Sync chat DB aviso:', e));
+  } catch (e) {
+    console.warn('Error guardando en BD:', e);
+  }
+}
+
 function saveChatHistory() {
   const box = document.getElementById('chatBox');
   if (!box) return;
@@ -817,7 +841,20 @@ function saveChatHistory() {
   }
 }
 
-function clearUserChat() {
+async function clearUserChat() {
+  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const role = currentUser?.rol || currentRole || 'estudiante';
+  
+  // 1. Borrar en base de datos Supabase
+  try {
+    await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {
+    console.warn('Error borrando chat en BD:', e);
+  }
+
+  // 2. Borrar en caché local
   const key = getChatStorageKey();
   localStorage.removeItem(key);
   const box = document.getElementById('chatBox');
@@ -826,7 +863,7 @@ function clearUserChat() {
   toast('🗑️ Historial de conversación reiniciado');
 }
 
-function initNapi(forceGreeting = false) {
+async function initNapi(forceGreeting = false) {
   const box = document.getElementById('chatBox');
   if (!box) return;
 
@@ -835,22 +872,63 @@ function initNapi(forceGreeting = false) {
   if (privacyBadge) {
     if (currentUser) {
       const rolName = currentUser.rol === 'docente' ? 'Docente' : 'Estudiante';
-      privacyBadge.textContent = `🔒 Chat de ${currentUser.nombre.split(' ')[0]} (${rolName})`;
+      privacyBadge.textContent = `☁️ Base de Datos · ${currentUser.nombre.split(' ')[0]} (${rolName})`;
     } else {
-      privacyBadge.textContent = `🔒 Chat Individual · INACAP Maipú`;
+      privacyBadge.textContent = `☁️ Chat Seguro · INACAP Maipú`;
     }
   }
 
+  // Si se fuerza nuevo saludo, reiniciar directamente
+  if (forceGreeting) {
+    box.innerHTML = '';
+    renderDefaultGreeting();
+    return;
+  }
+
+  // 1. Intentar cargar historial desde la Base de Datos Supabase
+  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const role = currentUser?.rol || currentRole || 'estudiante';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.messages && data.messages.length > 0) {
+        box.innerHTML = '';
+        data.messages.forEach(m => {
+          if (m.sender === 'user') {
+            addUser(m.message, false);
+          } else if (m.sender === 'napi') {
+            addNapi(m.message, false);
+          } else if (m.sender === 'card' && m.metadata) {
+            addSimCardSupabase(m.metadata, false);
+          }
+        });
+        box.scrollTop = box.scrollHeight;
+        saveChatHistory();
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('No se pudo conectar con BD de chat, probando caché local:', err);
+  }
+
+  // 2. Respaldo en caché local de este usuario específico
   const key = getChatStorageKey();
   const saved = localStorage.getItem(key);
 
-  if (!forceGreeting && saved && saved.trim().length > 0) {
+  if (saved && saved.trim().length > 0) {
     box.innerHTML = saved;
     box.scrollTop = box.scrollHeight;
     return;
   }
 
+  // 3. Saludo inicial si no hay historial previo en BD
   box.innerHTML = '';
+  renderDefaultGreeting();
+}
+
+function renderDefaultGreeting() {
   if (currentUser && currentUser.rol === 'estudiante') {
     addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** en INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te diré qué porcentaje de coincidencia tiene con proyectos anteriores y cómo innovar para que sea único. 🚀`, false);
   } else if (currentUser && currentUser.rol === 'docente') {
@@ -885,7 +963,10 @@ function addNapi(txt, save = true) {
     <div class="bubble-napi px-4 py-3 text-xs leading-relaxed max-w-[88%] shadow-sm">${fmt(txt)}</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
-  if (save) saveChatHistory();
+  if (save) {
+    saveChatHistory();
+    saveChatMessageToDb('napi', txt);
+  }
 }
 
 function addUser(txt, save = true) {
@@ -897,7 +978,10 @@ function addUser(txt, save = true) {
     <div class="w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-bold flex items-center justify-center shrink-0">👤</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
-  if (save) saveChatHistory();
+  if (save) {
+    saveChatHistory();
+    saveChatMessageToDb('user', txt);
+  }
 }
 
 function addTyping() {
