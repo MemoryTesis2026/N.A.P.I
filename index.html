@@ -182,7 +182,7 @@
     <div id="heroCarousel" class="relative h-[520px] md:h-[580px] lg:h-[640px]">
 
       <!-- Slide 1 (Sede Maipú Campus Principal) -->
-      <div class="carousel-slide active" id="slide-0" style="background-image:url('assets/sede1.png')">
+      <div class="carousel-slide active" id="slide-0" style="background-image:url('img/slide1.jpg'), url('assets/sede1.png')">
         <div class="carousel-overlay"></div>
         <div class="carousel-content">
           <span class="carousel-badge">🏛️ INACAP Sede Maipú · Repositorio Oficial</span>
@@ -196,7 +196,7 @@
       </div>
 
       <!-- Slide 2 (Campus Tecnológico & Áreas Verdes) -->
-      <div class="carousel-slide" id="slide-1" style="background-image:url('assets/sede2.png')">
+      <div class="carousel-slide" id="slide-1" style="background-image:url('img/slide2.jpg'), url('assets/sede2.png')">
         <div class="carousel-overlay"></div>
         <div class="carousel-content">
           <span class="carousel-badge">🎓 Excelencia Académica INACAP</span>
@@ -210,7 +210,7 @@
       </div>
 
       <!-- Slide 3 (Edificio de Innovación & Talleres) -->
-      <div class="carousel-slide" id="slide-2" style="background-image:url('assets/sede3.png')">
+      <div class="carousel-slide" id="slide-2" style="background-image:url('img/slide3.jpg'), url('assets/sede3.png')">
         <div class="carousel-overlay"></div>
         <div class="carousel-content">
           <span class="carousel-badge">🤖 Inteligencia Artificial Educativa</span>
@@ -254,7 +254,7 @@
         <!-- Foto Sede 1 -->
         <div class="sede-photo-card group">
           <div class="overflow-hidden relative">
-            <img src="assets/sede1.png" alt="INACAP Sede Maipú Campus Principal" class="sede-photo-img" />
+            <img src="img/slide1.jpg" onerror="this.src='assets/sede1.png'" alt="INACAP Sede Maipú Campus Principal" class="sede-photo-img" />
             <div class="absolute top-3 left-3 bg-[#ED1C24] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
               Sede Maipú
             </div>
@@ -272,7 +272,7 @@
         <!-- Foto Sede 2 -->
         <div class="sede-photo-card group">
           <div class="overflow-hidden relative">
-            <img src="assets/sede2.png" alt="Campus Tecnológico INACAP" class="sede-photo-img" />
+            <img src="img/slide2.jpg" onerror="this.src='assets/sede2.png'" alt="Campus Tecnológico INACAP" class="sede-photo-img" />
             <div class="absolute top-3 left-3 bg-[#1E293B] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
               Laboratorios
             </div>
@@ -290,7 +290,7 @@
         <!-- Foto Sede 3 -->
         <div class="sede-photo-card group">
           <div class="overflow-hidden relative">
-            <img src="assets/sede3.png" alt="Edificio de Ingeniería y Transferencia" class="sede-photo-img" />
+            <img src="img/slide3.jpg" onerror="this.src='assets/sede3.png'" alt="Edificio de Ingeniería y Transferencia" class="sede-photo-img" />
             <div class="absolute top-3 left-3 bg-[#ED1C24] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
               Edificio Central
             </div>
@@ -1359,18 +1359,23 @@
 
     <!-- Header NAPI -->
     <div class="napi-header flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-[#ED1C24] border border-red-300 text-white text-lg font-bold flex items-center justify-center shadow-md">🤖</div>
-        <div>
-          <h3 class="text-xs font-black text-white flex items-center gap-1.5">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-full bg-[#ED1C24] border border-red-300 text-white text-lg font-bold flex items-center justify-center shadow-md shrink-0">🤖</div>
+        <div class="min-w-0">
+          <h3 class="text-xs font-black text-white flex items-center gap-1.5 truncate">
             Asistente NAPI <span class="badge-admin text-[9px] px-1.5 bg-white text-[#ED1C24]">IA</span>
           </h3>
-          <p class="text-[10px] text-red-200 font-medium">Validación de Similitud · INACAP Maipú</p>
+          <p id="chatPrivacyBadge" class="text-[10px] text-red-100 font-medium truncate">🔒 Chat Privado · INACAP Maipú</p>
         </div>
       </div>
-      <button onclick="toggleChat()" class="text-slate-400 hover:text-white transition-colors">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="clearUserChat()" class="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Borrar historial de esta cuenta (Privado)">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+        <button onclick="toggleChat()" class="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Cerrar chat">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
 
     <!-- Quick Chips -->

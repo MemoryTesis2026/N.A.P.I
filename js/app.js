@@ -31,8 +31,19 @@ const CARRERAS = [
 const shortC = c => c.split('/')[0].trim();
 
 // ──────────────────────────────────────────
-//  ESTADO GLOBAL
+//  CONFIGURACIÓN DE API Y ESTADO GLOBAL
 // ──────────────────────────────────────────
+const API_BASE_URL = (() => {
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
+      if (window.location.port !== '8000') {
+        return 'http://127.0.0.1:8000/api';
+      }
+    }
+  }
+  return '/api';
+})();
+
 let currentRole = 'docente';
 let napiOpen = false;
 let editingId = null;
@@ -802,13 +813,6 @@ function addTyping() {
   box.appendChild(d); box.scrollTop=box.scrollHeight; return d;
 }
 
-const API_BASE_URL = (() => {
-  if (window.location.protocol === 'file:' || window.location.port === '5500') {
-    return 'http://127.0.0.1:8000/api';
-  }
-  return '/api';
-})();
-
 function fmt(t) {
   if (!t) return '';
   return t
@@ -824,63 +828,75 @@ function fmt(t) {
     .replace(/\n/g, '<br/>');
 }
 
-async function sendMsg() {
-  const input = document.getElementById('napiInput'); if(!input) return;
-  const txt = input.value.trim(); if(!txt) return;
-  addUser(txt); input.value='';
-  const typing = addTyping();
+// Motor de análisis semántico local (fallback inteligente)
+function analyze(txt) {
+  const lower = txt.toLowerCase();
+  const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3 && !['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero'].includes(w));
+  
+  // Buscar coincidencias en el catálogo de proyectos de Sede Maipú
+  let bestMatch = null;
+  let maxScore = 0;
 
-  try {
-    // 1. Intentar llamar al motor RAG en vivo (FastAPI + Supabase + Gemini)
-    const res = await fetch(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: txt, umbral: 0.40, limite: 4 })
+  PROJECTS.forEach(p => {
+    const haystack = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
+    let hits = 0;
+    words.forEach(w => {
+      if (haystack.includes(w)) hits += 1;
     });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (typing) typing.remove();
-
-      // Renderizar análisis generado por Gemini
-      addNapi(data.analisis);
-
-      // Renderizar cards de proyectos más similares encontrados en Supabase
-      if (data.similares && data.similares.length > 0) {
-        data.similares.forEach((sim, idx) => {
-          setTimeout(() => addSimCardSupabase(sim), 200 * (idx + 1));
-        });
-      }
-      return;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      console.warn('API /analyze error status:', res.status, errData);
+    const score = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 95) : 0;
+    if (score > maxScore) {
+      maxScore = score;
+      bestMatch = p;
     }
-  } catch (err) {
-    console.warn('Backend RAG offline o error:', err);
+  });
+
+  let riesgo = 'SIN RIESGO';
+  let badgeColor = 'bg-emerald-500';
+  if (maxScore >= 75) {
+    riesgo = 'CRÍTICO';
+    badgeColor = 'bg-red-500';
+  } else if (maxScore >= 55) {
+    riesgo = 'ALTO';
+    badgeColor = 'bg-amber-500';
+  } else if (maxScore >= 35) {
+    riesgo = 'MODERADO';
+    badgeColor = 'bg-cyan-500';
   }
 
-  // 2. Respaldo local si el servidor backend no está encendido
-  setTimeout(() => {
-    if (typing) typing.remove();
-    addNapi(analyze(txt));
-    const lower = txt.toLowerCase();
-    const words = lower.split(/\s+/).filter(w => w.length > 3);
-    const top = PROJECTS.map(p => {
-      const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
-      const cnt = words.filter(w => src.includes(w)).length;
-      return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 94) };
-    }).filter(x => x.pct >= 40).sort((a, b) => b.pct - a.pct)[0];
-    if (top) setTimeout(() => addSimCard(top.p, top.pct), 280);
-  }, 800);
+  if (bestMatch && maxScore >= 35) {
+    return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **${riesgo} (${maxScore}% similitud)**\n* **Proyecto histórico detectado:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})\n\n## 🔍 Análisis de Similitud\nSe identificó un solapamiento conceptual en las áreas de **${bestMatch.stack.slice(0, 3).join(', ')}** y el alcance funcional de la solución propuesta para INACAP Sede Maipú.\n\n## ⚠️ Zonas de Choque de Ideas\n- **Arquitectura base:** Enfoque similar en la recopilación o gestión de datos.\n- **Público objetivo:** Ya existe un anteproyecto que aborda una problemática análoga.\n\n## 🚀 Recomendaciones de Innovación\n1. **Edge AI / Analítica Predictiva:** Integra inferencia en tiempo real en lugar de procesamiento estático.\n2. **Arquitectura Serverless / Supabase:** Utiliza microservicios modernos con autenticación biométrica o WebSockets.\n3. **Caso de uso industrial específico:** Adapta el proyecto a una necesidad productiva real de la comuna de Maipú o la Región Metropolitana.\n\n## 💪 Próximo Paso\nRevisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor diferenciadora.`;
+  }
+
+  return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **SIN RIESGO (0-15%)**\n* **Propuesta evaluada:** "${txt.substring(0, 60)}${txt.length > 60 ? '...' : ''}"\n\n🎉 **¡Excelente potencial innovador!**\nNo se detectaron proyectos previos con alta similitud en el catálogo institucional de INACAP Sede Maipú.\n\n## 🚀 Recomendaciones Técnicas\n1. **Stack Tecnológico:** Considera tecnologías como FastAPI, Supabase, Next.js/React Native y Gemini para máxima escalabilidad.\n2. **Validación:** Define métricas claras de impacto y pruebas de concepto antes del anteproyecto de título.\n\n## 💪 Próximo Paso\nRedacta el alcance técnico y preséntalo con confianza a tu docente guía.`;
+}
+
+function addSimCard(p, pct) {
+  const box = document.getElementById('chatBox'); if(!box) return;
+  const d = document.createElement('div');
+  d.className = 'anim-fade mb-3 ml-8 cursor-pointer';
+  const col = pct >= 75 ? 'bg-red-500' : pct >= 55 ? 'bg-amber-500' : 'bg-cyan-500';
+  d.innerHTML = `
+    <div onclick="openProjModal(${p.id})" class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
+          ${pct}%
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold text-slate-800 leading-tight">${p.nombre}</p>
+          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(p.carrera)} · ${p.anio} · <span class="text-slate-500">${p.autores}</span></p>
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${p.desc}</p>
+    </div>`;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
 }
 
 function addSimCardSupabase(sim) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
   d.className = 'anim-fade mb-3 ml-8';
-  const pct = sim.porcentaje_similitud;
-  const col = pct >= 80 ? 'bg-red-500' : pct >= 65 ? 'bg-amber-500' : 'bg-cyan-500';
+  const pct = Math.round(sim.porcentaje_similitud || 60);
+  const col = pct >= 75 ? 'bg-red-500' : pct >= 55 ? 'bg-amber-500' : 'bg-cyan-500';
   d.innerHTML = `
     <div class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
       <div class="flex items-center gap-3">
@@ -889,12 +905,73 @@ function addSimCardSupabase(sim) {
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-xs font-bold text-slate-800 leading-tight">${sim.titulo}</p>
-          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(sim.carrera)} · ${sim.anio} · <span class="text-slate-500">${sim.autores}</span></p>
+          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(sim.carrera || '')} · ${sim.anio || 2025} · <span class="text-slate-500">${sim.autores || 'Autores INACAP'}</span></p>
         </div>
       </div>
-      <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${sim.resumen}</p>
+      <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${sim.resumen || ''}</p>
     </div>`;
   box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('napiInput'); if(!input) return;
+  const txt = input.value.trim(); if(!txt) return;
+  addUser(txt); input.value='';
+  const typing = addTyping();
+
+  // 1. Intentar llamar a la API FastAPI + Supabase + Gemini
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout max
+
+    const res = await fetch(`${API_BASE_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: txt, umbral: 0.35, limite: 4 }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (typing) typing.remove();
+
+      // Renderizar análisis de NAPI
+      if (data.analisis) {
+        addNapi(data.analisis);
+      } else {
+        addNapi(analyze(txt));
+      }
+
+      // Renderizar cards de proyectos de Supabase
+      if (data.similares && data.similares.length > 0) {
+        data.similares.forEach((sim, idx) => {
+          setTimeout(() => addSimCardSupabase(sim), 200 * (idx + 1));
+        });
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('API /analyze no disponible o en fallback:', err);
+  }
+
+  // 2. Fallback local garantizado si el backend no está encendido o tiene demora
+  setTimeout(() => {
+    if (typing) typing.remove();
+    addNapi(analyze(txt));
+
+    const lower = txt.toLowerCase();
+    const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
+    const top = PROJECTS.map(p => {
+      const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
+      const cnt = words.filter(w => src.includes(w)).length;
+      return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 92) };
+    }).filter(x => x.pct >= 35).sort((a, b) => b.pct - a.pct)[0];
+
+    if (top) {
+      setTimeout(() => addSimCard(top.p, top.pct), 250);
+    }
+  }, 400);
 }
 
 // ══════════════════════════════════════════
