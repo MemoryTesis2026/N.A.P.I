@@ -949,24 +949,25 @@
           <span class="text-lg font-black text-slate-900 tracking-tight">inacap</span>
           <span class="text-xs font-black text-[#ED1C24]">N.A.P.I</span>
         </div>
-        <p class="text-[#ED1C24] text-[9px] font-bold uppercase tracking-widest mt-0.5">Administrador · Sede Maipú</p>
+        <p id="adminSidebarSubtitle" class="text-[#ED1C24] text-[9px] font-bold uppercase tracking-widest mt-0.5">Portal Docente · Sede Maipú</p>
       </div>
     </div>
 
     <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
       <button onclick="adminTab('dashboard')" id="nav-dashboard" class="nav-link active w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📊 Dashboard General</button>
+      <button onclick="adminTab('upload')"    id="nav-upload"    class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📤 Subir Proyecto</button>
       <button onclick="adminTab('users')"     id="nav-users"     class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">👥 Gestión de Usuarios (CRUD)</button>
       <button onclick="adminTab('manage')"    id="nav-manage"    class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📁 Gestor del Repositorio</button>
       <button onclick="adminTab('reports')"   id="nav-reports"   class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📈 Métricas e Informes</button>
     </nav>
 
-    <!-- Perfil Administrador -->
+    <!-- Perfil Docente / Administrador -->
     <div class="px-4 py-4 border-t border-slate-200">
       <div class="flex items-center gap-3">
-        <div id="adminUserAvatar" class="w-9 h-9 rounded-full bg-[#121826] border border-slate-700 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">AD</div>
+        <div id="adminUserAvatar" class="w-9 h-9 rounded-full bg-[#121826] border border-slate-700 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">MR</div>
         <div class="flex-1 min-w-0">
-          <p id="adminUserName" class="text-slate-800 text-xs font-bold truncate">Admin Sede Maipú</p>
-          <span id="adminUserRole" class="text-[10px] font-bold text-[#ED1C24] uppercase tracking-wider block">Administrador</span>
+          <p id="adminUserName" class="text-slate-800 text-xs font-bold truncate">Prof. Marcela Rojas</p>
+          <span id="adminUserRole" class="text-[10px] font-bold text-[#ED1C24] uppercase tracking-wider block">Docente / Evaluador</span>
         </div>
         <button type="button" onclick="logout()" class="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Cerrar sesión">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>

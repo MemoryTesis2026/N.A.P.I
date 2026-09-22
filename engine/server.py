@@ -228,7 +228,7 @@ def login(req: LoginRequest):
             is_admin = "admin" in email_lower or req.role == "administrador"
             is_docente = "docente" in email_lower or "carlos.mendoza" in email_lower or "marcela.rojas" in email_lower or req.role == "docente"
             rol = "administrador" if is_admin else ("docente" if is_docente else "estudiante")
-            nombre = "Admin Sede Maipú" if is_admin else ("Prof. Carlos Mendoza" if is_docente else ("Francisca González" if "francisca" in email_lower else "Flavio Escobar Mendoza"))
+            nombre = "Admin Sede Maipú" if is_admin else ("Prof. Marcela Rojas" if is_docente else ("Francisca González" if "francisca" in email_lower else "Flavio Escobar Mendoza"))
             
             return {
                 "success": True,

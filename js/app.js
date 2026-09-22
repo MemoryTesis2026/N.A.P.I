@@ -314,24 +314,40 @@ function updateUserDisplay(user) {
     stSub.textContent = `${roleLabel} INACAP · ${user.carrera || 'SEDE MAIPÚ'}`;
   }
 
-  // Sidebar de admin
+  // Sidebar de docente / admin
+  const adSubtitle = document.getElementById('adminSidebarSubtitle');
   const adName = document.getElementById('adminUserName');
   const adRole = document.getElementById('adminUserRole');
   const adAvatar = document.getElementById('adminUserAvatar');
   const adHeaderBadge = document.getElementById('adminHeaderBadge');
+  const navUsers = document.getElementById('nav-users');
+  const navUpload = document.getElementById('nav-upload');
 
+  const isAdmin = user.rol === 'administrador';
+
+  if (adSubtitle) {
+    adSubtitle.textContent = isAdmin ? 'Administrador · Sede Maipú' : 'Portal Docente · Sede Maipú';
+  }
   if (adName) {
-    adName.textContent = user.rol === 'administrador' ? (user.nombre || 'Admin Sede Maipú') : (user.nombre || 'Prof. Carlos Mendoza');
+    adName.textContent = isAdmin ? (user.nombre || 'Admin Sede Maipú') : (user.nombre || 'Prof. Marcela Rojas');
   }
   if (adRole) {
-    adRole.textContent = user.rol === 'administrador' ? 'Administrador' : 'Docente / Profesor';
+    adRole.textContent = isAdmin ? 'Administrador' : 'Docente / Evaluador';
   }
   if (adHeaderBadge) {
-    adHeaderBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#ED1C24] animate-pulse"></span> Rol: ${user.rol === 'administrador' ? 'Administrador' : 'Docente'}`;
+    adHeaderBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#ED1C24] animate-pulse"></span> Rol: ${isAdmin ? 'Administrador' : 'Docente'}`;
   }
   if (adAvatar) {
-    const initials = user.rol === 'administrador' ? 'AD' : (user.nombre || 'PR').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
-    adAvatar.textContent = initials || 'AD';
+    const initials = isAdmin ? 'AD' : (user.nombre || 'Prof. Marcela Rojas').replace('Prof. ', '').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+    adAvatar.textContent = initials || (isAdmin ? 'AD' : 'MR');
+  }
+
+  // Visibilidad de pestañas según rol
+  if (navUsers) {
+    navUsers.classList.toggle('hidden', !isAdmin);
+  }
+  if (navUpload) {
+    navUpload.classList.toggle('hidden', isAdmin);
   }
 }
 
@@ -339,8 +355,8 @@ function updateUserDisplay(user) {
 const DEFAULT_USERS = [
   { id: "usr-1", nombre: "Flavio Escobar Mendoza", email: "flavio.escobar@inacapmail.cl", password: "InacapPassword123!", rol: "estudiante", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2026-03-01" },
   { id: "usr-2", nombre: "Francisca González", email: "francisca.gonzalez@inacapmail.cl", password: "InacapPassword123!", rol: "estudiante", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2026-03-02" },
-  { id: "usr-3", nombre: "Prof. Carlos Mendoza", email: "carlos.mendoza@inacap.cl", password: "InacapPassword123!", rol: "docente", area: "Automatización, Electrónica y Robótica", carrera: "Ingeniería en Automatización y Robótica", created_at: "2025-11-15" },
-  { id: "usr-4", nombre: "Prof. Marcela Rojas", email: "marcela.rojas@inacap.cl", password: "InacapPassword123!", rol: "docente", area: "Administración", carrera: "Ingeniería en Administración de Empresas", created_at: "2025-10-20" },
+  { id: "usr-3", nombre: "Prof. Marcela Rojas", email: "docente.maipu@inacap.cl", password: "InacapPassword123!", rol: "docente", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2025-10-20" },
+  { id: "usr-4", nombre: "Prof. Carlos Mendoza", email: "carlos.mendoza@inacap.cl", password: "InacapPassword123!", rol: "docente", area: "Automatización, Electrónica y Robótica", carrera: "Ingeniería en Automatización y Robótica", created_at: "2025-11-15" },
   { id: "usr-5", nombre: "Admin Sede Maipú", email: "admin.maipu@inacap.cl", password: "InacapPassword123!", rol: "administrador", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2025-08-01" }
 ];
 
@@ -662,18 +678,19 @@ function logout() {
 // ══════════════════════════════════════════
 
 function adminTab(tab) {
-  ['dashboard','users','manage','reports'].forEach(t => {
+  ['dashboard','upload','users','manage','reports'].forEach(t => {
     document.getElementById('tab-'+t)?.classList.toggle('hidden', t !== tab);
     document.getElementById('nav-'+t)?.classList.toggle('active', t === tab);
   });
   const titles = { 
     dashboard: 'Panel General de Control', 
+    upload: 'Subir Nuevo Proyecto de Título',
     users: 'Gestión de Usuarios (Alumnos y Docentes)',
-    manage: 'Gestor del Repositorio', 
+    manage: 'Gestor del Repositorio Institucional', 
     reports: 'Métricas e Informes Analíticos' 
   };
   const titleEl = document.getElementById('adminTitle');
-  if (titleEl) titleEl.textContent = titles[tab] || 'Panel Administrativo';
+  if (titleEl) titleEl.textContent = titles[tab] || 'Panel Académico';
 
   if (tab === 'users') {
     loadAdminUsers();
