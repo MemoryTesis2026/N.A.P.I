@@ -637,25 +637,56 @@
         <span class="text-2xl">🎓</span>
       </div>
       <h2 class="text-xl font-black text-slate-800">Acceso <span class="text-[#ED1C24]">Docente</span> / Admin</h2>
-      <p class="text-slate-500 text-xs mt-1">Ingresa con tus credenciales institucionales INACAP.</p>
+      <p class="text-slate-500 text-xs mt-1">Ingresa o regístrate con tus credenciales de INACAP.</p>
     </div>
-    <!-- Reutiliza el form de login -->
-    <div id="loginError-d" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
-      <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
-      <span id="loginErrMsg-d"></span>
+
+    <!-- VISTA 1: FORMULARIO DE LOGIN DOCENTE -->
+    <div id="loginFormDocente">
+      <div id="loginError-d" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+        <span id="loginErrMsg-d"></span>
+      </div>
+      <div class="mb-4">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
+        <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+        <input id="dEmail" type="email" value="docente.maipu@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/></div>
+      </div>
+      <div class="mb-6">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
+        <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <input id="dPass" type="password" value="InacapPassword123!" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')doModalLogin('docente')"/></div>
+      </div>
+      <button id="btnSubmitDocente" onclick="doModalLogin('docente')" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] active:scale-95 transition-all shadow-md shadow-red-500/20">Ingresar como Docente / Admin</button>
+      <button onclick="doModalLogin('docente', true)" class="mt-3 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors">⚡ Demo Rápida Docente</button>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+        <button type="button" onclick="toggleRegisterForm('docente', true)" class="text-[#ED1C24] hover:underline font-bold">¿Nuevo docente? Regístrate aquí</button>
+        <span class="text-slate-400">INACAP Maipú</span>
+      </div>
     </div>
-    <div class="mb-4">
-      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
-      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
-      <input id="dEmail" type="email" value="docente.maipu@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/></div>
+
+    <!-- VISTA 2: FORMULARIO DE REGISTRO NUEVO DOCENTE -->
+    <div id="regFormDocente" class="hidden">
+      <div id="regDocenteError" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+        <span id="regDocenteErrMsg"></span>
+      </div>
+      <div class="mb-3">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Nombre Completo</label>
+        <input id="regDocenteNombre" type="text" placeholder="Ej: Prof. Alejandro Silva" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium"/>
+      </div>
+      <div class="mb-3">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Correo Institucional (@inacap.cl)</label>
+        <input id="regDocenteEmail" type="email" placeholder="nombre.apellido@inacap.cl" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium"/>
+      </div>
+      <div class="mb-4">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Contraseña</label>
+        <input id="regDocentePass" type="password" placeholder="Mínimo 6 caracteres" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium"/>
+      </div>
+      <button onclick="doModalRegister('docente')" class="w-full py-2.5 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#121826] hover:bg-slate-800 active:scale-95 transition-all shadow-md">Crear Cuenta e Ingresar</button>
+      <button type="button" onclick="toggleRegisterForm('docente', false)" class="mt-2.5 w-full py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-800">← Volver al inicio de sesión</button>
     </div>
-    <div class="mb-6">
-      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
-      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-      <input id="dPass" type="password" value="1234" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')doModalLogin('docente')"/></div>
-    </div>
-    <button onclick="doModalLogin('docente')" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] active:scale-95 transition-all shadow-md shadow-red-500/20">Ingresar como Docente / Admin</button>
-    <button onclick="doModalLogin('docente', true)" class="mt-3 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors">⚡ Demo Rápida Docente</button>
+
   </div>
 </div>
 
@@ -670,24 +701,68 @@
         <span class="text-2xl">📚</span>
       </div>
       <h2 class="text-xl font-black text-slate-800">Acceso <span class="text-[#ED1C24]">Estudiante</span></h2>
-      <p class="text-slate-500 text-xs mt-1">Ingresa con tu cuenta de alumno INACAP Sede Maipú.</p>
+      <p class="text-slate-500 text-xs mt-1">Ingresa o regístrate con tu cuenta de alumno INACAP.</p>
     </div>
-    <div id="loginError-e" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
-      <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
-      <span id="loginErrMsg-e"></span>
+
+    <!-- VISTA 1: FORMULARIO DE LOGIN ESTUDIANTE -->
+    <div id="loginFormEstudiante">
+      <div id="loginError-e" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+        <span id="loginErrMsg-e"></span>
+      </div>
+      <div class="mb-4">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
+        <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+        <input id="eEmail" type="email" value="alumno.maipu@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/></div>
+      </div>
+      <div class="mb-6">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
+        <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <input id="ePass" type="password" value="InacapPassword123!" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')doModalLogin('estudiante')"/></div>
+      </div>
+      <button id="btnSubmitEstudiante" onclick="doModalLogin('estudiante')" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] active:scale-95 transition-all shadow-md shadow-red-500/20">Ingresar como Estudiante</button>
+      <button onclick="doModalLogin('estudiante', true)" class="mt-3 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors">⚡ Demo Rápida Estudiante</button>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+        <button type="button" onclick="toggleRegisterForm('estudiante', true)" class="text-[#ED1C24] hover:underline font-bold">¿Nuevo alumno? Regístrate aquí</button>
+        <span class="text-slate-400">INACAP Maipú</span>
+      </div>
     </div>
-    <div class="mb-4">
-      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
-      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
-      <input id="eEmail" type="email" value="alumno.maipu@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/></div>
+
+    <!-- VISTA 2: FORMULARIO DE REGISTRO NUEVO ESTUDIANTE -->
+    <div id="regFormEstudiante" class="hidden">
+      <div id="regEstudianteError" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+        <span id="regEstudianteErrMsg"></span>
+      </div>
+      <div class="mb-3">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Nombre Completo</label>
+        <input id="regEstudianteNombre" type="text" placeholder="Ej: Francisca González" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium"/>
+      </div>
+      <div class="mb-3">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Correo de Alumno (@inacapmail.cl)</label>
+        <input id="regEstudianteEmail" type="email" placeholder="nombre.apellido@inacapmail.cl" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium"/>
+      </div>
+      <div class="mb-3">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Carrera</label>
+        <select id="regEstudianteCarrera" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium bg-white">
+          <option value="Informática / Ing. en Computación">Informática / Ing. en Computación</option>
+          <option value="Electricidad y Electrónica">Electricidad y Electrónica</option>
+          <option value="Mecánica Automotriz e Industrial">Mecánica Automotriz e Industrial</option>
+          <option value="Administración de Empresas">Administración de Empresas</option>
+          <option value="Comercio Internacional">Comercio Internacional</option>
+          <option value="Edificación y Construcción">Edificación y Construcción</option>
+          <option value="Minería y Metalurgia">Minería y Metalurgia</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Contraseña</label>
+        <input id="regEstudiantePass" type="password" placeholder="Mínimo 6 caracteres" class="input-field w-full px-3 py-2 rounded-xl text-xs font-medium"/>
+      </div>
+      <button onclick="doModalRegister('estudiante')" class="w-full py-2.5 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#121826] hover:bg-slate-800 active:scale-95 transition-all shadow-md">Crear Cuenta e Ingresar</button>
+      <button type="button" onclick="toggleRegisterForm('estudiante', false)" class="mt-2.5 w-full py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-800">← Volver al inicio de sesión</button>
     </div>
-    <div class="mb-6">
-      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
-      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-      <input id="ePass" type="password" value="1234" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')doModalLogin('estudiante')"/></div>
-    </div>
-    <button onclick="doModalLogin('estudiante')" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] active:scale-95 transition-all shadow-md shadow-red-500/20">Ingresar como Estudiante</button>
-    <button onclick="doModalLogin('estudiante', true)" class="mt-3 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors">⚡ Demo Rápida Estudiante</button>
+
   </div>
 </div>
 

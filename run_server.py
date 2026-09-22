@@ -14,11 +14,12 @@ if engine_dir not in sys.path:
 os.chdir(engine_dir)
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    is_render = bool(os.environ.get("RENDER"))
     print("=" * 60)
     print("  ArchivaIA - Servidor Backend API (FastAPI + Supabase + Gemini)")
     print("  INACAP Sede Maipú")
-    print("  URL: http://127.0.0.1:8080")
+    print(f"  URL: http://127.0.0.1:{port}")
     print("=" * 60)
     
-    # Inicia en el puerto 8080
-    uvicorn.run("server:app", host="127.0.0.1", port=8080, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=not is_render)

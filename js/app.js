@@ -117,8 +117,97 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeAllModals();
 });
 
-// ── Login desde modales de landing ──
-function doModalLogin(role, isDemo = false) {
+// ── Estado de Usuario ──
+let currentUser = null;
+
+function updateUserDisplay(user) {
+  if (!user) return;
+  // Banner de estudiante
+  const stName = document.getElementById('studentUserName');
+  const stSub  = document.getElementById('studentUserSub');
+  if (stName) stName.textContent = user.nombre || user.email;
+  if (stSub) stSub.textContent = `${user.rol === 'docente' ? 'DOCENTE' : 'ALUMNO'} INACAP · ${user.carrera || 'SEDE MAIPÚ'}`;
+
+  // Sidebar de admin
+  const adName = document.getElementById('adminUserName');
+  const adRole = document.getElementById('adminUserRole');
+  const adAvatar = document.getElementById('adminUserAvatar');
+  if (adName) adName.textContent = user.nombre || user.email;
+  if (adRole) adRole.textContent = user.rol === 'docente' ? 'Docente / Admin' : 'Estudiante';
+  if (adAvatar && user.nombre) {
+    const initials = user.nombre.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+    adAvatar.textContent = initials || 'IN';
+  }
+}
+
+// ── Modales de Login & Registro ──
+function toggleRegisterForm(role, show = null) {
+  const regId = role === 'docente' ? 'regFormDocente' : 'regFormEstudiante';
+  const logId = role === 'docente' ? 'loginFormDocente' : 'loginFormEstudiante';
+  const regEl = document.getElementById(regId);
+  const logEl = document.getElementById(logId);
+  if (!regEl || !logEl) return;
+
+  const shouldShow = show !== null ? show : regEl.classList.contains('hidden');
+  if (shouldShow) {
+    regEl.classList.remove('hidden');
+    logEl.classList.add('hidden');
+  } else {
+    regEl.classList.add('hidden');
+    logEl.classList.remove('hidden');
+  }
+}
+
+async function doModalRegister(role) {
+  const isDoc = role === 'docente';
+  const nombre = document.getElementById(isDoc ? 'regDocenteNombre' : 'regEstudianteNombre')?.value.trim();
+  const email  = document.getElementById(isDoc ? 'regDocenteEmail' : 'regEstudianteEmail')?.value.trim();
+  const pass   = document.getElementById(isDoc ? 'regDocentePass' : 'regEstudiantePass')?.value.trim();
+  const carrera = isDoc
+    ? 'Informática / Ing. en Computación'
+    : (document.getElementById('regEstudianteCarrera')?.value || 'Informática / Ing. en Computación');
+
+  const errEl  = document.getElementById(isDoc ? 'regDocenteError' : 'regEstudianteError');
+  const errMsg = document.getElementById(isDoc ? 'regDocenteErrMsg' : 'regEstudianteErrMsg');
+
+  if (!nombre || !email || !pass) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Por favor completa todos los campos.';
+    return;
+  }
+  if (pass.length < 6) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass, nombre, rol: role, carrera })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      toast(`✅ Cuenta de ${role} registrada exitosamente en Supabase`);
+      // Llenar datos en el login y acceder automáticamente
+      const emailInput = document.getElementById(isDoc ? 'dEmail' : 'eEmail');
+      const passInput  = document.getElementById(isDoc ? 'dPass' : 'ePass');
+      if (emailInput) emailInput.value = email;
+      if (passInput) passInput.value = pass;
+      toggleRegisterForm(role, false);
+      await doModalLogin(role);
+    } else {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = data.detail || 'Error al crear la cuenta.';
+    }
+  } catch (err) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Error de conexión: ' + err.message;
+  }
+}
+
+async function doModalLogin(role, isDemo = false) {
   const emailId = role === 'docente' ? 'dEmail' : 'eEmail';
   const passId  = role === 'docente' ? 'dPass'  : 'ePass';
   const errId   = role === 'docente' ? 'loginError-d' : 'loginError-e';
@@ -127,7 +216,7 @@ function doModalLogin(role, isDemo = false) {
   if (isDemo) {
     document.getElementById(emailId).value = role === 'docente'
       ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl';
-    document.getElementById(passId).value = '1234';
+    document.getElementById(passId).value = 'InacapPassword123!';
   }
 
   const email = document.getElementById(emailId)?.value.trim();
@@ -138,10 +227,54 @@ function doModalLogin(role, isDemo = false) {
 
   if (!email) { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu correo institucional.'; return; }
   if (!pass)  { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu contraseña.'; return; }
-  if (pass !== '1234') { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Contraseña inválida. Usa "1234" para la demo.'; return; }
+
+  // Autenticación con Backend / Supabase Auth
+  let user = null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass, role })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      user = data.user;
+    } else {
+      // Si la contraseña ingresada es 1234, admitir como demo
+      if (pass === '1234') {
+        user = {
+          nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+          email: email,
+          rol: role,
+          carrera: 'Informática / Ing. en Computación'
+        };
+      } else {
+        errEl?.classList.remove('hidden');
+        if (errMsg) errMsg.textContent = data.detail || 'Credenciales inválidas.';
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('Backend offline, usando fallback de sesión:', err);
+    if (pass === '1234' || pass === 'InacapPassword123!') {
+      user = {
+        nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+        email: email,
+        rol: role,
+        carrera: 'Informática / Ing. en Computación'
+      };
+    } else {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = 'Servidor inaccesible. Puedes usar la demo rápida o verificar el backend.';
+      return;
+    }
+  }
 
   errEl?.classList.add('hidden');
-  currentRole = role;
+  currentRole = user.rol || role;
+  currentUser = user;
+  localStorage.setItem('napi_user', JSON.stringify(currentUser));
+  updateUserDisplay(currentUser);
 
   // Ocultar landing + modal, mostrar panel correspondiente
   closeAllModals();
@@ -153,7 +286,7 @@ function doModalLogin(role, isDemo = false) {
   if (legacyLogin) legacyLogin.style.display = 'none';
 
   setTimeout(() => {
-    if (role === 'docente') {
+    if (currentRole === 'docente') {
       document.getElementById('adminScreen').classList.remove('hidden');
       initAdmin();
     } else {
@@ -162,7 +295,7 @@ function doModalLogin(role, isDemo = false) {
     }
     document.getElementById('napiWidget').style.display = 'flex';
     initNapi();
-    toast(`🔑 Sesión iniciada como ${role === 'docente' ? 'Docente/Admin' : 'Estudiante'}`);
+    toast(`🔑 Sesión iniciada: ${currentUser.nombre}`);
   }, 300);
 }
 
@@ -643,19 +776,19 @@ function sendPreset(txt) { document.getElementById('napiInput').value = txt; sen
 function addNapi(txt) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
-  d.className = 'flex gap-2.5 items-start anim-fade mb-3';
+  d.className = 'flex gap-2.5 items-start anim-fade mb-3.5';
   d.innerHTML = `
     <div class="w-8 h-8 rounded-full bg-cyan-500 border border-cyan-300 text-white text-sm font-bold flex items-center justify-center shrink-0 shadow">🤖</div>
-    <div class="bubble-napi px-4 py-3 text-xs leading-relaxed max-w-[290px]">${fmt(txt)}</div>`;
+    <div class="bubble-napi px-4 py-3 text-xs leading-relaxed max-w-[88%] shadow-sm">${fmt(txt)}</div>`;
   box.appendChild(d); box.scrollTop=box.scrollHeight;
 }
 
 function addUser(txt) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
-  d.className = 'flex gap-2.5 items-start justify-end anim-fade mb-3';
+  d.className = 'flex gap-2.5 items-start justify-end anim-fade mb-3.5';
   d.innerHTML = `
-    <div class="bubble-user px-4 py-3 text-xs leading-relaxed max-w-[270px]">${txt}</div>
+    <div class="bubble-user px-4 py-3 text-xs leading-relaxed max-w-[80%] shadow-sm">${txt}</div>
     <div class="w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-bold flex items-center justify-center shrink-0">👤</div>`;
   box.appendChild(d); box.scrollTop=box.scrollHeight;
 }
@@ -669,17 +802,23 @@ function addTyping() {
   box.appendChild(d); box.scrollTop=box.scrollHeight; return d;
 }
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = (() => {
+  if (window.location.protocol === 'file:' || window.location.port === '5500') {
+    return 'http://127.0.0.1:8000/api';
+  }
+  return '/api';
+})();
 
 function fmt(t) {
   if (!t) return '';
   return t
-    .replace(/^### (.*$)/gim, '<h4 class="font-bold text-slate-800 text-xs mt-2 mb-1">$1</h4>')
-    .replace(/^## (.*$)/gim, '<h3 class="font-bold text-cyan-800 text-xs mt-2.5 mb-1 pb-0.5 border-b border-cyan-100">$1</h3>')
+    .replace(/^### (.*$)/gim, '<h4 class="font-bold text-slate-800 text-xs mt-3 mb-1.5">$1</h4>')
+    .replace(/^## (.*$)/gim, '<h3 class="font-bold text-cyan-800 text-sm mt-3.5 mb-1.5 pb-1 border-b border-cyan-100">$1</h3>')
+    .replace(/^# (.*$)/gim, '<h2 class="font-black text-slate-900 text-sm mt-3.5 mb-1.5">$1</h2>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-800 font-bold">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em class="text-slate-600">$1</em>')
-    .replace(/^- (.*$)/gim, '<div class="flex items-start gap-1.5 my-1"><span class="text-cyan-500 font-bold">•</span><span>$1</span></div>')
-    .replace(/^• (.*$)/gim, '<div class="flex items-start gap-1.5 my-1"><span class="text-cyan-500 font-bold">•</span><span>$1</span></div>')
+    .replace(/^\d+\.\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 text-slate-700"><span class="text-cyan-600 font-bold">•</span><span>$1</span></div>')
+    .replace(/^[-\*•]\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 text-slate-700"><span class="text-cyan-500 font-bold">•</span><span>$1</span></div>')
     .replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-cyan-700 px-1 py-0.5 rounded text-[10px] font-mono">$1</code>')
     .replace(/\n\n/g, '<div class="my-2"></div>')
     .replace(/\n/g, '<br/>');
@@ -696,7 +835,7 @@ async function sendMsg() {
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: txt, umbral: 0.50, limite: 3 })
+      body: JSON.stringify({ query: txt, umbral: 0.40, limite: 4 })
     });
 
     if (res.ok) {
@@ -713,9 +852,12 @@ async function sendMsg() {
         });
       }
       return;
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      console.warn('API /analyze error status:', res.status, errData);
     }
   } catch (err) {
-    console.warn('Backend RAG offline, usando motor local de respaldo:', err);
+    console.warn('Backend RAG offline o error:', err);
   }
 
   // 2. Respaldo local si el servidor backend no está encendido
@@ -730,7 +872,7 @@ async function sendMsg() {
       return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 94) };
     }).filter(x => x.pct >= 40).sort((a, b) => b.pct - a.pct)[0];
     if (top) setTimeout(() => addSimCard(top.p, top.pct), 280);
-  }, 1000);
+  }, 800);
 }
 
 function addSimCardSupabase(sim) {
