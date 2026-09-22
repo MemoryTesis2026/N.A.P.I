@@ -318,13 +318,20 @@ function updateUserDisplay(user) {
   const adName = document.getElementById('adminUserName');
   const adRole = document.getElementById('adminUserRole');
   const adAvatar = document.getElementById('adminUserAvatar');
-  if (adName) adName.textContent = user.nombre || user.email;
-  if (adRole) {
-    adRole.textContent = user.rol === 'administrador' ? 'Administrador General' : user.rol === 'docente' ? 'Docente / Profesor' : 'Estudiante';
+  const adHeaderBadge = document.getElementById('adminHeaderBadge');
+
+  if (adName) {
+    adName.textContent = user.rol === 'administrador' ? (user.nombre || 'Admin Sede Maipú') : (user.nombre || 'Prof. Carlos Mendoza');
   }
-  if (adAvatar && user.nombre) {
-    const initials = user.nombre.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
-    adAvatar.textContent = initials || 'IN';
+  if (adRole) {
+    adRole.textContent = user.rol === 'administrador' ? 'Administrador' : 'Docente / Profesor';
+  }
+  if (adHeaderBadge) {
+    adHeaderBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#ED1C24] animate-pulse"></span> Rol: ${user.rol === 'administrador' ? 'Administrador' : 'Docente'}`;
+  }
+  if (adAvatar) {
+    const initials = user.rol === 'administrador' ? 'AD' : (user.nombre || 'PR').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+    adAvatar.textContent = initials || 'AD';
   }
 }
 
@@ -536,30 +543,132 @@ async function doModalLogin(role, isDemo = false) {
 
   setTimeout(() => {
     if (currentRole === 'administrador') {
-      document.getElementById('adminScreen').classList.remove('hidden');
+      document.getElementById('adminScreen')?.classList.remove('hidden');
       initAdmin('users');
+      // El administrador NO utiliza NAPI (se oculta botón y panel)
+      const napiWidget = document.getElementById('napiWidget');
+      if (napiWidget) napiWidget.style.display = 'none';
+      const chatPanel = document.getElementById('chatPanel');
+      if (chatPanel) chatPanel.classList.add('hidden');
+      napiOpen = false;
     } else if (currentRole === 'docente') {
-      document.getElementById('adminScreen').classList.remove('hidden');
+      document.getElementById('adminScreen')?.classList.remove('hidden');
       initAdmin('dashboard');
+      const napiWidget = document.getElementById('napiWidget');
+      if (napiWidget) napiWidget.style.display = 'flex';
+      initNapi();
     } else {
-      document.getElementById('studentScreen').classList.remove('hidden');
+      document.getElementById('studentScreen')?.classList.remove('hidden');
       initStudent();
+      const napiWidget = document.getElementById('napiWidget');
+      if (napiWidget) napiWidget.style.display = 'flex';
+      initNapi();
     }
-    document.getElementById('napiWidget').style.display = 'flex';
-    initNapi();
     toast(`🔑 Sesión iniciada: ${currentUser.nombre}`);
   }, 300);
 }
 
+// ── Navegación suave ──
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Menú Mobile ──
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileMenu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+// ── Navbar activo al scroll ──
+function updateNavActive() {
+  const sections = ['inicio','sobre-nosotros','origen','napi'];
+  const links = document.querySelectorAll('.nav-landing-link');
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.offsetTop - 100) current = id;
+  });
+  links.forEach(link => {
+    const href = link.getAttribute('href');
+    link.style.color = href === '#' + current ? '#FFFFFF' : '';
+    link.style.background = href === '#' + current ? 'rgba(255,255,255,0.08)' : '';
+  });
+}
+
+// ── Inicialización General ──
+document.addEventListener('DOMContentLoaded', () => {
+  const adminScreen = document.getElementById('adminScreen');
+  const studentScreen = document.getElementById('studentScreen');
+  const loginScreen = document.getElementById('loginScreen');
+  if (adminScreen) adminScreen.classList.add('hidden');
+  if (studentScreen) studentScreen.classList.add('hidden');
+  if (loginScreen) loginScreen.style.display = 'none';
+
+  // Iniciar carrusel
+  startCarouselTimer();
+
+  // Inicializar dropdowns dependientes
+  populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
+  populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
+  populateCarreraDropdown('fArea', 'fCarrera', false);
+  populateCarreraDropdown('editArea', 'editCarrera', false);
+  populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
+  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
+  populateCarreraDropdown('crudArea', 'crudCarrera', false);
+
+  window.addEventListener('scroll', updateNavActive, { passive: true });
+});
+
+// ══════════════════════════════════════════
+//  MÓDULO 1: CIERRE DE SESIÓN
+// ══════════════════════════════════════════
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('napi_user');
+
+  const adminScreen = document.getElementById('adminScreen');
+  const studentScreen = document.getElementById('studentScreen');
+  const loginScreen = document.getElementById('loginScreen');
+  const landingScreen = document.getElementById('landingScreen');
+
+  if (adminScreen) adminScreen.classList.add('hidden');
+  if (studentScreen) studentScreen.classList.add('hidden');
+  if (loginScreen) loginScreen.style.display = 'none';
+
+  const napiWidget = document.getElementById('napiWidget');
+  if (napiWidget) napiWidget.style.display = 'none';
+
+  const chatPanel = document.getElementById('chatPanel');
+  if (chatPanel) chatPanel.classList.add('hidden');
+  napiOpen = false;
+
+  const box = document.getElementById('chatBox');
+  if (box) box.innerHTML = '';
+
+  if (landingScreen) {
+    landingScreen.style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    clearInterval(carouselTimer);
+    goToSlide(0);
+    startCarouselTimer();
+  }
+  toast('👋 Sesión cerrada correctamente');
+}
+
+// ══════════════════════════════════════════
+//  MÓDULO 2: PANEL DOCENTE / ADMINISTRADOR & CRUD USUARIOS
+// ══════════════════════════════════════════
+
 function adminTab(tab) {
-  ['dashboard','users','upload','manage','reports'].forEach(t => {
+  ['dashboard','users','manage','reports'].forEach(t => {
     document.getElementById('tab-'+t)?.classList.toggle('hidden', t !== tab);
     document.getElementById('nav-'+t)?.classList.toggle('active', t === tab);
   });
   const titles = { 
     dashboard: 'Panel General de Control', 
     users: 'Gestión de Usuarios (Alumnos y Docentes)',
-    upload: 'Cargar Nuevo Proyecto', 
     manage: 'Gestor del Repositorio', 
     reports: 'Métricas e Informes Analíticos' 
   };
