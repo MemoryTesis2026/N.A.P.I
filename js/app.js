@@ -305,13 +305,15 @@ document.addEventListener('keydown', function(e) {
 function updateUserDisplay(user) {
   if (!user) return;
   
+  const displayName = user.nombre || user.email || 'ESTUDIANTE INACAP';
+
   // Banner de estudiante
   const stName = document.getElementById('studentUserName');
   const stSub  = document.getElementById('studentUserSub');
-  if (stName) stName.textContent = user.nombre || user.email;
+  if (stName) stName.textContent = displayName.toUpperCase();
   if (stSub) {
     const roleLabel = user.rol === 'administrador' ? 'ADMINISTRADOR' : user.rol === 'docente' ? 'DOCENTE' : 'ALUMNO';
-    stSub.textContent = `${roleLabel} INACAP · ${user.carrera || 'SEDE MAIPÚ'}`;
+    stSub.textContent = `${roleLabel} INACAP · ${(user.carrera || 'SEDE MAIPÚ').toUpperCase()}`;
   }
 
   // Sidebar de docente / admin
@@ -509,6 +511,11 @@ async function doModalLogin(role, isDemo = false) {
     const data = await res.json();
     if (res.ok && data.success) {
       user = data.user;
+      if (localMatch) {
+        if (localMatch.nombre) user.nombre = localMatch.nombre;
+        if (localMatch.carrera) user.carrera = localMatch.carrera;
+        if (localMatch.area) user.area = localMatch.area;
+      }
     }
   } catch (err) {
     console.warn('Backend offline o error auth:', err);
@@ -524,8 +531,23 @@ async function doModalLogin(role, isDemo = false) {
       } else {
         const isAdmin = email.toLowerCase().includes('admin');
         const isDoc = email.toLowerCase().includes('docente') || role === 'docente';
+        
+        let customName = '';
+        if (isAdmin) {
+          customName = 'Admin Sede Maipú';
+        } else if (isDoc) {
+          customName = 'Prof. Marcela Rojas';
+        } else if (email.toLowerCase().includes('flavio')) {
+          customName = 'Flavio Escobar Mendoza';
+        } else if (email.toLowerCase().includes('francisca')) {
+          customName = 'Francisca González';
+        } else {
+          const raw = email.split('@')[0].replace(/[._-]/g, ' ');
+          customName = raw.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ').trim() || 'Estudiante INACAP';
+        }
+
         user = {
-          nombre: isAdmin ? 'Admin Sede Maipú' : isDoc ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
+          nombre: customName,
           email: email,
           rol: isAdmin ? 'administrador' : isDoc ? 'docente' : 'estudiante',
           area: 'Informática, Ciberseguridad y Telecomunicaciones',
@@ -1219,6 +1241,7 @@ function submitProject() {
 //  MÓDULO 3: PANEL ESTUDIANTE & CATÁLOGO
 // ══════════════════════════════════════════
 function initStudent() { 
+  if (currentUser) updateUserDisplay(currentUser);
   populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
   renderCards(PROJECTS.filter(p=>p.estado==='Público')); 
 }

@@ -228,7 +228,25 @@ def login(req: LoginRequest):
             is_admin = "admin" in email_lower or req.role == "administrador"
             is_docente = "docente" in email_lower or "carlos.mendoza" in email_lower or "marcela.rojas" in email_lower or req.role == "docente"
             rol = "administrador" if is_admin else ("docente" if is_docente else "estudiante")
-            nombre = "Admin Sede Maipú" if is_admin else ("Prof. Marcela Rojas" if is_docente else ("Francisca González" if "francisca" in email_lower else "Flavio Escobar Mendoza"))
+            
+            # Nombre inteligente según el correo o usuario
+            if is_admin:
+                nombre = "Admin Sede Maipú"
+            elif is_docente:
+                if "carlos" in email_lower:
+                    nombre = "Prof. Carlos Mendoza"
+                else:
+                    nombre = "Prof. Marcela Rojas"
+            elif "flavio" in email_lower:
+                nombre = "Flavio Escobar Mendoza"
+            elif "francisca" in email_lower:
+                nombre = "Francisca González"
+            elif "alumno" in email_lower or "estudiante" in email_lower:
+                nombre = "Estudiante Sede Maipú"
+            else:
+                # Extraer nombre limpio a partir del correo: juan.perez@inacapmail.cl -> Juan Perez
+                raw_name = email_lower.split("@")[0].replace(".", " ").replace("_", " ").replace("-", " ")
+                nombre = " ".join([w.capitalize() for w in raw_name.split() if w])
             
             return {
                 "success": True,
