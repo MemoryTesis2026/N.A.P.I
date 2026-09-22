@@ -442,25 +442,25 @@ def analyze_project(req: AnalyzeRequest):
             ])
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
 
-        # 2. Generar respuesta NAPI con Gemini (soporte conversacional multi-turno)
-        SYSTEM_PROMPT = """Eres NAPI, el mentor y asistente inteligente de proyectos de título de INACAP Sede Maipú.
-Eres un mentor experto, cercano, empático, motivador y hablas en lenguaje natural, claro y amigable (sin tecnicismos complejos innecesarios).
+        # 2. Generar respuesta NAPI con Gemini (soporte conversacional natural estilo Antigravity)
+        SYSTEM_PROMPT = """Eres NAPI, el asistente de inteligencia artificial y mentor experto de proyectos de título de INACAP Sede Maipú.
+Tu personalidad es cercana, motivadora, pedagógica, clara y técnica (exactamente como un asistente de IA avanzado estilo Antigravity o ChatGPT).
 
-Tienes acceso al repositorio institucional de proyectos de título de la sede y al historial de la conversación.
+Tienes acceso al catálogo de proyectos de título históricos de INACAP Sede Maipú.
 
-REGLAS FUNDAMENTALES DE RESPUESTA:
-1. SI EL USUARIO ESTÁ PRESENTANDO O DESCRIBIENDO UNA IDEA DE PROYECTO NUEVA:
-   - Estructura tu respuesta de forma visual y motivadora:
-     💡 **Diagnóstico de tu Idea**: Menciona el % de coincidencia estimado y el nombre del proyecto previo más parecido (si hay).
+PAUTAS DE COMPORTAMIENTO:
+1. SI EL ESTUDIANTE TE PRESENTA UNA IDEA O ANTEPROYECTO NUEVO POR PRIMERA VEZ (ej: "tengo una idea con reconocimiento facial", "quiero hacer un proyecto de monitoreo energético"):
+   - Proporciona un diagnóstico visual, amigable y estructurado:
+     💡 **Diagnóstico de tu Idea**: Menciona el % de coincidencia estimado y el título del proyecto previo más parecido de la sede.
      🔍 **¿En qué se parece?**: Explica de forma sencilla qué partes, sensores o enfoque coinciden con trabajos anteriores.
-     🚀 **¿Cómo puedes innovar y diferenciarte?**: Entrega 3 ideas prácticas, claras e innovadoras (ej: alertas a WhatsApp/Telegram, modelos predictivos simples, IoT en tiempo real o pruebas en una empresa real de Maipú).
+     🚀 **¿Cómo puedes innovar y diferenciarte?**: Entrega 3 ideas prácticas, modernas y claras para hacerlo único.
      🎯 **Tu próximo paso**: Un consejo motivador y directo para su anteproyecto.
 
-2. SI EL USUARIO ESTÁ HACIENDO PREGUNTAS DE SEGUIMIENTO, DEBATIENDO, REFLEXIONANDO O REBATIENDO (ejemplos: "¿no se parecería a X proyecto?", "¿tienes razón?", "¿por qué?", "¿y si le agrego visión computacional?", "¿cómo implemento eso?"):
-   - RESPONDE DE FORMA 100% CONVERSACIONAL, DIRECTA Y NATURAL.
-   - ¡NO repitas la plantilla de diagnóstico de 4 puntos si es una pregunta de seguimiento!
-   - Reconoce y valida lo que dice el usuario: si tiene razón, dile: *"¡Tienes toda la razón!...", "La verdad es que no tanto porque...", "Buena observación, lo que pasa es que..."*.
-   - Responde puntualmente a su inquietud manteniendo la memoria de todo lo conversado antes."""
+2. SI EL ESTUDIANTE HACE PREGUNTAS DE SEGUIMIENTO, PIDE RECOMENDACIONES O CONTINÚA LA CONVERSACIÓN (ej: "qué me recomendarías agregar más a esta idea", "cómo implemento eso", "qué sensores o librerías usarías", "no se parecería a X proyecto?", "¿por qué?"):
+   - RESPONDE DE FORMA 100% CONVERSACIONAL, EXPERTA Y DIRECTA.
+   - ¡NO repitas el diagnóstico de porcentaje ni la plantilla rígida!
+   - Da sugerencias técnicas específicas (ej: para reconocimiento facial -> detección de vivacidad/liveness, edge computing con Raspberry Pi, alertas a Telegram, validación offline).
+   - Mantén el hilo de la conversación y formula preguntas interesantes para guiar al estudiante."""
 
         # Construir secuencia de contenidos para Gemini
         contents_list = []
@@ -472,7 +472,16 @@ REGLAS FUNDAMENTALES DE RESPUESTA:
                     parts=[genai_types.Part.from_text(text=item.content)]
                 ))
 
-        user_prompt_content = f"{req.query}\n\n[Repositorio INACAP Maipú - Proyectos Similares detectados]:\n{contexto}"
+        q_lower = req.query.lower()
+        is_followup = bool(req.history and len(req.history) > 0) and any(
+            w in q_lower for w in ["que ", "qué ", "como ", "cómo ", "cual ", "cuál ", "recomiendas", "recomendarías", "agregar", "sumar", "y si", "por que", "por qué", "no se", "¿no", "tienes", "pero", "gracias", "ok", "más"]
+        )
+
+        if is_followup:
+            user_prompt_content = req.query
+        else:
+            user_prompt_content = f"{req.query}\n\n[Repositorio INACAP Maipú - Proyectos Similares detectados]:\n{contexto}"
+
         contents_list.append(genai_types.Content(
             role="user",
             parts=[genai_types.Part.from_text(text=user_prompt_content)]
@@ -487,7 +496,7 @@ REGLAS FUNDAMENTALES DE RESPUESTA:
                         contents=contents_list,
                         config=genai_types.GenerateContentConfig(
                             system_instruction=SYSTEM_PROMPT,
-                            temperature=0.6,
+                            temperature=0.7,
                             max_output_tokens=1500
                         )
                     )
@@ -496,22 +505,37 @@ REGLAS FUNDAMENTALES DE RESPUESTA:
                     log.warning(f"Error llamando {mod_name}: {e}")
                     return ""
 
-            for mod in ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.7-flash"]:
+            for mod in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-pro"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=4.5)
+                    analisis_texto = fut.result(timeout=5.0)
                     if analisis_texto:
-                        log.info(f"Diagnóstico/Conversación generada exitosamente con {mod}")
+                        log.info(f"Respuesta generada exitosamente con {mod}")
                         break
                 except Exception as ex:
                     log.warning(f"Modelo {mod} timeout/fallo: {ex}")
 
         # Fallback analítico garantizado con lenguaje simple y conversacional
         if not analisis_texto:
-            q_lower = req.query.lower()
-            is_idea_or_sim = any(k in q_lower for k in ["idea", "tesis", "proyecto", "similitud", "similitudes", "trabajo", "trabajos", "eficiencia", "energia", "aduana", "sensor", "iot", "app", "sistema"])
-            
-            if similares and (is_idea_or_sim or not req.history):
+            if is_followup:
+                if any(k in q_lower for k in ["facial", "rostro", "camara", "reconocimiento", "acceso", "seguridad"]):
+                    analisis_texto = """Para potenciar y hacer única tu idea de **Reconocimiento Facial**, te recomiendo agregar estas innovaciones clave:
+
+1. **Detección de Vivacidad (Anti-Spoofing / Liveness Detection)**: Implementa un filtro que detecte parpadeo o micro-movimientos para evitar que engañen a la cámara con una foto impresa o un video desde el celular.
+2. **Procesamiento en el Borde (Edge AI)**: Ejecuta la inferencia localmente en una Raspberry Pi 4 o microcomputador, evitando enviar video continuo a la nube y garantizando respuesta en menos de 300 ms.
+3. **Alertas en Tiempo Real con Captura**: Si se detecta un intento de acceso no autorizado, envía automáticamente una alerta instantánea con la foto a un canal seguro de Telegram o WhatsApp.
+4. **Modo Offline-First**: Almacena las marcas de acceso localmente en caso de caída de red y sincronízalas a la base de datos Supabase cuando vuelva la conexión.
+
+¿Qué hardware o lenguaje tienes en mente usar (por ejemplo, Python con OpenCV/DeepFace o una app móvil)?"""
+                else:
+                    analisis_texto = """¡Excelente pregunta! Para diferenciar tu anteproyecto y maximizar la nota de titulación, te sugiero considerar:
+
+1. **Automatización en Tiempo Real**: Agrega alertas proactivas a canales móviles (WhatsApp/Telegram/Push) ante eventos críticos.
+2. **Predicción con Modelos Ligeros**: En lugar de solo reportar datos actuales, incorpora una estimación predictiva a corto plazo.
+3. **Validación en un Caso Real de Maipú**: Enfoca las pruebas directamente en un comercio, taller o empresa real de la comuna para darle respaldo práctico a tu tesis.
+
+¿Te gustaría que diseñemos juntos la arquitectura técnica o el alcance de tu anteproyecto?"""
+            elif similares:
                 top = similares[0]
                 proyectos_lista = "\n".join([
                     f"- **{s.get('titulo')}** ({s.get('porcentaje_similitud', 60)}% parecido) — *{s.get('carrera')} · {s.get('anio')}*"
@@ -535,12 +559,6 @@ Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo si
 
 ## 🎯 Tu próximo paso
 Revisa el proyecto anterior para ver qué le faltó y preséntale esta propuesta mejorada a tu profesor guía."""
-            elif req.history and len(req.history) > 0:
-                analisis_texto = f"""¡Buena observación! Respecto a lo que planteas:
-
-La clave para diferenciar tu propuesta está en el enfoque de aplicación y las tecnologías que incorpores. Si ajustas el alcance para resolver un problema específico (por ejemplo, automatización con alertas en tiempo real o un piloto en una empresa local de Maipú), tu proyecto se desmarcará completamente y tendrá un alto valor para tu comisión de titulación.
-
-¿Te gustaría que profundicemos en la arquitectura técnica o en cómo redactar la justificación para tu anteproyecto?"""
             else:
                 analisis_texto = f"""## 💡 Diagnóstico de tu Idea
 
