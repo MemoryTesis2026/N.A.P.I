@@ -66,11 +66,16 @@ app.add_middleware(
 # ──────────────────────────────────────────
 # MODELOS PYDANTIC
 # ──────────────────────────────────────────
+class ChatHistoryItem(BaseModel):
+    role: str  # "user", "model", "napi", "assistant"
+    content: str
+
 class AnalyzeRequest(BaseModel):
     query: str
     umbral: Optional[float] = 0.40
     limite: Optional[int] = 4
     carrera: Optional[str] = None
+    history: Optional[List[ChatHistoryItem]] = None
 
 class ChatMessageRequest(BaseModel):
     email: str
@@ -437,18 +442,41 @@ def analyze_project(req: AnalyzeRequest):
             ])
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
 
-        # 2. Generar diagnóstico NAPI con Gemini
-        SYSTEM_PROMPT = """Eres NAPI, el asistente virtual y mentor de proyectos de título de INACAP Sede Maipú.
+        # 2. Generar respuesta NAPI con Gemini (soporte conversacional multi-turno)
+        SYSTEM_PROMPT = """Eres NAPI, el mentor y asistente inteligente de proyectos de título de INACAP Sede Maipú.
+Eres un mentor experto, cercano, empático, motivador y hablas en lenguaje natural, claro y amigable (sin tecnicismos complejos innecesarios).
 
-Tu misión es explicarle al estudiante si su idea se parece a proyectos anteriores de la sede, de forma MUY SIMPLE, AMIGABLE Y DIRECTA (sin palabras técnicas complejas ni lenguaje académico pesado).
+Tienes acceso al repositorio institucional de proyectos de título de la sede y al historial de la conversación.
 
-Estructura tu respuesta exactamente con:
-1. 💡 **Diagnóstico de tu Idea**: Menciona el porcentaje de coincidencia de forma clara y el nombre del proyecto previo más parecido.
-2. 🔍 **¿En qué se parece?**: Explica en 2 frases sencillas qué partes o funciones coinciden con los trabajos anteriores.
-3. 🚀 **¿Cómo puedes innovar y diferenciarte?**: Dale 3 ideas concretas, prácticas y fáciles de entender para que su proyecto sea único (ejemplos: agregar alertas automáticas al celular vía WhatsApp/Telegram, usar predicción simple, conectar datos en tiempo real a la nube, o resolver un problema real de una empresa local en Maipú).
-4. 🎯 **Tu próximo paso**: Un consejo motivador y directo para su anteproyecto.
+REGLAS FUNDAMENTALES DE RESPUESTA:
+1. SI EL USUARIO ESTÁ PRESENTANDO O DESCRIBIENDO UNA IDEA DE PROYECTO NUEVA:
+   - Estructura tu respuesta de forma visual y motivadora:
+     💡 **Diagnóstico de tu Idea**: Menciona el % de coincidencia estimado y el nombre del proyecto previo más parecido (si hay).
+     🔍 **¿En qué se parece?**: Explica de forma sencilla qué partes, sensores o enfoque coinciden con trabajos anteriores.
+     🚀 **¿Cómo puedes innovar y diferenciarte?**: Entrega 3 ideas prácticas, claras e innovadoras (ej: alertas a WhatsApp/Telegram, modelos predictivos simples, IoT en tiempo real o pruebas en una empresa real de Maipú).
+     🎯 **Tu próximo paso**: Un consejo motivador y directo para su anteproyecto.
 
-Usa un tono cercano, motivador, formato Markdown limpio y viñetas claras."""
+2. SI EL USUARIO ESTÁ HACIENDO PREGUNTAS DE SEGUIMIENTO, DEBATIENDO, REFLEXIONANDO O REBATIENDO (ejemplos: "¿no se parecería a X proyecto?", "¿tienes razón?", "¿por qué?", "¿y si le agrego visión computacional?", "¿cómo implemento eso?"):
+   - RESPONDE DE FORMA 100% CONVERSACIONAL, DIRECTA Y NATURAL.
+   - ¡NO repitas la plantilla de diagnóstico de 4 puntos si es una pregunta de seguimiento!
+   - Reconoce y valida lo que dice el usuario: si tiene razón, dile: *"¡Tienes toda la razón!...", "La verdad es que no tanto porque...", "Buena observación, lo que pasa es que..."*.
+   - Responde puntualmente a su inquietud manteniendo la memoria de todo lo conversado antes."""
+
+        # Construir secuencia de contenidos para Gemini
+        contents_list = []
+        if req.history and len(req.history) > 0:
+            for item in req.history[-8:]:
+                r = "user" if item.role in ["user", "human"] else "model"
+                contents_list.append(genai_types.Content(
+                    role=r,
+                    parts=[genai_types.Part.from_text(text=item.content)]
+                ))
+
+        user_prompt_content = f"{req.query}\n\n[Repositorio INACAP Maipú - Proyectos Similares detectados]:\n{contexto}"
+        contents_list.append(genai_types.Content(
+            role="user",
+            parts=[genai_types.Part.from_text(text=user_prompt_content)]
+        ))
 
         analisis_texto = ""
         if gemini_client:
@@ -456,9 +484,10 @@ Usa un tono cercano, motivador, formato Markdown limpio y viñetas claras."""
                 try:
                     resp = gemini_client.models.generate_content(
                         model=mod_name,
-                        contents=f"{SYSTEM_PROMPT}\n\n---\n\n{contexto}",
+                        contents=contents_list,
                         config=genai_types.GenerateContentConfig(
-                            temperature=0.4,
+                            system_instruction=SYSTEM_PROMPT,
+                            temperature=0.6,
                             max_output_tokens=1500
                         )
                     )
@@ -470,16 +499,27 @@ Usa un tono cercano, motivador, formato Markdown limpio y viñetas claras."""
             for mod in ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.7-flash"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=3.5)
+                    analisis_texto = fut.result(timeout=4.5)
                     if analisis_texto:
-                        log.info(f"Diagnóstico generado exitosamente con {mod}")
+                        log.info(f"Diagnóstico/Conversación generada exitosamente con {mod}")
                         break
                 except Exception as ex:
                     log.warning(f"Modelo {mod} timeout/fallo: {ex}")
 
-        # Fallback analítico garantizado con lenguaje simple y cercano
+        # Fallback analítico garantizado con lenguaje simple y conversacional
         if not analisis_texto:
-            if similares:
+            q_lower = req.query.lower()
+            is_followup = bool(req.history and len(req.history) > 0) or any(
+                q_lower.startswith(p) for p in ["no se", "¿no", "por que", "¿por", "como", "¿como", "y si", "tienes", "pero", "gracias", "vale", "ok"]
+            )
+
+            if is_followup:
+                analisis_texto = f"""¡Buena observación! Respecto a lo que planteas:
+
+La clave para diferenciar tu propuesta está en el enfoque de aplicación y las tecnologías que incorpores. Si ajustas el alcance para resolver un problema específico (por ejemplo, automatización con alertas en tiempo real o un piloto en una empresa local de Maipú), tu proyecto se desmarcará completamente y tendrá un alto valor para tu comisión de titulación.
+
+¿Te gustaría que profundicemos en la arquitectura técnica o en cómo redactar la justificación para tu anteproyecto?"""
+            elif similares:
                 top = similares[0]
                 proyectos_lista = "\n".join([
                     f"- **{s.get('titulo')}** ({s.get('porcentaje_similitud', 60)}% parecido) — *{s.get('carrera')} · {s.get('anio')}*"

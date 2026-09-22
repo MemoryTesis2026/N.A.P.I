@@ -287,6 +287,10 @@ async function doModalLogin(role, isDemo = false) {
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
   updateUserDisplay(currentUser);
 
+  // Limpiar chatbox inmediatamente para aislamiento absoluto de sesión
+  const box = document.getElementById('chatBox');
+  if (box) box.innerHTML = '';
+
   // Ocultar landing + modal, mostrar panel correspondiente
   closeAllModals();
   clearInterval(carouselTimer);
@@ -1011,11 +1015,45 @@ function fmt(t) {
     .replace(/\n/g, '<br/>');
 }
 
-// Motor de análisis semántico local con lenguaje simple y motivador
-function analyze(txt) {
+// ══════════════════════════════════════════
+//  ANÁLISIS SEMÁNTICO Y CONVERSACIÓN NAPI
+// ══════════════════════════════════════════
+function getChatHistoryArray() {
+  const box = document.getElementById('chatBox');
+  if (!box) return [];
+  const items = [];
+  const nodes = box.querySelectorAll('.bubble-user, .bubble-napi');
+  nodes.forEach(n => {
+    const isUser = n.classList.contains('bubble-user');
+    const text = n.innerText.trim();
+    if (text) {
+      items.push({
+        role: isUser ? 'user' : 'model',
+        content: text
+      });
+    }
+  });
+  return items.slice(-8);
+}
+
+function analyze(txt, history = []) {
   const lower = txt.toLowerCase();
   const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3 && !['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea'].includes(w));
   
+  const isFollowup = (history && history.length > 0) || ['no se', '¿no', 'por que', '¿por', 'como', '¿como', 'y si', 'tienes', 'pero', 'gracias', 'vale', 'ok', 'verdad'].some(w => lower.startsWith(w));
+
+  if (isFollowup) {
+    if (lower.includes('no se') || lower.includes('parece') || lower.includes('proyecto') || lower.includes('verdad')) {
+      return `¡Buena observación! Si bien pueden compartir la temática base, la clave está en el **enfoque de valor** que le des:
+
+1. **Diferenciador tecnológico:** En lugar de hacer solo registro de datos, agrega procesamiento predictivo o alertas inmediatas (por ejemplo a Telegram o WhatsApp).
+2. **Aplicación real:** Valida tu prototipo resolviendo un problema concreto en un taller, empresa o comercio de Maipú.
+
+Con esos dos puntos, tu profesor guía y la comisión verán una propuesta con personalidad propia e innovadora. ¿Te gustaría que detallemos qué herramientas técnicas podrías sumar?`;
+    }
+    return `¡Exacto! Tienes toda la razón. Al enfocar la solución desde esa perspectiva y sumarle validaciones prácticas, tu propuesta se vuelve mucho más sólida y defendible ante tu docente guía. ¿Quieres que veamos el marco metodológico o el alcance de la prueba de concepto?`;
+  }
+
   let bestMatch = null;
   let maxScore = 0;
 
@@ -1117,20 +1155,22 @@ function addSimCardSupabase(sim, save = true) {
 async function sendMsg() {
   const input = document.getElementById('napiInput'); if(!input) return;
   const txt = input.value.trim(); if(!txt) return;
+
+  const history = getChatHistoryArray();
   addUser(txt);
   input.value = '';
   const typing = addTyping();
 
-  // 1. Intentar llamar a la API FastAPI + Supabase + Gemini
+  // 1. Intentar llamar a la API FastAPI + Supabase + Gemini (con memoria conversacional)
   let responded = false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
 
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: txt, umbral: 0.35, limite: 4 }),
+      body: JSON.stringify({ query: txt, history: history, umbral: 0.35, limite: 4 }),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -1140,15 +1180,15 @@ async function sendMsg() {
       if (typing) typing.remove();
       responded = true;
 
-      // Renderizar análisis de NAPI
+      // Renderizar respuesta de NAPI
       if (data.analisis) {
         addNapi(data.analisis);
       } else {
-        addNapi(analyze(txt));
+        addNapi(analyze(txt, history));
       }
 
-      // Renderizar cards de proyectos de Supabase
-      if (data.similares && data.similares.length > 0) {
+      // Renderizar cards de proyectos de Supabase (solo en propuestas iniciales)
+      if (data.similares && data.similares.length > 0 && history.length === 0) {
         data.similares.forEach((sim, idx) => {
           setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
         });
@@ -1159,22 +1199,24 @@ async function sendMsg() {
     console.warn('Backend API /analyze con demora o no disponible:', err);
   }
 
-  // 2. Respaldo directo en frontend (Garantizado 100% sin importar el estado del servidor)
+  // 2. Respaldo directo en frontend con lógica conversacional garantizada
   if (!responded) {
     setTimeout(() => {
       if (typing) typing.remove();
-      addNapi(analyze(txt));
+      addNapi(analyze(txt, history));
 
-      const lower = txt.toLowerCase();
-      const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
-      const top = PROJECTS.map(p => {
-        const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
-        const cnt = words.filter(w => src.includes(w)).length;
-        return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 92) };
-      }).filter(x => x.pct >= 35).sort((a, b) => b.pct - a.pct)[0];
+      if (history.length === 0) {
+        const lower = txt.toLowerCase();
+        const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
+        const top = PROJECTS.map(p => {
+          const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
+          const cnt = words.filter(w => src.includes(w)).length;
+          return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 92) };
+        }).filter(x => x.pct >= 35).sort((a, b) => b.pct - a.pct)[0];
 
-      if (top) {
-        setTimeout(() => addSimCard(top.p, top.pct), 200);
+        if (top) {
+          setTimeout(() => addSimCard(top.p, top.pct), 200);
+        }
       }
     }, 300);
   }
