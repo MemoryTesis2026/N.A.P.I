@@ -254,7 +254,7 @@ async function doModalLogin(role, isDemo = false) {
       // Si la contraseña ingresada es 1234, admitir como demo
       if (pass === '1234') {
         user = {
-          nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+          nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
           email: email,
           rol: role,
           carrera: 'Informática / Ing. en Computación'
@@ -269,7 +269,7 @@ async function doModalLogin(role, isDemo = false) {
     console.warn('Backend offline, usando fallback de sesión:', err);
     if (pass === '1234' || pass === 'InacapPassword123!') {
       user = {
-        nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+        nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
         email: email,
         rol: role,
         carrera: 'Informática / Ing. en Computación'
@@ -342,10 +342,14 @@ function updateNavActive() {
   });
 }
 
-// ── Init Landing (se ejecuta al cargar) ──
-document.addEventListener('DOMContentLoaded', function() {
-  // Ocultar pantallas de plataforma, mostrar landing por defecto
+// ── Inicialización General ──
+document.addEventListener('DOMContentLoaded', () => {
+  // Ocultar pantallas de aplicación
+  const adminScreen = document.getElementById('adminScreen');
+  const studentScreen = document.getElementById('studentScreen');
   const loginScreen = document.getElementById('loginScreen');
+  if (adminScreen) adminScreen.classList.add('hidden');
+  if (studentScreen) studentScreen.classList.add('hidden');
   if (loginScreen) loginScreen.style.display = 'none';
 
   // Iniciar carrusel automático
@@ -362,12 +366,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function selectRole(role) {
   currentRole = role;
   currentUser = {
-    nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
-    email: role === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl',
+    nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
+    email: role === 'docente' ? 'docente.maipu@inacap.cl' : 'flavio.escobar@inacapmail.cl',
     rol: role,
     carrera: 'Informática / Ing. en Computación'
   };
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
+  updateUserDisplay(currentUser);
   const box = document.getElementById('chatBox');
   if (box) box.innerHTML = '';
   initNapi();
@@ -375,7 +380,7 @@ function selectRole(role) {
   document.getElementById('roleEstudiante')?.classList.toggle('active', role === 'estudiante');
   const emailInput = document.getElementById('loginEmail');
   if (emailInput) {
-    emailInput.value = role === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl';
+    emailInput.value = role === 'docente' ? 'docente.maipu@inacap.cl' : 'flavio.escobar@inacapmail.cl';
   }
 }
 
@@ -387,13 +392,13 @@ function togglePass() {
 }
 
 function handleLogin() {
-  const email = document.getElementById('loginEmail')?.value.trim() || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const email = document.getElementById('loginEmail')?.value.trim() || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'flavio.escobar@inacapmail.cl');
   const pass  = document.getElementById('loginPass')?.value.trim();
   if (!pass)  { showError('Ingresa tu contraseña.'); return; }
   if (pass !== '1234') { showError('Contraseña inválida. Usa "1234" para la demo.'); return; }
 
   currentUser = {
-    nombre: currentRole === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+    nombre: currentRole === 'docente' ? 'Prof. Carlos Mendoza' : 'Flavio Escobar Mendoza',
     email: email,
     rol: currentRole,
     carrera: 'Informática / Ing. en Computación'
@@ -1023,7 +1028,11 @@ function getChatHistoryArray() {
   if (!box) return [];
   const items = [];
   const nodes = box.querySelectorAll('.bubble-user, .bubble-napi');
-  nodes.forEach(n => {
+  nodes.forEach((n, idx) => {
+    // Excluir el saludo de bienvenida inicial del historial para no contaminar el contexto conversacional
+    if (idx === 0 && n.classList.contains('bubble-napi') && n.innerText.includes('¡Hola')) {
+      return;
+    }
     const isUser = n.classList.contains('bubble-user');
     const text = n.innerText.trim();
     if (text) {
@@ -1038,22 +1047,12 @@ function getChatHistoryArray() {
 
 function analyze(txt, history = []) {
   const lower = txt.toLowerCase();
-  const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3 && !['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea'].includes(w));
   
-  const isFollowup = (history && history.length > 0) || ['no se', '¿no', 'por que', '¿por', 'como', '¿como', 'y si', 'tienes', 'pero', 'gracias', 'vale', 'ok', 'verdad'].some(w => lower.startsWith(w));
-
-  if (isFollowup) {
-    if (lower.includes('no se') || lower.includes('parece') || lower.includes('proyecto') || lower.includes('verdad')) {
-      return `¡Buena observación! Si bien pueden compartir la temática base, la clave está en el **enfoque de valor** que le des:
-
-1. **Diferenciador tecnológico:** En lugar de hacer solo registro de datos, agrega procesamiento predictivo o alertas inmediatas (por ejemplo a Telegram o WhatsApp).
-2. **Aplicación real:** Valida tu prototipo resolviendo un problema concreto en un taller, empresa o comercio de Maipú.
-
-Con esos dos puntos, tu profesor guía y la comisión verán una propuesta con personalidad propia e innovadora. ¿Te gustaría que detallemos qué herramientas técnicas podrías sumar?`;
-    }
-    return `¡Exacto! Tienes toda la razón. Al enfocar la solución desde esa perspectiva y sumarle validaciones prácticas, tu propuesta se vuelve mucho más sólida y defendible ante tu docente guía. ¿Quieres que veamos el marco metodológico o el alcance de la prueba de concepto?`;
-  }
-
+  // Palabras a ignorar
+  const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'unos', 'unas', 'ver', 'las', 'los', 'que', 'una', 'uno'];
+  const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
+  
+  // Buscar coincidencia semántica en el catálogo de proyectos institucionales
   let bestMatch = null;
   let maxScore = 0;
 
@@ -1063,31 +1062,46 @@ Con esos dos puntos, tu profesor guía y la comisión verán una propuesta con p
     words.forEach(w => {
       if (haystack.includes(w)) hits += 1;
     });
-    const score = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.6), 94) : 0;
+    const score = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
     if (score > maxScore) {
       maxScore = score;
       bestMatch = p;
     }
   });
 
-  if (bestMatch && maxScore >= 35) {
+  // Si encontramos un proyecto con coincidencia clara
+  if (bestMatch && (maxScore >= 25 || words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w)))) {
+    const finalScore = Math.max(maxScore, 58);
     return `## 💡 Diagnóstico de tu Idea
 
-Tu idea tiene un **${maxScore}% de similitud** con un proyecto anterior en INACAP Sede Maipú:
+Tu idea tiene un **${finalScore}% de similitud** con un proyecto anterior en INACAP Sede Maipú:
 
-* **Proyecto más parecido:** *"${bestMatch.nombre}"* (${bestMatch.anio})
+* **Proyecto más parecido:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})
 
 ## 🔍 ¿En qué se parece?
-Tu propuesta comparte el enfoque de **${bestMatch.stack.slice(0, 3).join(', ')}** y el tipo de solución que aborda.
+Tu propuesta coincide en el enfoque de **${bestMatch.stack.slice(0, 3).join(', ')}** y el tipo de solución que aborda.
 
 ## 🚀 ¿Cómo puedes innovar y diferenciarte?
 Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
 1. **Agregar alertas automáticas:** Envío de notificaciones inmediatas al celular (por WhatsApp o Telegram) ante cualquier evento.
-2. **Usar predicción simple con IA:** En vez de solo medir variables, programa un modelo que anticipe fallas antes de que ocurran.
+2. **Usar predicción simple con IA:** En vez de solo medir variables actuales, programa un modelo que anticipe fallas antes de que ocurran.
 3. **Aplicarlo a un caso real en Maipú:** Enfoca las pruebas directamente en un taller, empresa o comercio de la comuna.
 
 ## 🎯 Tu próximo paso
 Revisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
+  }
+
+  // Si es un debate, pregunta o repregunta conversacional
+  if (history && history.length > 0) {
+    if (lower.includes('no se') || lower.includes('parece') || lower.includes('verdad') || lower.includes('razon')) {
+      return `¡Buena observación! Si bien pueden compartir conceptos base, la clave está en el **enfoque de valor** que le des:
+
+1. **Diferenciador tecnológico:** En lugar de hacer solo registro o visualización de datos, agrega procesamiento predictivo o alertas inmediatas (por ejemplo a Telegram o WhatsApp).
+2. **Aplicación real:** Valida tu prototipo resolviendo un problema concreto en un taller, empresa o comercio de Maipú.
+
+Con esos dos puntos, tu profesor guía y la comisión verán una propuesta con personalidad propia e innovadora. ¿Te gustaría que detallemos qué herramientas técnicas podrías sumar?`;
+    }
+    return `¡Comprendido! Al plantear tu proyecto con ese enfoque y sumarle validaciones en un entorno real de Maipú, tu propuesta se vuelve mucho más sólida y defendible ante tu docente guía. ¿Quieres que veamos el alcance técnico o las tecnologías recomendadas?`;
   }
 
   return `## 💡 Diagnóstico de tu Idea
@@ -1205,18 +1219,19 @@ async function sendMsg() {
       if (typing) typing.remove();
       addNapi(analyze(txt, history));
 
-      if (history.length === 0) {
-        const lower = txt.toLowerCase();
-        const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
-        const top = PROJECTS.map(p => {
-          const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
-          const cnt = words.filter(w => src.includes(w)).length;
-          return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 92) };
-        }).filter(x => x.pct >= 35).sort((a, b) => b.pct - a.pct)[0];
+      const lower = txt.toLowerCase();
+      const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
+      const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
+      const top = PROJECTS.map(p => {
+        const src = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
+        let hits = 0;
+        words.forEach(w => { if (src.includes(w)) hits += 1; });
+        const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
+        return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w))) ? Math.max(pct, 58) : pct };
+      }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct)[0];
 
-        if (top) {
-          setTimeout(() => addSimCard(top.p, top.pct), 200);
-        }
+      if (top) {
+        setTimeout(() => addSimCard(top.p, top.pct), 200);
       }
     }, 300);
   }

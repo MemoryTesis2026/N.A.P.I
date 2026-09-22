@@ -509,17 +509,9 @@ REGLAS FUNDAMENTALES DE RESPUESTA:
         # Fallback analítico garantizado con lenguaje simple y conversacional
         if not analisis_texto:
             q_lower = req.query.lower()
-            is_followup = bool(req.history and len(req.history) > 0) or any(
-                q_lower.startswith(p) for p in ["no se", "¿no", "por que", "¿por", "como", "¿como", "y si", "tienes", "pero", "gracias", "vale", "ok"]
-            )
-
-            if is_followup:
-                analisis_texto = f"""¡Buena observación! Respecto a lo que planteas:
-
-La clave para diferenciar tu propuesta está en el enfoque de aplicación y las tecnologías que incorpores. Si ajustas el alcance para resolver un problema específico (por ejemplo, automatización con alertas en tiempo real o un piloto en una empresa local de Maipú), tu proyecto se desmarcará completamente y tendrá un alto valor para tu comisión de titulación.
-
-¿Te gustaría que profundicemos en la arquitectura técnica o en cómo redactar la justificación para tu anteproyecto?"""
-            elif similares:
+            is_idea_or_sim = any(k in q_lower for k in ["idea", "tesis", "proyecto", "similitud", "similitudes", "trabajo", "trabajos", "eficiencia", "energia", "aduana", "sensor", "iot", "app", "sistema"])
+            
+            if similares and (is_idea_or_sim or not req.history):
                 top = similares[0]
                 proyectos_lista = "\n".join([
                     f"- **{s.get('titulo')}** ({s.get('porcentaje_similitud', 60)}% parecido) — *{s.get('carrera')} · {s.get('anio')}*"
@@ -543,6 +535,12 @@ Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo si
 
 ## 🎯 Tu próximo paso
 Revisa el proyecto anterior para ver qué le faltó y preséntale esta propuesta mejorada a tu profesor guía."""
+            elif req.history and len(req.history) > 0:
+                analisis_texto = f"""¡Buena observación! Respecto a lo que planteas:
+
+La clave para diferenciar tu propuesta está en el enfoque de aplicación y las tecnologías que incorpores. Si ajustas el alcance para resolver un problema específico (por ejemplo, automatización con alertas en tiempo real o un piloto en una empresa local de Maipú), tu proyecto se desmarcará completamente y tendrá un alto valor para tu comisión de titulación.
+
+¿Te gustaría que profundicemos en la arquitectura técnica o en cómo redactar la justificación para tu anteproyecto?"""
             else:
                 analisis_texto = f"""## 💡 Diagnóstico de tu Idea
 
