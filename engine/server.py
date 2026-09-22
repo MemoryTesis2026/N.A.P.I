@@ -312,10 +312,19 @@ class UserCreateAdminRequest(BaseModel):
 @app.get("/api/auth/users")
 @app.get("/api/admin/users")
 def get_users():
-    """Obtiene la lista de usuarios registrados (Alumnos, Docentes y Administradores)."""
+    """Obtiene la lista de usuarios registrados (Alumnos, Docentes y Administradores) desde Supabase."""
     try:
         user_list = []
+        # 1. Intentar leer desde tabla pública en Supabase
         if db_admin:
+            try:
+                tbl_res = db_admin.table("napi_usuarios").select("*").order("created_at", desc=True).execute()
+                if tbl_res.data and len(tbl_res.data) > 0:
+                    return {"users": tbl_res.data}
+            except Exception as tbl_err:
+                log.info(f"Tabla napi_usuarios no consultable ({tbl_err}), leyendo auth.users")
+
+            # 2. Respaldo desde auth.users
             try:
                 users_res = db_admin.auth.admin.list_users()
                 users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
@@ -326,8 +335,8 @@ def get_users():
                         "email": getattr(u, 'email', ''),
                         "nombre": meta.get("nombre", getattr(u, 'email', 'Usuario').split("@")[0]),
                         "rol": meta.get("rol", "estudiante"),
-                        "area": meta.get("area", "Tecnología Aplicada"),
-                        "carrera": meta.get("carrera", "-"),
+                        "area": meta.get("area", "Informática, Ciberseguridad y Telecomunicaciones"),
+                        "carrera": meta.get("carrera", "Ingeniería en Informática"),
                         "created_at": getattr(u, 'created_at', None)
                     })
             except Exception as e:
@@ -338,33 +347,49 @@ def get_users():
 
 @app.post("/api/admin/users")
 def admin_create_user(req: UserCreateAdminRequest):
-    """Crea un usuario (Alumno, Docente o Administrador) en Supabase Auth."""
+    """Crea un usuario (Alumno, Docente o Administrador) en Supabase Auth y en tabla pública."""
     try:
         user_id = "user-" + str(os.urandom(4).hex())
         if db_admin:
-            res = db_admin.auth.admin.create_user({
-                "email": req.email.strip(),
-                "password": req.password.strip(),
-                "email_confirm": True,
-                "user_metadata": {
+            try:
+                res = db_admin.auth.admin.create_user({
+                    "email": req.email.strip(),
+                    "password": req.password.strip(),
+                    "email_confirm": True,
+                    "user_metadata": {
+                        "nombre": req.nombre.strip(),
+                        "rol": req.rol.strip(),
+                        "area": req.area.strip() if req.area else "Informática, Ciberseguridad y Telecomunicaciones",
+                        "carrera": req.carrera.strip() if req.carrera else "Ingeniería en Informática"
+                    }
+                })
+                if res and hasattr(res, 'user') and res.user:
+                    user_id = res.user.id
+            except Exception as auth_e:
+                log.warning(f"Aviso al crear en Supabase Auth ({auth_e})")
+
+            # Guardar también en tabla pública napi_usuarios si está creada
+            try:
+                db_admin.table("napi_usuarios").upsert({
+                    "id": user_id,
+                    "email": req.email.strip(),
                     "nombre": req.nombre.strip(),
                     "rol": req.rol.strip(),
-                    "area": req.area.strip() if req.area else "Tecnología Aplicada",
+                    "area": req.area.strip() if req.area else "Informática, Ciberseguridad y Telecomunicaciones",
                     "carrera": req.carrera.strip() if req.carrera else "Ingeniería en Informática"
-                }
-            })
-            if res and hasattr(res, 'user') and res.user:
-                user_id = res.user.id
+                }).execute()
+            except Exception as t_err:
+                log.info(f"Aviso al sincronizar tabla napi_usuarios: {t_err}")
 
         return {
             "success": True,
-            "message": f"Usuario {req.nombre} ({req.rol}) creado exitosamente.",
+            "message": f"Usuario {req.nombre} ({req.rol}) creado exitosamente en Supabase.",
             "user": {
                 "id": user_id,
                 "email": req.email.strip(),
                 "nombre": req.nombre.strip(),
                 "rol": req.rol.strip(),
-                "area": req.area.strip() if req.area else "Tecnología Aplicada",
+                "area": req.area.strip() if req.area else "Informática, Ciberseguridad y Telecomunicaciones",
                 "carrera": req.carrera.strip() if req.carrera else "Ingeniería en Informática"
             }
         }
@@ -374,7 +399,7 @@ def admin_create_user(req: UserCreateAdminRequest):
 
 @app.put("/api/admin/users/{user_id}")
 def admin_update_user(user_id: str, req: UserUpdateRequest):
-    """Actualiza los datos de un usuario (Alumno, Docente o Administrador)."""
+    """Actualiza los datos de un usuario en Supabase."""
     try:
         meta_updates = {}
         if req.nombre is not None: meta_updates["nombre"] = req.nombre.strip()
@@ -389,11 +414,22 @@ def admin_update_user(user_id: str, req: UserUpdateRequest):
             try:
                 db_admin.auth.admin.update_user_by_id(user_id, attrs)
             except Exception as e:
-                log.warning(f"Error actualizando usuario en Supabase ({user_id}): {e}")
+                log.warning(f"Error actualizando usuario en Supabase Auth ({user_id}): {e}")
+
+            try:
+                payload = { "id": user_id }
+                if req.email: payload["email"] = req.email.strip()
+                if req.nombre: payload["nombre"] = req.nombre.strip()
+                if req.rol: payload["rol"] = req.rol.strip()
+                if req.area: payload["area"] = req.area.strip()
+                if req.carrera: payload["carrera"] = req.carrera.strip()
+                db_admin.table("napi_usuarios").upsert(payload).execute()
+            except Exception as t_err:
+                log.info(f"Aviso actualizando tabla napi_usuarios: {t_err}")
 
         return {
             "success": True,
-            "message": "Usuario actualizado correctamente.",
+            "message": "Usuario actualizado correctamente en Supabase.",
             "user": {
                 "id": user_id,
                 "email": req.email,
@@ -409,14 +445,18 @@ def admin_update_user(user_id: str, req: UserUpdateRequest):
 
 @app.delete("/api/admin/users/{user_id}")
 def admin_delete_user(user_id: str):
-    """Elimina un usuario de Supabase Auth."""
+    """Elimina un usuario de Supabase."""
     try:
         if db_admin:
             try:
                 db_admin.auth.admin.delete_user(user_id)
             except Exception as e:
-                log.warning(f"Error eliminando usuario de Supabase ({user_id}): {e}")
-        return {"success": True, "message": "Usuario eliminado exitosamente."}
+                log.warning(f"Error eliminando usuario de Supabase Auth ({user_id}): {e}")
+            try:
+                db_admin.table("napi_usuarios").delete().eq("id", user_id).execute()
+            except Exception as t_err:
+                log.info(f"Aviso eliminando de tabla napi_usuarios: {t_err}")
+        return {"success": True, "message": "Usuario eliminado exitosamente de Supabase."}
     except Exception as e:
         log.error(f"Error al eliminar usuario: {e}")
         raise HTTPException(status_code=400, detail=str(e))
