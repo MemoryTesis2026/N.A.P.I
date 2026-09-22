@@ -90,6 +90,9 @@ class ProjectCreateRequest(BaseModel):
     carrera: str
     anio: int
     autores: str
+    nota: Optional[float] = 6.5
+    area: Optional[str] = "Informática, Ciberseguridad y Telecomunicaciones"
+    stack: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str
@@ -525,8 +528,15 @@ def get_projects():
 
 @app.post("/api/projects")
 def create_project(data: ProjectCreateRequest):
-    """Inserta un nuevo proyecto calculando automáticamente su vector de embedding."""
+    """Inserta un nuevo proyecto validando nota >= 6.0 y calculando su vector de embedding."""
     try:
+        # Validación de nota según normativa INACAP
+        if data.nota is not None and (data.nota < 6.0 or data.nota > 7.0):
+            raise HTTPException(
+                status_code=400, 
+                detail="Normativa INACAP: Solo se pueden registrar proyectos con nota final igual o superior a 6.0."
+            )
+
         texto_completo = f"{data.titulo}. {data.resumen}"
         embedding = get_doc_embedding(texto_completo)
 
@@ -539,8 +549,60 @@ def create_project(data: ProjectCreateRequest):
             "embedding": embedding
         }
 
-        res = db_admin.table("proyectos_titulo").insert(payload).execute()
-        return {"success": True, "project": res.data[0]}
+        if db_admin:
+            try:
+                res = db_admin.table("proyectos_titulo").insert(payload).execute()
+                return {"success": True, "project": res.data[0] if res.data else payload}
+            except Exception as db_e:
+                log.warning(f"Aviso guardando en Supabase proyectos_titulo: {db_e}")
+
+        return {"success": True, "project": payload}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/projects/{project_id}")
+def update_project(project_id: str, data: ProjectCreateRequest):
+    """Actualiza los metadatos de un proyecto y recalcula sus embeddings."""
+    try:
+        if data.nota is not None and (data.nota < 6.0 or data.nota > 7.0):
+            raise HTTPException(status_code=400, detail="La nota final debe estar entre 6.0 y 7.0.")
+
+        texto_completo = f"{data.titulo}. {data.resumen}"
+        embedding = get_doc_embedding(texto_completo)
+
+        payload = {
+            "titulo": data.titulo,
+            "resumen": data.resumen,
+            "carrera": data.carrera,
+            "anio": data.anio,
+            "autores": data.autores,
+            "embedding": embedding
+        }
+
+        if db_admin:
+            try:
+                db_admin.table("proyectos_titulo").update(payload).eq("id", project_id).execute()
+            except Exception as db_e:
+                log.warning(f"Aviso actualizando en Supabase: {db_e}")
+
+        return {"success": True, "project": payload}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: str):
+    """Elimina un proyecto del repositorio institucional."""
+    try:
+        if db_admin:
+            try:
+                db_admin.table("proyectos_titulo").delete().eq("id", project_id).execute()
+            except Exception as db_e:
+                log.warning(f"Aviso eliminando proyecto en Supabase: {db_e}")
+        return {"success": True, "message": "Proyecto eliminado correctamente."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

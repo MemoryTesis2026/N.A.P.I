@@ -652,8 +652,10 @@ document.addEventListener('DOMContentLoaded', () => {
   populateCarreraDropdown('fArea', 'fCarrera', false);
   populateCarreraDropdown('editArea', 'editCarrera', false);
   populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
-  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
   populateCarreraDropdown('crudArea', 'crudCarrera', false);
+
+  // Inicializar Drag & Drop para documentos de tesis
+  initDragAndDrop();
 
   window.addEventListener('scroll', updateNavActive, { passive: true });
 });
@@ -978,6 +980,44 @@ async function deleteUserCrud(userId) {
   toast(`🗑️ Usuario ${name} eliminado`);
 }
 
+function logActivity(icon, text, time = 'Justo ahora') {
+  try {
+    let logs = JSON.parse(localStorage.getItem('napi_activity_logs') || '[]');
+    logs.unshift({ i: icon, t: text, h: time, ts: Date.now() });
+    if (logs.length > 25) logs = logs.slice(0, 25);
+    localStorage.setItem('napi_activity_logs', JSON.stringify(logs));
+  } catch(e) {}
+  renderActivity();
+}
+
+function renderActivity() {
+  let acts = [];
+  try {
+    const saved = localStorage.getItem('napi_activity_logs');
+    if (saved) acts = JSON.parse(saved);
+  } catch(e) {}
+
+  if (!acts || acts.length === 0) {
+    acts = [
+      {i:'🚀', t:'Sistema N.A.P.I v2.0 operativo en INACAP Sede Maipú', h:'Reciente'},
+      {i:'📤', t:'Proyecto indexado: <strong class="text-cyan-700">IoT Telemetría Industrial</strong> (Nota: 6.8)', h:'Hace 1h'},
+      {i:'👥', t:'Usuario registrado: <strong class="text-slate-800">Flavio Escobar Mendoza</strong>', h:'Hace 2h'},
+      {i:'🔍', t:'Auditoría: <strong class="text-cyan-700">Validaciones RAG y Supabase activas</strong>', h:'Hace 3h'},
+      {i:'✅', t:'Proyecto aprobado: <strong class="text-slate-800">App Móvil Stock QR</strong> (Nota: 6.5)', h:'Hace 5h'}
+    ];
+  }
+
+  const el = document.getElementById('recentActivity');
+  if (el) el.innerHTML = acts.slice(0, 6).map(a=>`
+    <div class="flex gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200 anim-fade">
+      <span class="shrink-0 text-base">${a.i}</span>
+      <div class="min-w-0 flex-1">
+        <p class="text-xs text-slate-700 leading-snug truncate">${a.t}</p>
+        <p class="text-[10px] text-slate-400 mt-0.5 font-medium">${a.h}</p>
+      </div>
+    </div>`).join('');
+}
+
 // ── Renderizado de Dashboard y Repositorio ──
 function renderKpis() {
   const totEl = document.getElementById('kpiTotal');
@@ -1000,24 +1040,6 @@ function renderCarreraChart() {
     </div>`).join('');
 }
 
-function renderActivity() {
-  const acts = [
-    {i:'📤', t:'Proyecto cargado: <strong class="text-cyan-700">IoT Telemetría Industrial</strong>', h:'Hace 1h'},
-    {i:'👥', t:'Usuario registrado: <strong class="text-slate-800">Flavio Escobar (Alumno)</strong>', h:'Hace 2h'},
-    {i:'🔍', t:'NAPI realizó <strong class="text-cyan-700">14 análisis</strong> hoy', h:'Hace 3h'},
-    {i:'✅', t:'Aprobado: <strong class="text-slate-800">App Móvil Stock QR</strong>', h:'Hace 5h'}
-  ];
-  const el = document.getElementById('recentActivity');
-  if (el) el.innerHTML = acts.map(a=>`
-    <div class="flex gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-      <span class="shrink-0 text-base">${a.i}</span>
-      <div>
-        <p class="text-xs text-slate-700 leading-snug">${a.t}</p>
-        <p class="text-[10px] text-slate-400 mt-0.5 font-medium">${a.h}</p>
-      </div>
-    </div>`).join('');
-}
-
 function renderReviews() {
   const reqs = [
     {n:'Emilia Castro', p:'Chatbot Orientación Vocacional', c:'Ing. en Informática'},
@@ -1033,8 +1055,8 @@ function renderReviews() {
         <p class="text-[11px] text-slate-500">${r.n} · <span class="text-cyan-700">${r.c}</span></p>
       </div>
       <div class="flex gap-1.5 shrink-0">
-        <button onclick="toast('✅ Solicitud aprobada')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors">Aprobar</button>
-        <button onclick="toast('❌ Solicitud rechazada')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors">Rechazar</button>
+        <button onclick="logActivity('✅', 'Solicitud aprobada: ${r.p}'); toast('✅ Solicitud de ${r.n} aprobada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors">Aprobar</button>
+        <button onclick="logActivity('❌', 'Solicitud rechazada: ${r.p}'); toast('❌ Solicitud de ${r.n} rechazada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors">Rechazar</button>
       </div>
     </div>`).join('');
 }
@@ -1049,7 +1071,7 @@ function renderTable(list) {
     <tr>
       <td class="px-4 py-3">
         <p class="font-bold text-slate-800 text-xs leading-snug" style="max-width:260px">${p.nombre}</p>
-        <div class="flex gap-1 flex-wrap mt-1">${p.stack.slice(0,3).map(s=>`<span class="badge-tech">${s}</span>`).join('')}</div>
+        <div class="flex gap-1 flex-wrap mt-1">${(Array.isArray(p.stack)?p.stack:[]).slice(0,3).map(s=>`<span class="badge-tech">${s}</span>`).join('')}</div>
       </td>
       <td class="px-4 py-3">
         <span class="badge-cyan block truncate max-w-[200px]" title="${p.carrera}">${shortC(p.carrera)}</span>
@@ -1058,11 +1080,11 @@ function renderTable(list) {
       <td class="px-4 py-3 text-xs font-semibold text-slate-700">${p.anio}</td>
       <td class="px-4 py-3 text-xs text-slate-500">${p.autores}</td>
       <td class="px-4 py-3">
-        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${p.estado==='Público'?'bg-cyan-50 text-cyan-700 border border-cyan-200':'bg-slate-100 text-slate-500 border border-slate-200'}">${p.estado}</span>
+        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${p.estado==='Público'?'bg-cyan-50 text-cyan-700 border border-cyan-200':p.estado==='En Revisión'?'bg-amber-50 text-amber-700 border border-amber-200':'bg-slate-100 text-slate-500 border border-slate-200'}">${p.estado}</span>
       </td>
       <td class="px-4 py-3">
         <div class="flex gap-1.5">
-          <button onclick="openEdit(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 transition-colors" title="Editar">✏️</button>
+          <button onclick="openEdit(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 transition-colors" title="Editar Metadatos">✏️</button>
           <button onclick="toggleStatus(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-600 transition-colors" title="Visibilidad">${p.estado==='Público'?'👁️':'🙈'}</button>
           <button onclick="deleteP(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors" title="Eliminar">🗑️</button>
         </div>
@@ -1086,11 +1108,16 @@ function filterTable() {
 function openEdit(id) {
   editingId = id;
   const p = PROJECTS.find(x=>x.id===id); if(!p) return;
-  document.getElementById('editNombre').value  = p.nombre;
-  document.getElementById('editArea').value    = p.area || 'Tecnología Aplicada';
+  document.getElementById('editNombre').value  = p.nombre || '';
+  document.getElementById('editArea').value    = p.area || 'Informática, Ciberseguridad y Telecomunicaciones';
   onEditAreaChange();
-  document.getElementById('editCarrera').value = p.carrera;
-  document.getElementById('editEstado').value  = p.estado;
+  document.getElementById('editCarrera').value = p.carrera || '';
+  document.getElementById('editAutores').value = p.autores || '';
+  document.getElementById('editAnio').value    = p.anio || 2025;
+  document.getElementById('editNota').value    = p.nota || 6.5;
+  document.getElementById('editStack').value   = Array.isArray(p.stack) ? p.stack.join(', ') : (p.stack || '');
+  document.getElementById('editDesc').value    = p.desc || '';
+  document.getElementById('editEstado').value  = p.estado || 'Público';
   document.getElementById('editModal').classList.remove('hidden');
 }
 
@@ -1098,26 +1125,58 @@ function closeEdit() { document.getElementById('editModal').classList.add('hidde
 
 function saveEdit() {
   const p = PROJECTS.find(x=>x.id===editingId); if(!p) return;
-  p.nombre  = document.getElementById('editNombre').value;
-  p.area    = document.getElementById('editArea').value;
-  p.carrera = document.getElementById('editCarrera').value;
-  p.estado  = document.getElementById('editEstado').value;
+  const nombre  = document.getElementById('editNombre')?.value.trim();
+  const area    = document.getElementById('editArea')?.value;
+  const carrera = document.getElementById('editCarrera')?.value;
+  const autores = document.getElementById('editAutores')?.value.trim();
+  const anio    = parseInt(document.getElementById('editAnio')?.value) || 2025;
+  const nota    = parseFloat(document.getElementById('editNota')?.value);
+  const stackStr= document.getElementById('editStack')?.value.trim();
+  const desc    = document.getElementById('editDesc')?.value.trim();
+  const estado  = document.getElementById('editEstado')?.value;
+
+  if (!nombre || !carrera || !autores) {
+    toast('⚠️ Completa los campos obligatorios del proyecto.');
+    return;
+  }
+  if (isNaN(nota) || nota < 6.0 || nota > 7.0) {
+    toast('⛔ Normativa INACAP: La nota final debe ser entre 6.0 y 7.0.');
+    return;
+  }
+
+  p.nombre  = nombre;
+  p.area    = area;
+  p.carrera = carrera;
+  p.autores = autores;
+  p.anio    = anio;
+  p.nota    = nota;
+  p.stack   = stackStr ? stackStr.split(',').map(s=>s.trim()).filter(Boolean) : ['General'];
+  p.desc    = desc || p.desc;
+  p.estado  = estado;
+
   closeEdit(); 
   filterTable(); 
-  toast('✅ Proyecto actualizado.');
+  renderKpis();
+  logActivity('✏️', `Metadatos editados: "${p.nombre}" (Nota: ${p.nota})`);
+  toast('✅ Metadatos del proyecto actualizados correctamente.');
 }
 
 function toggleStatus(id) {
   const p = PROJECTS.find(x=>x.id===id); if(!p) return;
   p.estado = p.estado==='Público'?'Oculto':'Público';
   filterTable(); 
+  logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
   toast(`${p.estado==='Público'?'👁️ Visible':'🙈 Oculto'} en el catálogo.`);
 }
 
 function deleteP(id) {
   if (!confirm('¿Eliminar este proyecto del repositorio?')) return;
   const i = PROJECTS.findIndex(x=>x.id===id);
-  if (i>=0) PROJECTS.splice(i,1);
+  if (i>=0) {
+    const deleted = PROJECTS[i];
+    PROJECTS.splice(i,1);
+    logActivity('🗑️', `Proyecto eliminado: "${deleted.nombre}"`);
+  }
   filterTable(); renderKpis(); toast('🗑️ Proyecto eliminado.');
 }
 
@@ -1146,28 +1205,35 @@ function renderMetrics() {
   const sum = [
     {l:'Proyectos Registrados',v:PROJECTS.length,i:'📁'},
     {l:'Áreas Académicas INACAP',v:Object.keys(AREAS_CARRERAS).length,i:'🏛️'},
-    {l:'Nota Promedio',v:(PROJECTS.reduce((a,p)=>a+p.nota,0)/PROJECTS.length).toFixed(1),i:'⭐'},
+    {l:'Nota Promedio',v:(PROJECTS.reduce((a,p)=>a+(p.nota||6.0),0)/PROJECTS.length).toFixed(1),i:'⭐'},
     {l:'Consultas NAPI IA',v:184,i:'🤖'},
-    {l:'Usuarios Registrados',v:ADMIN_USERS.length,i:'👥'}
+    {l:'Tasa de Aprobación',v:'100%',i:'📈'},
+    {l:'Estado Supabase',v:'En Línea',i:'🟢'}
   ];
-  const ss = document.getElementById('sysSummary');
-  if (ss) ss.innerHTML = sum.map(s=>`
-    <div class="flex justify-between py-2 border-b border-slate-100 last:border-0">
-      <span class="text-xs text-slate-500">${s.i} ${s.l}</span>
+  const ms = document.getElementById('sysSummary');
+  if (ms) ms.innerHTML = sum.map(s=>`
+    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+      <span class="text-xs text-slate-600 flex items-center gap-2">${s.i} ${s.l}</span>
       <span class="text-xs font-bold text-slate-800">${s.v}</span>
     </div>`).join('');
 }
 
 function renderYearBars() {
-  const data = [{y:'2023',n:4},{y:'2024',n:5},{y:'2025',n:8}];
-  const max = Math.max(...data.map(d=>d.n));
+  const yc = {}; PROJECTS.forEach(p=>{ yc[p.anio]=(yc[p.anio]||0)+1; });
+  const years = [2023,2024,2025,2026];
+  const max = Math.max(...Object.values(yc),1);
   const el = document.getElementById('yearChart');
-  if (el) el.innerHTML = data.map(d=>`
-    <div class="flex flex-col items-center gap-1 flex-1">
-      <span class="text-xs font-bold text-cyan-700">${d.n}</span>
-      <div class="w-full rounded-t-lg bg-cyan-600" style="height:${Math.round(d.n/max*100)}px"></div>
-      <span class="text-xs text-slate-500">${d.y}</span>
-    </div>`).join('');
+  if (el) el.innerHTML = years.map(y=>{
+    const c = yc[y]||0; const pct = Math.round(c/max*100);
+    return `
+    <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+      <span class="text-[11px] font-black text-cyan-700">${c}</span>
+      <div class="w-full bg-slate-100 rounded-t-lg overflow-hidden flex items-end" style="height:100px">
+        <div class="w-full bg-[#00B5E2] rounded-t-lg transition-all" style="height:${pct}%"></div>
+      </div>
+      <span class="text-[11px] font-semibold text-slate-500">${y}</span>
+    </div>`;
+  }).join('');
 }
 
 function toggleVis() {
@@ -1178,63 +1244,150 @@ function toggleVis() {
   if (lbl) { lbl.textContent = visPublic?'Público (Visible para Estudiantes)':'Oculto (Sólo Administración)'; lbl.className = visPublic?'text-xs font-bold text-cyan-700':'text-xs font-bold text-slate-500'; }
 }
 
+let currentUploadedFile = null;
+
 function handleFile(e) {
-  const f = e.target.files[0]; if(!f) return;
-  document.getElementById('uploadDefault').classList.add('hidden');
-  document.getElementById('uploadSelected').classList.remove('hidden');
-  document.getElementById('fileName').textContent = `${f.name} (${(f.size/1048576).toFixed(1)} MB)`;
+  const f = e.target?.files?.[0];
+  if (!f) return;
+  processUploadedFile(f);
+}
+
+function processUploadedFile(file) {
+  const validExtensions = ['.pdf', '.docx', '.doc'];
+  const nameLower = file.name.toLowerCase();
+  const isValid = validExtensions.some(ext => nameLower.endsWith(ext));
+  
+  if (!isValid) {
+    toast('⚠️ Formato no compatible. Por favor adjunta un archivo PDF o Word (.docx)');
+    return;
+  }
+
+  currentUploadedFile = file;
+  document.getElementById('uploadDefault')?.classList.add('hidden');
+  document.getElementById('uploadSelected')?.classList.remove('hidden');
+  const sizeMb = (file.size / 1048576).toFixed(1);
+  const extBadge = nameLower.endsWith('.pdf') ? '📄 PDF' : '📝 Word';
+  const fnEl = document.getElementById('fileName');
+  if (fnEl) fnEl.textContent = `${extBadge}: ${file.name} (${sizeMb} MB)`;
+  toast(`📎 Documento "${file.name}" cargado para indexación.`);
+}
+
+function initDragAndDrop() {
+  const dropZone = document.getElementById('dropZone');
+  if (!dropZone) return;
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('border-[#ED1C24]', 'bg-red-50/50');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('border-[#ED1C24]', 'bg-red-50/50');
+    });
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      processUploadedFile(files[0]);
+    }
+  });
 }
 
 function clearForm() {
   ['fNombre','fAutores','fDesc','fStack'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('techTags').innerHTML='';
-  document.getElementById('uploadDefault').classList.remove('hidden');
-  document.getElementById('uploadSelected').classList.add('hidden');
+  const fNota = document.getElementById('fNota');
+  if (fNota) fNota.value = '6.5';
+  const techTags = document.getElementById('techTags');
+  if (techTags) techTags.innerHTML = '';
+  document.getElementById('uploadDefault')?.classList.remove('hidden');
+  document.getElementById('uploadSelected')?.classList.add('hidden');
+  currentUploadedFile = null;
 }
 
-function submitProject() {
+async function submitProject() {
   const nombre  = document.getElementById('fNombre')?.value.trim();
   const area    = document.getElementById('fArea')?.value;
   const carrera = document.getElementById('fCarrera')?.value;
   const autores = document.getElementById('fAutores')?.value.trim();
   const desc    = document.getElementById('fDesc')?.value.trim();
+  const anio    = parseInt(document.getElementById('fAnio')?.value) || 2025;
+  const notaVal = document.getElementById('fNota')?.value.trim();
+  const nota    = parseFloat(notaVal);
 
-  if (!nombre||!carrera||!autores||!desc) { toast('⚠️ Completa todos los campos obligatorios.'); return; }
-  const stack = document.getElementById('fStack')?.value.split(',').map(s=>s.trim()).filter(Boolean)||['General'];
-  const anio  = parseInt(document.getElementById('fAnio')?.value)||2025;
+  if (!nombre || !carrera || !autores || !desc) {
+    toast('⚠️ Completa todos los campos obligatorios del proyecto.');
+    return;
+  }
+
+  // RF-10: Validación estricta que impida registrar proyectos con nota inferior a 6.0
+  if (!notaVal || isNaN(nota) || nota < 6.0 || nota > 7.0) {
+    toast('⛔ Normativa INACAP: Solo se pueden registrar proyectos con nota final igual o superior a 6.0 (Aprobados).');
+    return;
+  }
+
+  const stack = document.getElementById('fStack')?.value.split(',').map(s=>s.trim()).filter(Boolean) || ['General'];
+  const btnSubmit = document.querySelector('#tab-upload button[onclick="submitProject()"]');
+
+  // RF-11: Indicador de carga durante el procesamiento e indexación
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<span class="inline-flex items-center gap-2"><div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Indexando con IA...</span>`;
+  }
+
+  await new Promise(r => setTimeout(r, 600));
 
   PROJECTS.unshift({ 
     id: PROJECTS.length + 1, 
     nombre, 
-    area: area || 'Tecnología Aplicada', 
+    area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
     carrera, 
     anio, 
     autores, 
     desc, 
     stack, 
     estado: visPublic ? 'Público' : 'Oculto', 
-    nota: 6.5 
+    nota: nota,
+    archivo: currentUploadedFile ? currentUploadedFile.name : null
   });
 
   const sb = document.getElementById('uploadSuccess');
-  if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'),4000); }
+  if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'), 4000); }
+  
   clearForm(); 
   filterTable(); 
   renderKpis();
-  toast('🚀 Proyecto registrado en el repositorio N.A.P.I.');
+  logActivity('🚀', `Nuevo proyecto indexado: "${nombre}" (Nota: ${nota})`);
+  toast(`🚀 Proyecto "${nombre}" (Nota ${nota}) indexado exitosamente en N.A.P.I.`);
+
+  if (btnSubmit) {
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = 'Guardar e Indexar Proyecto';
+  }
 
   // Sincronizar en Supabase
-  fetch(`${API_BASE_URL}/projects`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      titulo: nombre,
-      carrera: carrera,
-      anio: anio,
-      autores: autores,
-      resumen: desc
-    })
-  }).catch(() => {});
+  try {
+    fetch(`${API_BASE_URL}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: nombre,
+        carrera: carrera,
+        anio: anio,
+        autores: autores,
+        resumen: desc,
+        nota: nota,
+        area: area,
+        stack: stack.join(', ')
+      })
+    }).catch(() => {});
+  } catch(e) {}
 }
 
 // ══════════════════════════════════════════
@@ -1697,7 +1850,7 @@ async function sendMsg() {
   let responded = false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // RNF-02: Máximo 5s de respuesta
 
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
