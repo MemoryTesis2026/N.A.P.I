@@ -379,19 +379,17 @@ def analyze_project(req: AnalyzeRequest):
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
 
         # 2. Generar diagnóstico NAPI con Gemini
-        SYSTEM_PROMPT = """Eres NAPI (Navegador de Antecedentes de Proyectos Innovadores), el asistente virtual de inteligencia artificial de ArchivaIA para INACAP Sede Maipú.
+        SYSTEM_PROMPT = """Eres NAPI, el asistente virtual y mentor de proyectos de título de INACAP Sede Maipú.
 
-Tu misión es brindar un análisis preventivo de choque de ideas entre el proyecto nuevo propuesto por el estudiante y los proyectos históricos encontrados por el motor RAG en el repositorio de la sede.
+Tu misión es explicarle al estudiante si su idea se parece a proyectos anteriores de la sede, de forma MUY SIMPLE, AMIGABLE Y DIRECTA (sin palabras técnicas complejas ni lenguaje académico pesado).
 
-Debes responder siempre en español, con un tono motivador, empático, académico y técnico.
-Estructura tu respuesta con:
-1. 📊 **Diagnóstico de Originalidad**: Menciona el nivel de riesgo detectado y el porcentaje máximo de similitud encontrado.
-2. 🔍 **Análisis de Similitud**: Explica claramente qué elementos técnicos, funcionales o metodológicos coinciden con los proyectos previos.
-3. ⚠️ **Zonas de Choque de Ideas**: Puntos específicos donde hay solapamiento de alcance o propuesta de valor.
-4. 🚀 **Recomendaciones de Innovación**: Entre 3 y 4 sugerencias concretas con tecnologías modernas (sensores, IA, cloud, IoT, edge computing, etc.) para que el estudiante diferencie su propuesta.
-5. 💪 **Próximo Paso**: Una recomendación constructiva e inspiradora para su anteproyecto de título.
+Estructura tu respuesta exactamente con:
+1. 💡 **Diagnóstico de tu Idea**: Menciona el porcentaje de coincidencia de forma clara y el nombre del proyecto previo más parecido.
+2. 🔍 **¿En qué se parece?**: Explica en 2 frases sencillas qué partes o funciones coinciden con los trabajos anteriores.
+3. 🚀 **¿Cómo puedes innovar y diferenciarte?**: Dale 3 ideas concretas, prácticas y fáciles de entender para que su proyecto sea único (ejemplos: agregar alertas automáticas al celular vía WhatsApp/Telegram, usar predicción simple, conectar datos en tiempo real a la nube, o resolver un problema real de una empresa local en Maipú).
+4. 🎯 **Tu próximo paso**: Un consejo motivador y directo para su anteproyecto.
 
-Utiliza formato Markdown limpio y títulos claros."""
+Usa un tono cercano, motivador, formato Markdown limpio y viñetas claras."""
 
         analisis_texto = ""
         if gemini_client:
@@ -420,49 +418,46 @@ Utiliza formato Markdown limpio y títulos claros."""
                 except Exception as ex:
                     log.warning(f"Modelo {mod} timeout/fallo: {ex}")
 
-        # Fallback analítico garantizado si la API de generación tiene demora o cuota agotada
+        # Fallback analítico garantizado con lenguaje simple y cercano
         if not analisis_texto:
             if similares:
                 top = similares[0]
                 proyectos_lista = "\n".join([
-                    f"- **{s.get('titulo')}** ({s.get('carrera')} · {s.get('anio')}) — *Similitud: {s.get('porcentaje_similitud', 60)}%*"
-                    for s in similares[:3]
+                    f"- **{s.get('titulo')}** ({s.get('porcentaje_similitud', 60)}% parecido) — *{s.get('carrera')} · {s.get('anio')}*"
+                    for s in similares[:2]
                 ])
-                analisis_texto = f"""## 📊 Diagnóstico de Originalidad
+                analisis_texto = f"""## 💡 Diagnóstico de tu Idea
 
-* **Nivel de riesgo:** **{nivel_riesgo} ({top_similitud}%)**
-* **Principal coincidencia:** *"{top.get('titulo')}"* ({top.get('carrera')} · {top.get('anio')})
+Tu idea tiene un **{top_similitud}% de similitud** con proyectos previos en INACAP Sede Maipú.
 
-## 🔍 Análisis de Similitud
-El motor RAG detectó una similitud semántica del **{top_similitud}%** con los siguientes antecedentes en INACAP Sede Maipú:
+* **Proyecto más parecido:** *"{top.get('titulo')}"* ({top.get('anio')})
+
+## 🔍 ¿En qué se parece?
+Tu propuesta coincide en el objetivo principal con estos trabajos registrados en la sede:
 {proyectos_lista}
 
-## ⚠️ Zonas de Choque de Ideas
-- **Alcance Funcional:** La idea comparte objetivos técnicos y componentes arquitectónicos con proyectos ya catalogados.
-- **Tecnologías Solapadas:** Coincidencia en el enfoque metodológico o en el stack de desarrollo.
+## 🚀 ¿Cómo puedes innovar y diferenciarte?
+Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
+1. **Agregar alertas automáticas y tiempo real:** Notificaciones instantáneas al celular (por WhatsApp, Telegram o correo) cuando se detecte alguna anomalía.
+2. **Incorporar predicción simple con IA:** En lugar de solo mostrar datos actuales, usa un modelo que anticipe qué pasará en las próximas horas.
+3. **Aplicarlo a un caso real en Maipú:** Enfoca la solución directamente en un taller, comercio o industria de la comuna.
 
-## 🚀 Recomendaciones de Innovación
-1. **Edge AI / Analítica en Tiempo Real:** Integra modelos de Machine Learning en el dispositivo o procesamiento continuo de streams de datos.
-2. **Arquitectura Serverless / Event-Driven:** Aplica microservicios en la nube con Supabase, WebSockets y colas de mensajes (MQTT / Redis).
-3. **Aplicación a un Sector Productivo Local:** Valida la solución en una industria o problemática concreta de la comuna de Maipú.
-
-## 💪 Próximo Paso
-Revisa la ficha técnica del proyecto coincidente y enfoca tu anteproyecto en resolver las limitaciones de los trabajos anteriores."""
+## 🎯 Tu próximo paso
+Revisa el proyecto anterior para ver qué le faltó y preséntale esta propuesta mejorada a tu profesor guía."""
             else:
-                analisis_texto = f"""## 📊 Diagnóstico de Originalidad
+                analisis_texto = f"""## 💡 Diagnóstico de tu Idea
 
-* **Nivel de riesgo:** **SIN RIESGO (0%)**
-* **Idea analizada:** "{req.query}"
+* **Nivel de coincidencia:** **0% (Idea Original)**
+* **Propuesta:** "{req.query}"
 
-🎉 **¡Excelente propuesta!**
-No se detectaron proyectos con alta similitud en el repositorio de INACAP Sede Maipú. Tu propuesta presenta un alto nivel de innovación y originalidad para tu trabajo de título.
+🎉 **¡Excelente idea!** No hay proyectos registrados en INACAP Sede Maipú que se parezcan a lo que propones.
 
-## 🚀 Recomendaciones Técnicas
-1. **Definición de Arquitectura:** Elige tecnologías escalables como FastAPI, Supabase, Next.js / React Native y APIs de Inteligencia Artificial.
-2. **Validación de Métricas:** Establece KPIs medibles para cuantificar la mejora de tu solución en las pruebas de campo.
+## 🚀 ¿Cómo asegurar el éxito de tu proyecto?
+1. **Tecnologías recomendadas:** Elige herramientas modernas y fáciles de integrar como FastAPI, Supabase y React/Next.js.
+2. **Pruebas prácticas:** Diseña un prototipo funcional pequeño antes de construir todo el sistema completo.
 
-## 💪 Próximo Paso
-Comienza a redactar el anteproyecto formal y coordina las pautas de evaluación con tu docente guía."""
+## 🎯 Tu próximo paso
+Empieza a redactar el resumen de tu anteproyecto y coméntalo con tu docente guía."""
 
         return {
             "query": req.query,

@@ -357,10 +357,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function selectRole(role) {
   currentRole = role;
-  document.getElementById('roleDocente').classList.toggle('active', role === 'docente');
-  document.getElementById('roleEstudiante').classList.toggle('active', role === 'estudiante');
-  document.getElementById('loginEmail').value = role === 'docente'
-    ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl';
+  currentUser = {
+    nombre: role === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+    email: role === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl',
+    rol: role,
+    carrera: 'Informática / Ing. en Computación'
+  };
+  localStorage.setItem('napi_user', JSON.stringify(currentUser));
+  initNapi();
+  document.getElementById('roleDocente')?.classList.toggle('active', role === 'docente');
+  document.getElementById('roleEstudiante')?.classList.toggle('active', role === 'estudiante');
+  const emailInput = document.getElementById('loginEmail');
+  if (emailInput) {
+    emailInput.value = role === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl';
+  }
 }
 
 function demoLogin(role) { selectRole(role); document.getElementById('loginPass').value='1234'; handleLogin(); }
@@ -371,32 +381,40 @@ function togglePass() {
 }
 
 function handleLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value.trim();
-  if (!email) { showError('Ingresa tu correo institucional.'); return; }
+  const email = document.getElementById('loginEmail')?.value.trim() || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'estudiante.maipu@inacapmail.cl');
+  const pass  = document.getElementById('loginPass')?.value.trim();
   if (!pass)  { showError('Ingresa tu contraseña.'); return; }
   if (pass !== '1234') { showError('Contraseña inválida. Usa "1234" para la demo.'); return; }
-  document.getElementById('loginError').classList.add('hidden');
-  document.getElementById('loginBtnTxt').classList.add('invisible');
-  document.getElementById('loginSpinner').classList.remove('hidden');
+
+  currentUser = {
+    nombre: currentRole === 'docente' ? 'Prof. Carlos Mendoza' : 'Francisca González',
+    email: email,
+    rol: currentRole,
+    carrera: 'Informática / Ing. en Computación'
+  };
+  localStorage.setItem('napi_user', JSON.stringify(currentUser));
+
+  document.getElementById('loginError')?.classList.add('hidden');
+  document.getElementById('loginBtnTxt')?.classList.add('invisible');
+  document.getElementById('loginSpinner')?.classList.remove('hidden');
   setTimeout(() => {
-    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('loginScreen')?.classList.add('hidden');
     if (currentRole === 'docente') {
-      document.getElementById('adminScreen').classList.remove('hidden');
+      document.getElementById('adminScreen')?.classList.remove('hidden');
       initAdmin();
     } else {
-      document.getElementById('studentScreen').classList.remove('hidden');
+      document.getElementById('studentScreen')?.classList.remove('hidden');
       initStudent();
     }
     document.getElementById('napiWidget').style.display = 'flex';
     initNapi();
-    toast(`🔑 Sesión iniciada como ${currentRole === 'docente' ? 'Docente/Admin' : 'Estudiante'}`);
-  }, 850);
+    toast(`🔑 Sesión iniciada: ${currentUser.nombre}`);
+  }, 400);
 }
 
 function showError(msg) {
   document.getElementById('loginErrMsg').textContent = msg;
-  document.getElementById('loginError').classList.remove('hidden');
+  document.getElementById('loginError')?.classList.remove('hidden');
 }
 
 function logout() {
@@ -779,7 +797,11 @@ function sendToNapi() {
 
 function getChatStorageKey() {
   if (currentUser && currentUser.email) {
-    return `napi_chat_${currentUser.email.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
+    const rolePrefix = currentUser.rol === 'docente' ? 'docente' : 'estudiante';
+    return `napi_chat_${rolePrefix}_${currentUser.email.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
+  }
+  if (currentRole) {
+    return `napi_chat_${currentRole}`;
   }
   return 'napi_chat_guest';
 }
@@ -830,11 +852,11 @@ function initNapi(forceGreeting = false) {
 
   box.innerHTML = '';
   if (currentUser && currentUser.rol === 'estudiante') {
-    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** en INACAP Sede Maipú.\n\nEscribe el **nombre o idea de tu proyecto de título** y analizaré en tiempo real la similitud contra el repositorio institucional para ayudarte a diferenciarte. 🚀`, false);
+    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** en INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te diré qué porcentaje de coincidencia tiene con proyectos anteriores y cómo innovar para que sea único. 🚀`, false);
   } else if (currentUser && currentUser.rol === 'docente') {
-    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI** en **Modo Docente**.\n\nPuedes consultar cualquier anteproyecto para validar originalidad, zonas de duplicación y antecedentes históricos en el repositorio institucional. 🎓`, false);
+    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI** en **Modo Docente**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional. 🎓`, false);
   } else {
-    addNapi(`¡Hola! 👋 Soy **NAPI**, el Asistente Inteligente de INACAP Sede Maipú.\n\nEscribe el **nombre o idea de tu proyecto** y analizaré en tiempo real la similitud contra el repositorio de la sede para ayudarte a innovar. 🚀`, false);
+    addNapi(`¡Hola! 👋 Soy **NAPI**, el Asistente Inteligente de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te diré qué porcentaje de coincidencia tiene con otros proyectos y cómo diferenciarte. 🚀`, false);
   }
 }
 
@@ -905,7 +927,7 @@ function fmt(t) {
     .replace(/\n/g, '<br/>');
 }
 
-// Motor de análisis semántico local garantizado
+// Motor de análisis semántico local con lenguaje simple y motivador
 function analyze(txt) {
   const lower = txt.toLowerCase();
   const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3 && !['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea'].includes(w));
@@ -926,20 +948,39 @@ function analyze(txt) {
     }
   });
 
-  let riesgo = 'SIN RIESGO';
-  if (maxScore >= 75) {
-    riesgo = 'CRÍTICO';
-  } else if (maxScore >= 55) {
-    riesgo = 'ALTO';
-  } else if (maxScore >= 35) {
-    riesgo = 'MODERADO';
-  }
-
   if (bestMatch && maxScore >= 35) {
-    return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **${riesgo} (${maxScore}% similitud)**\n* **Proyecto histórico detectado:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})\n\n## 🔍 Análisis de Similitud\nSe identificó un solapamiento en las tecnologías **${bestMatch.stack.slice(0, 3).join(', ')}** y el objetivo funcional propuesto para INACAP Sede Maipú.\n\n## ⚠️ Zonas de Choque de Ideas\n- **Arquitectura base:** Coincidencia en recolección, análisis de señales o flujo de datos.\n- **Público objetivo:** Ya existe un trabajo que resuelve un desafío análogo en la sede.\n\n## 🚀 Recomendaciones de Innovación\n1. **Edge AI / Analítica Predictiva:** Integra inferencia en tiempo real en lugar de procesamiento estático.\n2. **Arquitectura Serverless / Supabase:** Emplea microservicios con WebSockets y eventos en tiempo real.\n3. **Caso de uso industrial específico:** Adapta la validación a una empresa o sector productivo concreto de Maipú.\n\n## 💪 Próximo Paso\nRevisa la ficha técnica del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
+    return `## 💡 Diagnóstico de tu Idea
+
+Tu idea tiene un **${maxScore}% de similitud** con un proyecto anterior en INACAP Sede Maipú:
+
+* **Proyecto más parecido:** *"${bestMatch.nombre}"* (${bestMatch.anio})
+
+## 🔍 ¿En qué se parece?
+Tu propuesta comparte el enfoque de **${bestMatch.stack.slice(0, 3).join(', ')}** y el tipo de solución que aborda.
+
+## 🚀 ¿Cómo puedes innovar y diferenciarte?
+Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
+1. **Agregar alertas automáticas:** Envío de notificaciones inmediatas al celular (por WhatsApp o Telegram) ante cualquier evento.
+2. **Usar predicción simple con IA:** En vez de solo medir variables, programa un modelo que anticipe fallas antes de que ocurran.
+3. **Aplicarlo a un caso real en Maipú:** Enfoca las pruebas directamente en un taller, empresa o comercio de la comuna.
+
+## 🎯 Tu próximo paso
+Revisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
   }
 
-  return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **SIN RIESGO (0-15%)**\n* **Propuesta evaluada:** "${txt.substring(0, 60)}${txt.length > 60 ? '...' : ''}"\n\n🎉 **¡Excelente potencial innovador!**\nNo se detectaron proyectos previos con alta similitud en el catálogo institucional de INACAP Sede Maipú.\n\n## 🚀 Recomendaciones Técnicas\n1. **Stack Tecnológico:** Considera tecnologías como FastAPI, Supabase, Next.js / React Native y modelos de IA para máxima escalabilidad.\n2. **Validación:** Define métricas claras de impacto y pruebas de concepto antes del anteproyecto de título.\n\n## 💪 Próximo Paso\nRedacta el alcance técnico y preséntalo con confianza a tu docente guía.`;
+  return `## 💡 Diagnóstico de tu Idea
+
+* **Nivel de coincidencia:** **0% (Idea Original)**
+* **Propuesta:** "${txt.substring(0, 60)}${txt.length > 60 ? '...' : ''}"
+
+🎉 **¡Excelente propuesta!** No se detectaron proyectos con alta similitud en el repositorio de INACAP Sede Maipú.
+
+## 🚀 ¿Cómo asegurar el éxito de tu proyecto?
+1. **Tecnologías modernas:** Usa herramientas fáciles y escalables como FastAPI, Supabase y React/Next.js.
+2. **Prototipo funcional:** Construye primero una prueba pequeña y medible.
+
+## 🎯 Tu próximo paso
+Empieza a redactar el alcance técnico y preséntalo con confianza a tu docente guía.`;
 }
 
 function addSimCard(p, pct, save = true) {
