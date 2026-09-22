@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>N.A.P.I – Repositorio Inteligente de Proyectos de Título · INACAP Sede Maipú</title>
+  <meta name="description" content="N.A.P.I: Repositorio inteligente de proyectos de título para INACAP Sede Maipú con asistente virtual de IA."/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind Config: Paleta exacta -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-slate':   '#F8FAFC',
+            'navy':       '#121826',
+            'navy-dark':  '#0F172A',
+            'red-brand':  '#ED1C24',
+            'blue-act':   '#00B5E2',
+            'cyan-el':    '#00B5E2',
+            'cyan-400':   '#00B5E2',
+            'cyan-300':   '#38BDF8',
+            'card-w':     '#FFFFFF',
+            'bdr':        '#E2E8F0'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="css/PillNav.css"/>
+</head>
+
+<body class="font-inter bg-[#F8FAFC] text-[#121826] antialiased">
+
+<!-- ═══════════════════════════════════════════════════════
+     MÓDULO 0 · LANDING PAGE (Pre-Login)
+═══════════════════════════════════════════════════════ -->
+<div id="landingScreen">
+
+  <!-- ── NAVBAR SUPERIOR BLANCO & ROJO INACAP ── -->
+  <nav id="landingNav" class="landing-nav sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+
+        <!-- Logo Oficial INACAP + N.A.P.I -->
+        <a href="#inicio" id="pillLogoLink" class="flex items-center gap-3 cursor-pointer select-none" onclick="scrollToSection('inicio')">
+          <div id="pillLogoIcon" class="flex items-center gap-2.5">
+            <!-- Emblema cuadrado rojo INACAP (fijo, sin movimiento) -->
+            <div class="w-9 h-9 rounded-xl bg-[#ED1C24] flex items-center justify-center p-1.5 shadow-md shadow-red-500/25">
+              <svg viewBox="0 0 24 24" fill="none" class="w-full h-full text-white">
+                <path fill="#FFFFFF" d="M3 3h18v18H3V3zm4 4v10h10V7H7zm2 2h6v6H9V9z"/>
+              </svg>
+            </div>
+            <div class="leading-none">
+              <div class="flex items-center gap-2">
+                <span class="text-xl font-black tracking-tight text-[#1E293B]">inacap</span>
+                <span class="h-4 w-[1.5px] bg-slate-300"></span>
+                <span class="text-sm font-black text-[#ED1C24] tracking-tight">N.A.P.I</span>
+              </div>
+              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sede Maipú</p>
+            </div>
+          </div>
+        </a>
+
+        <!-- PillNav Component (Blanco y Rojo INACAP con GSAP) -->
+        <div class="pill-nav-container desktop-only">
+          <nav class="pill-nav" aria-label="Navegación Principal">
+            <div class="pill-nav-items">
+              <ul class="pill-list" role="menubar">
+                <li role="none">
+                  <a role="menuitem" href="#inicio" onclick="scrollToSection('inicio')" class="pill is-active" aria-label="Inicio">
+                    <span class="hover-circle" aria-hidden="true"></span>
+                    <span class="label-stack">
+                      <span class="pill-label">Inicio</span>
+                      <span class="pill-label-hover" aria-hidden="true">Inicio</span>
+                    </span>
+                  </a>
+                </li>
+                <li role="none">
+                  <a role="menuitem" href="#sedes" onclick="scrollToSection('sedes')" class="pill" aria-label="Sedes">
+                    <span class="hover-circle" aria-hidden="true"></span>
+                    <span class="label-stack">
+                      <span class="pill-label">Sedes</span>
+                      <span class="pill-label-hover" aria-hidden="true">Sedes</span>
+                    </span>
+                  </a>
+                </li>
+                <li role="none">
+                  <a role="menuitem" href="#sobre-nosotros" onclick="scrollToSection('sobre-nosotros')" class="pill" aria-label="Sobre Nosotros">
+                    <span class="hover-circle" aria-hidden="true"></span>
+                    <span class="label-stack">
+                      <span class="pill-label">Sobre Nosotros</span>
+                      <span class="pill-label-hover" aria-hidden="true">Sobre Nosotros</span>
+                    </span>
+                  </a>
+                </li>
+                <li role="none">
+                  <a role="menuitem" href="#origen" onclick="scrollToSection('origen')" class="pill" aria-label="¿Cómo surgió?">
+                    <span class="hover-circle" aria-hidden="true"></span>
+                    <span class="label-stack">
+                      <span class="pill-label">¿Cómo surgió?</span>
+                      <span class="pill-label-hover" aria-hidden="true">¿Cómo surgió?</span>
+                    </span>
+                  </a>
+                </li>
+                <li role="none">
+                  <a role="menuitem" href="#napi" onclick="scrollToSection('napi')" class="pill" aria-label="Conoce a NAPI">
+                    <span class="hover-circle" aria-hidden="true"></span>
+                    <span class="label-stack">
+                      <span class="pill-label">Conoce a NAPI</span>
+                      <span class="pill-label-hover" aria-hidden="true">Conoce a NAPI</span>
+                    </span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+
+        <!-- CTA Buttons (Blanco y Rojo INACAP) -->
+        <div class="flex items-center gap-2.5">
+          <button id="btnOpenDocente" onclick="openLoginModal('docente')" class="btn-login-docente hidden sm:flex items-center gap-2">
+            <span class="text-base">🎓</span>
+            <span class="text-xs font-bold">Docente</span>
+          </button>
+          <button id="btnOpenEstudiante" onclick="openLoginModal('estudiante')" class="btn-login-student flex items-center gap-2">
+            <span class="text-base">📚</span>
+            <span class="text-xs font-bold">Estudiante</span>
+          </button>
+          <!-- Mobile menu button -->
+          <button onclick="toggleMobileMenu()" class="md:hidden ml-1 p-2 rounded-lg text-slate-600 hover:text-[#ED1C24] hover:bg-red-50 transition-colors" id="mobileMenuBtn">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile menu popover (PillNav style) -->
+      <div id="mobileMenu" class="mobile-menu-popover hidden md:hidden">
+        <ul class="mobile-menu-list">
+          <li>
+            <a href="#inicio" onclick="scrollToSection('inicio'); toggleMobileMenu()" class="mobile-menu-link is-active">Inicio</a>
+          </li>
+          <li>
+            <a href="#sedes" onclick="scrollToSection('sedes'); toggleMobileMenu()" class="mobile-menu-link">Nuestras Sedes</a>
+          </li>
+          <li>
+            <a href="#sobre-nosotros" onclick="scrollToSection('sobre-nosotros'); toggleMobileMenu()" class="mobile-menu-link">Sobre Nosotros</a>
+          </li>
+          <li>
+            <a href="#origen" onclick="scrollToSection('origen'); toggleMobileMenu()" class="mobile-menu-link">¿Cómo surgió la idea?</a>
+          </li>
+          <li>
+            <a href="#napi" onclick="scrollToSection('napi'); toggleMobileMenu()" class="mobile-menu-link">Conoce a NAPI</a>
+          </li>
+          <li class="pt-3 border-t border-slate-200 flex flex-col gap-2">
+            <button onclick="openLoginModal('docente')" class="btn-login-docente justify-center w-full">
+              <span class="text-base">🎓</span><span class="text-xs font-bold">Docente</span>
+            </button>
+            <button onclick="openLoginModal('estudiante')" class="btn-login-student justify-center w-full">
+              <span class="text-base">📚</span><span class="text-xs font-bold">Estudiante</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── SECCIÓN CARRUSEL HERO CON LAS 3 FOTOS REALES DE SEDES INACAP ── -->
+  <section id="inicio" class="relative overflow-hidden">
+    <div id="heroCarousel" class="relative h-[520px] md:h-[580px] lg:h-[640px]">
+
+      <!-- Slide 1 (Sede Maipú Campus Principal) -->
+      <div class="carousel-slide active" id="slide-0" style="background-image:url('assets/sede1.png')">
+        <div class="carousel-overlay"></div>
+        <div class="carousel-content">
+          <span class="carousel-badge">🏛️ INACAP Sede Maipú · Repositorio Oficial</span>
+          <h1 class="carousel-title">Repositorio Inteligente de <span class="text-[#ED1C24]">Proyectos de Título</span></h1>
+          <p class="carousel-subtitle">Centraliza, protege y explora el conocimiento académico de INACAP Sede Maipú con la potencia de la Inteligencia Artificial.</p>
+          <div class="flex flex-wrap gap-3.5 justify-center">
+            <button onclick="openLoginModal('estudiante')" class="btn-carousel-primary">Explorar Catálogo Alumnos →</button>
+            <button onclick="scrollToSection('sedes')" class="btn-carousel-secondary">Ver Sedes y Espacios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2 (Campus Tecnológico & Áreas Verdes) -->
+      <div class="carousel-slide" id="slide-1" style="background-image:url('assets/sede2.png')">
+        <div class="carousel-overlay"></div>
+        <div class="carousel-content">
+          <span class="carousel-badge">🎓 Excelencia Académica INACAP</span>
+          <h1 class="carousel-title">Formando Profesionales que <span class="text-[#ED1C24]">Transforman Chile</span></h1>
+          <p class="carousel-subtitle">Más de 7 carreras con proyectos de título indexados, disponibles para toda la comunidad académica de Sede Maipú.</p>
+          <div class="flex flex-wrap gap-3.5 justify-center">
+            <button onclick="openLoginModal('docente')" class="btn-carousel-primary">Acceso Docente →</button>
+            <button onclick="scrollToSection('napi')" class="btn-carousel-secondary">Conoce al Asistente NAPI</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 3 (Edificio de Innovación & Talleres) -->
+      <div class="carousel-slide" id="slide-2" style="background-image:url('assets/sede3.png')">
+        <div class="carousel-overlay"></div>
+        <div class="carousel-content">
+          <span class="carousel-badge">🤖 Inteligencia Artificial Educativa</span>
+          <h1 class="carousel-title">Conoce a <span class="text-[#ED1C24]">NAPI</span>: Tu Asistente de Tesis</h1>
+          <p class="carousel-subtitle">Analiza similitudes en tiempo real, sugiere innovaciones tecnológicas y guía tu proyecto de título hacia la excelencia.</p>
+          <div class="flex flex-wrap gap-3.5 justify-center">
+            <button onclick="scrollToSection('napi')" class="btn-carousel-primary">Descubrir NAPI IA →</button>
+            <button onclick="openLoginModal('estudiante')" class="btn-carousel-secondary">Comenzar Ahora</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles Flechas -->
+      <button onclick="prevSlide()" class="carousel-arrow left-4 md:left-8" aria-label="Anterior">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <button onclick="nextSlide()" class="carousel-arrow right-4 md:right-8" aria-label="Siguiente">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+      </button>
+
+      <!-- Dots -->
+      <div class="carousel-dots">
+        <button class="carousel-dot active" onclick="goToSlide(0)" aria-label="Slide 1"></button>
+        <button class="carousel-dot" onclick="goToSlide(1)" aria-label="Slide 2"></button>
+        <button class="carousel-dot" onclick="goToSlide(2)" aria-label="Slide 3"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECCIÓN: LAS 3 SEDES INACAP (AJUSTADAS IGUALES Y MODERNAS) ── -->
+  <section id="sedes" class="py-16 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="badge-red inline-block mb-3">Infraestructura & Campus</span>
+        <h2 class="text-3xl md:text-4xl font-black text-[#1E293B] tracking-tight">Nuestras Sedes y <span class="text-[#ED1C24]">Espacios Académicos</span></h2>
+        <p class="text-slate-600 text-sm mt-3 leading-relaxed">Instalaciones de vanguardia donde estudiantes y docentes desarrollan proyectos tecnológicos de impacto nacional.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Foto Sede 1 -->
+        <div class="sede-photo-card group">
+          <div class="overflow-hidden relative">
+            <img src="assets/sede1.png" alt="INACAP Sede Maipú Campus Principal" class="sede-photo-img" />
+            <div class="absolute top-3 left-3 bg-[#ED1C24] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+              Sede Maipú
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="font-black text-slate-800 text-base mb-1.5 group-hover:text-[#ED1C24] transition-colors">Campus Principal Maipú</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">Av. Américo Vespucio Norte 1150. Edificio central donde convergen las carreras de ingeniería, tecnología y administración.</p>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400">
+              <span>📍 Región Metropolitana</span>
+              <span class="text-[#ED1C24] group-hover:translate-x-1 transition-transform">Ver Campus →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto Sede 2 -->
+        <div class="sede-photo-card group">
+          <div class="overflow-hidden relative">
+            <img src="assets/sede2.png" alt="Campus Tecnológico INACAP" class="sede-photo-img" />
+            <div class="absolute top-3 left-3 bg-[#1E293B] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+              Laboratorios
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="font-black text-slate-800 text-base mb-1.5 group-hover:text-[#ED1C24] transition-colors">Campus Tecnológico & Innovación</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">Aulas avanzadas, laboratorios de desarrollo y entornos preparados para la validación práctica de proyectos de titulación.</p>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400">
+              <span>🔬 Innovación Aplicada</span>
+              <span class="text-[#ED1C24] group-hover:translate-x-1 transition-transform">Ver Campus →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto Sede 3 -->
+        <div class="sede-photo-card group">
+          <div class="overflow-hidden relative">
+            <img src="assets/sede3.png" alt="Edificio de Ingeniería y Transferencia" class="sede-photo-img" />
+            <div class="absolute top-3 left-3 bg-[#ED1C24] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+              Edificio Central
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="font-black text-slate-800 text-base mb-1.5 group-hover:text-[#ED1C24] transition-colors">Centro de Transferencia & Talleres</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">Espacios de co-diseño, asesorías docentes y vinculación con la industria para llevar las tesis a prototipos reales.</p>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400">
+              <span>⚡ Desarrollo Full-Stack</span>
+              <span class="text-[#ED1C24] group-hover:translate-x-1 transition-transform">Ver Campus →</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECCIÓN STATS RÁPIDAS (ROJO INACAP) ── -->
+  <section class="py-10 stats-strip">
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div class="stat-item">
+        <span class="stat-number">12+</span>
+        <span class="stat-label">Proyectos Indexados</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">7</span>
+        <span class="stat-label">Carreras Sede Maipú</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">184</span>
+        <span class="stat-label">Consultas a NAPI IA</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">100%</span>
+        <span class="stat-label">Conocimiento Institucional</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECCIÓN SOBRE NOSOTROS (BLANCO Y ROJO INACAP) ── -->
+  <section id="sobre-nosotros" class="py-20 bg-[#F4F6F9]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+      <!-- Header sección -->
+      <div class="text-center mb-14">
+        <span class="badge-red inline-block mb-3">Repositorio Institucional</span>
+        <h2 class="text-3xl md:text-4xl font-black text-[#1E293B] tracking-tight">¿Qué es <span class="text-[#ED1C24]">N.A.P.I</span>?</h2>
+        <p class="text-slate-600 mt-3 max-w-2xl mx-auto text-sm leading-relaxed">Una plataforma digital de gestión y preservación del conocimiento académico, diseñada exclusivamente para INACAP Sede Maipú.</p>
+      </div>
+
+      <!-- Cards de propósito (Inspiradas en Portal INACAP) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14">
+
+        <div class="feature-box group">
+          <div class="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-[#ED1C24] group-hover:bg-[#ED1C24] group-hover:text-white transition-all shadow-sm">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+          </div>
+          <h3 class="text-base font-black text-[#1E293B] mt-5 mb-2 group-hover:text-[#ED1C24] transition-colors">Repositorio Centralizado</h3>
+          <p class="text-slate-600 text-xs leading-relaxed">Almacena y organiza todos los proyectos de título aprobados en Sede Maipú, con acceso diferenciado por rol: docente o estudiante.</p>
+        </div>
+
+        <div class="feature-box group">
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-[#ED1C24] group-hover:bg-[#ED1C24] group-hover:text-white transition-all shadow-sm">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3 class="text-base font-black text-[#1E293B] mt-5 mb-2 group-hover:text-[#ED1C24] transition-colors">Control de Similitudes</h3>
+          <p class="text-slate-600 text-xs leading-relaxed">Previene la duplicación de ideas y fomenta la innovación real, gracias al análisis inteligente de similitudes impulsado por NAPI IA.</p>
+        </div>
+
+        <div class="feature-box group">
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 group-hover:bg-[#ED1C24] group-hover:text-white transition-all shadow-sm">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <h3 class="text-base font-black text-[#1E293B] mt-5 mb-2 group-hover:text-[#ED1C24] transition-colors">Legado Académico</h3>
+          <p class="text-slate-600 text-xs leading-relaxed">Preserva el conocimiento generado por cada generación de estudiantes, construyendo una biblioteca viva del saber tecnológico de Maipú.</p>
+        </div>
+
+      </div>
+
+      <!-- Bloque descriptivo extendido -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div>
+          <h3 class="text-2xl font-black text-[#1E293B] mb-4">Una plataforma construida <span class="text-[#ED1C24]">para la comunidad</span></h3>
+          <p class="text-slate-600 text-sm leading-relaxed mb-4">N.A.P.I nació como respuesta a una necesidad real: <strong>el conocimiento generado por los estudiantes de INACAP Sede Maipú no tenía un hogar digital</strong>. Cada año, decenas de proyectos de título de alta calidad quedaban dispersos en archivos físicos o correos institucionales, perdiendo su valor como legado académico.</p>
+          <p class="text-slate-600 text-sm leading-relaxed">Con N.A.P.I, docentes y alumnos ahora tienen una herramienta institucional moderna: los docentes pueden gestionar el repositorio completo, mientras que los estudiantes pueden explorar proyectos aprobados para inspirarse e innovar con la guía de NAPI.</p>
+        </div>
+        <div class="space-y-3.5">
+          <div class="feature-mini-card flex items-center gap-4 text-left p-4">
+            <div class="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+              <span class="text-2xl">📊</span>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-[#1E293B]">Métricas en Tiempo Real</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">KPIs, estadísticas y reportes académicos de Sede Maipú.</p>
+            </div>
+          </div>
+          <div class="feature-mini-card flex items-center gap-4 text-left p-4">
+            <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
+              <span class="text-2xl">🔍</span>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-[#1E293B]">Búsqueda Avanzada</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Filtros dinámicos por carrera, año y tecnologías aplicadas.</p>
+            </div>
+          </div>
+          <div class="feature-mini-card flex items-center gap-4 text-left p-4">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+              <span class="text-2xl">📄</span>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-[#1E293B]">Gestión Documental</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Indexación de fichas técnicas y resúmenes ejecutivos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECCIÓN ORIGEN DE LA IDEA (INACAP BLANCO Y ROJO) ── -->
+  <section id="origen" class="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14">
+        <span class="badge-red inline-block mb-3">Historia del Proyecto</span>
+        <h2 class="text-3xl md:text-4xl font-black text-[#1E293B] tracking-tight">¿Cómo surgió la <span class="text-[#ED1C24]">idea</span>?</h2>
+        <p class="text-slate-600 mt-3 max-w-2xl mx-auto text-sm leading-relaxed">Detrás de N.A.P.I hay una historia de observación, necesidad real y vocación por la excelencia académica en INACAP.</p>
+      </div>
+
+      <!-- Timeline de origen -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="card p-7 hover:border-[#ED1C24] transition-all">
+          <div class="w-10 h-10 rounded-xl bg-red-50 text-[#ED1C24] font-black text-sm flex items-center justify-center mb-4 border border-red-100">01</div>
+          <h3 class="text-base font-bold text-[#1E293B] mb-2">El Problema Detectado</h3>
+          <p class="text-slate-600 text-xs leading-relaxed">Al revisar años de proyectos de título en INACAP Sede Maipú, se identificó que muchos alumnos repetían temáticas similares sin saberlo, y que los trabajos previos no eran accesibles ni reutilizables para inspirar nuevas generaciones.</p>
+        </div>
+
+        <div class="card p-7 hover:border-[#ED1C24] transition-all">
+          <div class="w-10 h-10 rounded-xl bg-red-50 text-[#ED1C24] font-black text-sm flex items-center justify-center mb-4 border border-red-100">02</div>
+          <h3 class="text-base font-bold text-[#1E293B] mb-2">La Visión Tecnológica</h3>
+          <p class="text-slate-600 text-xs leading-relaxed">La idea fue crear una plataforma web institucional que no solo almacenara proyectos, sino que incorporara Inteligencia Artificial para analizar similitudes, guiar a los alumnos y convertirse en una herramienta de innovación académica real.</p>
+        </div>
+
+        <div class="card p-7 hover:border-[#ED1C24] transition-all">
+          <div class="w-10 h-10 rounded-xl bg-red-50 text-[#ED1C24] font-black text-sm flex items-center justify-center mb-4 border border-red-100">03</div>
+          <h3 class="text-base font-bold text-[#1E293B] mb-2">El Proyecto de Título</h3>
+          <p class="text-slate-600 text-xs leading-relaxed">N.A.P.I se desarrolló como proyecto de titulación en Ingeniería en Computación e Informática de INACAP Sede Maipú, combinando desarrollo full-stack, diseño UX/UI y la implementación del asistente virtual con RAG.</p>
+        </div>
+
+      </div>
+
+      <!-- Mensaje Central -->
+      <div class="mt-12 text-center">
+        <div class="inline-block p-8 rounded-2xl border border-red-100 bg-[#FFF1F2] max-w-2xl">
+          <p class="text-[#1E293B] text-sm leading-relaxed italic mb-3 font-medium">"Un repositorio que no solo guarda proyectos, sino que aprende de ellos para hacer mejores a los que vienen después."</p>
+          <p class="text-[#ED1C24] text-xs font-bold uppercase tracking-widest">— Equipo de Desarrollo N.A.P.I · INACAP Sede Maipú 2026</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECCIÓN NAPI (ASISTENTE VIRTUAL) ── -->
+  <section id="napi" class="py-20 bg-[#F4F6F9]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+        <!-- Contenido izquierdo -->
+        <div>
+          <span class="badge-red inline-block mb-4">Asistente Virtual con IA</span>
+          <h2 class="text-3xl md:text-4xl font-black text-[#1E293B] tracking-tight mb-4">Conoce a <span class="text-[#ED1C24]">NAPI</span></h2>
+          <p class="text-slate-700 text-sm leading-relaxed mb-4"><strong class="text-[#1E293B]">NAPI (Neural Academic Project Intelligence)</strong> es el asistente virtual integrado, diseñado específicamente para la comunidad académica de INACAP Sede Maipú.</p>
+          <p class="text-slate-600 text-sm leading-relaxed mb-6">Fue entrenado y configurado para comprender el contexto académico de las carreras técnicas y de ingeniería, siendo capaz de analizar la originalidad de las propuestas de tesis, detectar similitudes con proyectos ya archivados y sugerir enfoques tecnológicos innovadores.</p>
+
+          <div class="space-y-3 mb-8">
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-3 shadow-sm">
+              <span class="text-xl">🔍</span>
+              <div>
+                <p class="text-xs font-bold text-[#1E293B]">Análisis de Similitudes</p>
+                <p class="text-[11px] text-slate-500">Detecta coincidencias entre tu propuesta y proyectos previos del repositorio.</p>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-3 shadow-sm">
+              <span class="text-xl">💡</span>
+              <div>
+                <p class="text-xs font-bold text-[#1E293B]">Guía de Innovación</p>
+                <p class="text-[11px] text-slate-500">Sugiere tecnologías y enfoques para diferenciar y potenciar tu proyecto.</p>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-3 shadow-sm">
+              <span class="text-xl">🤝</span>
+              <div>
+                <p class="text-xs font-bold text-[#1E293B]">Asistencia Personalizada</p>
+                <p class="text-[11px] text-slate-500">Responde preguntas sobre el proceso de titulación con contexto académico INACAP.</p>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="openLoginModal('estudiante')" class="btn-carousel-primary flex items-center gap-2">
+            🤖 Hablar con NAPI
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Card visual NAPI -->
+        <div class="relative">
+          <div class="napi-showcase-box">
+            <!-- Header del chat demo -->
+            <div class="napi-showcase-header">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-[#ED1C24] flex items-center justify-center text-xl font-bold shadow-md text-white">
+                  🤖
+                </div>
+                <div>
+                  <p class="text-white font-black text-sm">NAPI <span class="badge-admin text-[9px] ml-1 bg-[#ED1C24] text-white border-none">IA</span></p>
+                  <p class="text-slate-300 text-[10px] font-semibold">En línea · Asistente INACAP Sede Maipú</p>
+                </div>
+              </div>
+              <div class="flex gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#ED1C24]"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              </div>
+            </div>
+            <!-- Mensajes demo -->
+            <div class="p-5 space-y-3 bg-slate-50 flex-1">
+              <div class="bubble-napi p-3 text-xs leading-relaxed max-w-[85%]">
+                👋 ¡Hola! Soy NAPI. Cuéntame tu idea de proyecto y analizaré qué tan original es frente al repositorio de Sede Maipú.
+              </div>
+              <div class="bubble-user p-3 text-xs leading-relaxed max-w-[85%] ml-auto">
+                Quiero desarrollar un sistema IoT para monitoreo de energía en laboratorios.
+              </div>
+              <div class="bubble-napi p-3 text-xs leading-relaxed max-w-[85%]">
+                <span class="text-[#ED1C24] font-bold">✅ Análisis completado.</span> Tu propuesta tiene un <strong>23% de similitud</strong> con proyectos previos. Te sugiero diferenciarte usando <strong>Edge Computing + ML</strong> para análisis predictivo de fallas. ¿Quieres que profundice?
+              </div>
+            </div>
+            <!-- Input demo -->
+            <div class="p-3 bg-white border-t border-slate-200 flex gap-2 items-center">
+              <input type="text" placeholder="Escribe tu idea aquí..." class="flex-1 input-field px-3 py-2 rounded-xl text-xs" readonly/>
+              <button class="p-2 rounded-xl bg-[#ED1C24] text-white hover:bg-[#C41219] transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── FOOTER INSTITUCIONAL INACAP (DENTRO DE LANDING SCREEN) ── -->
+  <footer class="footer-inacap">
+
+    <!-- Footer principal -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+
+        <!-- Columna Logo y descripción -->
+        <div class="lg:col-span-2">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-xl bg-[#ED1C24] flex items-center justify-center p-1.5 shadow-md">
+              <svg viewBox="0 0 24 24" fill="none" class="w-full h-full text-white">
+                <path fill="#FFFFFF" d="M3 3h18v18H3V3zm4 4v10h10V7H7zm2 2h6v6H9V9z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xl font-black text-white tracking-tight">inacap</span>
+                <span class="h-4 w-[1.5px] bg-slate-600"></span>
+                <span class="text-sm font-black text-[#ED1C24]">N.A.P.I</span>
+              </div>
+              <p class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest mt-0.5">INACAP Sede Maipú</p>
+            </div>
+          </div>
+          <p class="text-slate-400 text-xs leading-relaxed max-w-md">Repositorio Inteligente de Proyectos de Título de INACAP Sede Maipú. Preservamos el conocimiento académico y potenciamos la innovación tecnológica con Inteligencia Artificial.</p>
+        </div>
+
+        <!-- Navegación Rápida -->
+        <div>
+          <h4 class="text-white font-bold text-xs uppercase tracking-widest mb-4">Navegación</h4>
+          <ul class="space-y-2.5">
+            <li><a href="#inicio" onclick="scrollToSection('inicio')" class="footer-link">Inicio</a></li>
+            <li><a href="#sedes" onclick="scrollToSection('sedes')" class="footer-link">Nuestras Sedes</a></li>
+            <li><a href="#sobre-nosotros" onclick="scrollToSection('sobre-nosotros')" class="footer-link">Sobre Nosotros</a></li>
+            <li><a href="#origen" onclick="scrollToSection('origen')" class="footer-link">¿Cómo surgió la idea?</a></li>
+            <li><a href="#napi" onclick="scrollToSection('napi')" class="footer-link">Conoce a NAPI</a></li>
+          </ul>
+        </div>
+
+        <!-- Contacto e Institución -->
+        <div>
+          <h4 class="text-white font-bold text-xs uppercase tracking-widest mb-4">Contacto Institucional</h4>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#ED1C24] mt-0.5">📍</span>
+              <span class="text-slate-400 text-xs leading-relaxed">Av. Américo Vespucio Norte 1150, Maipú, Región Metropolitana, Chile</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <span class="text-[#ED1C24]">📞</span>
+              <span class="text-slate-400 text-xs">+56 2 2418 6000</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <span class="text-[#ED1C24]">🌐</span>
+              <a href="https://www.inacap.cl" target="_blank" class="text-slate-400 text-xs hover:text-[#ED1C24] transition-colors">www.inacap.cl</a>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <span class="text-[#ED1C24]">✉️</span>
+              <span class="text-slate-400 text-xs">contacto.maipu@inacap.cl</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer bottom -->
+    <div class="border-t border-slate-800 px-4 sm:px-6 py-4">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p class="text-slate-500 text-[11px] text-center sm:text-left">© 2026 INACAP Sede Maipú · N.A.P.I. Todos los derechos reservados.</p>
+        <p class="text-slate-600 text-[11px]">Desarrollado como Proyecto de Título · Ingeniería en Computación e Informática</p>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /landingScreen (CORRECTAMENTE CERRADO TRAS EL FOOTER) -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL LOGIN DOCENTE / ADMIN
+═══════════════════════════════════════════════════════ -->
+<div id="modalDocente" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+  <div class="w-full max-w-md login-card rounded-2xl p-8 relative anim-fade">
+    <button onclick="closeLoginModal('docente')" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors text-sm font-bold">✕</button>
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 bg-[#121826] border border-[#ED1C24]/40 shadow-xl">
+        <span class="text-2xl">🎓</span>
+      </div>
+      <h2 class="text-xl font-black text-slate-800">Acceso <span class="text-[#ED1C24]">Docente</span> / Admin</h2>
+      <p class="text-slate-500 text-xs mt-1">Ingresa con tus credenciales institucionales INACAP.</p>
+    </div>
+    <!-- Reutiliza el form de login -->
+    <div id="loginError-d" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+      <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+      <span id="loginErrMsg-d"></span>
+    </div>
+    <div class="mb-4">
+      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
+      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+      <input id="dEmail" type="email" value="docente.maipu@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/></div>
+    </div>
+    <div class="mb-6">
+      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
+      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      <input id="dPass" type="password" value="1234" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')doModalLogin('docente')"/></div>
+    </div>
+    <button onclick="doModalLogin('docente')" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] active:scale-95 transition-all shadow-md shadow-red-500/20">Ingresar como Docente / Admin</button>
+    <button onclick="doModalLogin('docente', true)" class="mt-3 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors">⚡ Demo Rápida Docente</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL LOGIN ESTUDIANTE
+═══════════════════════════════════════════════════════ -->
+<div id="modalEstudiante" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+  <div class="w-full max-w-md login-card rounded-2xl p-8 relative anim-fade">
+    <button onclick="closeLoginModal('estudiante')" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors text-sm font-bold">✕</button>
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 bg-[#ED1C24]/10 border border-[#ED1C24]/30 shadow-md">
+        <span class="text-2xl">📚</span>
+      </div>
+      <h2 class="text-xl font-black text-slate-800">Acceso <span class="text-[#ED1C24]">Estudiante</span></h2>
+      <p class="text-slate-500 text-xs mt-1">Ingresa con tu cuenta de alumno INACAP Sede Maipú.</p>
+    </div>
+    <div id="loginError-e" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+      <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+      <span id="loginErrMsg-e"></span>
+    </div>
+    <div class="mb-4">
+      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
+      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+      <input id="eEmail" type="email" value="alumno.maipu@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/></div>
+    </div>
+    <div class="mb-6">
+      <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
+      <div class="relative"><svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      <input id="ePass" type="password" value="1234" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')doModalLogin('estudiante')"/></div>
+    </div>
+    <button onclick="doModalLogin('estudiante')" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] active:scale-95 transition-all shadow-md shadow-red-500/20">Ingresar como Estudiante</button>
+    <button onclick="doModalLogin('estudiante', true)" class="mt-3 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors">⚡ Demo Rápida Estudiante</button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MÓDULO 1 · LOGIN & AUTENTICACIÓN (LEGACY - oculto)
+═══════════════════════════════════════════════════════ -->
+<div id="loginScreen" class="login-bg flex items-center justify-center px-4 py-12 min-h-screen">
+  <div class="w-full max-w-md anim-fade">
+
+    <!-- Logo N.A.P.I -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3 bg-[#121826] border border-[#00B5E2]/40 shadow-xl">
+        <svg class="w-9 h-9 text-[#00B5E2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-black text-white tracking-tight">N.A.P.<span class="text-[#00B5E2]">I</span></h1>
+      <p class="text-[#00B5E2] text-xs mt-1 font-semibold uppercase tracking-widest">Repositorio Inteligente · INACAP Sede Maipú</p>
+    </div>
+
+    <!-- Tarjeta Login -->
+    <div class="login-card rounded-2xl p-8">
+      <h2 class="text-lg font-bold text-slate-800 mb-1">Iniciar Sesión Institucional</h2>
+      <p class="text-slate-500 text-xs mb-6">Accede según tu perfil académico INACAP.</p>
+
+      <!-- Error Banner -->
+      <div id="loginError" class="hidden mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-11.707a1 1 0 00-1.414 0L10 7.586 8.707 6.293a1 1 0 00-1.414 1.414L8.586 9l-1.293 1.293a1 1 0 001.414 1.414L10 10.414l1.293 1.293a1 1 0 001.414-1.414L11.414 9l1.293-1.293a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+        <span id="loginErrMsg"></span>
+      </div>
+
+      <!-- Selector de Rol -->
+      <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Selecciona tu Rol</label>
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div id="roleDocente" class="role-pill active rounded-xl py-3 px-2 text-center select-none" onclick="selectRole('docente')">
+          <span class="block text-lg mb-0.5">🎓</span>
+          <span class="text-xs font-semibold">Docente / Admin</span>
+        </div>
+        <div id="roleEstudiante" class="role-pill rounded-xl py-3 px-2 text-center select-none" onclick="selectRole('estudiante')">
+          <span class="block text-lg mb-0.5">📚</span>
+          <span class="text-xs font-semibold">Estudiante</span>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-4">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Correo Institucional</label>
+        <div class="relative">
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+          <input id="loginEmail" type="email" value="docente.maipu@inacap.cl" placeholder="usuario@inacap.cl" class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/>
+        </div>
+      </div>
+
+      <!-- Contraseña -->
+      <div class="mb-6">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Contraseña</label>
+        <div class="relative">
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <input id="loginPass" type="password" value="1234" placeholder="••••••••" class="input-field w-full pl-10 pr-10 py-2.5 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')handleLogin()"/>
+          <button onclick="togglePass()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Botón Ingresar -->
+      <button onclick="handleLogin()" class="w-full py-3 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#00B5E2] hover:bg-[#0099C2] active:scale-95 transition-all relative overflow-hidden shadow-md shadow-cyan-500/20">
+        <span id="loginBtnTxt">Ingresar a la Plataforma</span>
+        <div id="loginSpinner" class="hidden absolute inset-0 flex items-center justify-center bg-[#0099C2]">
+          <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </button>
+
+      <!-- Demo Rápida -->
+      <div class="mt-6 pt-5 border-t border-slate-200">
+        <p class="text-center text-slate-500 text-[11px] font-medium mb-2.5">Acceso rápido de demostración:</p>
+        <div class="flex gap-2">
+          <button onclick="demoLogin('docente')" class="flex-1 py-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold hover:bg-red-50 hover:text-[#ED1C24] hover:border-red-200 transition-colors">⚡ Demo Docente</button>
+          <button onclick="demoLogin('estudiante')" class="flex-1 py-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold hover:bg-cyan-50 hover:text-[#00B5E2] hover:border-cyan-200 transition-colors">⚡ Demo Estudiante</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-center text-slate-400 text-[11px] mt-6 font-medium">© 2026 INACAP Sede Maipú · N.A.P.I v2.0</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MÓDULO 2 · PANEL DOCENTE / ADMINISTRADOR
+═══════════════════════════════════════════════════════ -->
+<div id="adminScreen" class="hidden min-h-screen flex bg-[#F8FAFC]">
+
+  <!-- Sidebar INACAP Blanco y Rojo -->
+  <aside id="adminSidebar" class="w-64 sidebar-white flex-shrink-0 flex flex-col min-h-screen">
+    <div class="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-[#ED1C24] flex items-center justify-center p-1.5 shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full text-white">
+          <path fill="#FFFFFF" d="M3 3h18v18H3V3zm4 4v10h10V7H7zm2 2h6v6H9V9z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-lg font-black text-slate-900 tracking-tight">inacap</span>
+          <span class="text-xs font-black text-[#ED1C24]">N.A.P.I</span>
+        </div>
+        <p class="text-[#ED1C24] text-[9px] font-bold uppercase tracking-widest mt-0.5">Docente / Admin · Maipú</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+      <button onclick="adminTab('dashboard')" id="nav-dashboard" class="nav-link active w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📊 Dashboard General</button>
+      <button onclick="adminTab('upload')"    id="nav-upload"    class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📤 Cargar Proyecto</button>
+      <button onclick="adminTab('manage')"    id="nav-manage"    class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📁 Gestionar Repositorio</button>
+      <button onclick="adminTab('reports')"   id="nav-reports"   class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-xs text-left">📈 Métricas e Informes</button>
+    </nav>
+
+    <!-- Perfil Docente -->
+    <div class="px-4 py-4 border-t border-slate-200">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#ED1C24] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">MR</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-slate-800 text-xs font-bold truncate">Prof. Marcela Rojas</p>
+          <span class="badge-admin">Administrador</span>
+        </div>
+        <button onclick="logout()" class="text-slate-400 hover:text-red-600 transition-colors" title="Cerrar sesión">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Área de Contenido -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Header Portal Blanco INACAP -->
+    <header class="header-portal px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+      <div>
+        <h1 id="adminTitle" class="text-slate-900 font-black text-base">Dashboard General</h1>
+        <p class="text-slate-500 text-xs">N.A.P.I · Gestión Académica INACAP Sede Maipú</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="badge-admin flex items-center gap-1.5 px-3 py-1">
+          <span class="w-2 h-2 rounded-full bg-[#ED1C24] animate-pulse"></span>
+          Rol: Administrador Docente
+        </span>
+        <button onclick="logout()" class="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 hover:border-red-500 text-slate-700 text-xs font-bold hover:text-red-600 transition-colors">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <main class="flex-1 p-6 overflow-y-auto">
+
+      <!-- ── TAB DASHBOARD ── -->
+      <div id="tab-dashboard" class="space-y-6">
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="kpi-card p-5 border-l-[#ED1C24]">
+            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Proyectos Archivados</p>
+            <h3 id="kpiTotal" class="text-2xl font-black text-slate-800 mt-1">12</h3>
+            <p class="text-[#ED1C24] text-[11px] font-medium mt-1">↑ Activos en Sede Maipú</p>
+          </div>
+          <div class="kpi-card p-5 border-l-[#00B5E2]">
+            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Carreras Representadas</p>
+            <h3 class="text-2xl font-black text-[#00B5E2] mt-1">7</h3>
+            <p class="text-slate-500 text-[11px] font-medium mt-1">Informática, Mecánica, etc.</p>
+          </div>
+          <div class="kpi-card p-5 border-l-slate-400">
+            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Solicitudes Pendientes</p>
+            <h3 class="text-2xl font-black text-slate-800 mt-1">3</h3>
+            <p class="text-[#ED1C24] text-[11px] font-medium mt-1">Revisiones académicas</p>
+          </div>
+          <div class="kpi-card p-5 border-l-[#00B5E2]">
+            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Consultas NAPI IA</p>
+            <h3 class="text-2xl font-black text-[#00B5E2] mt-1">184</h3>
+            <p class="text-[#00B5E2] text-[11px] font-medium mt-1">Validaciones este mes</p>
+          </div>
+        </div>
+
+        <!-- Carrera Chart + Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 card p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">🎓 Proyectos por Carrera — Sede Maipú</h3>
+            <div id="carreraChart" class="space-y-4"></div>
+          </div>
+          <div class="card p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">⚡ Actividad Reciente</h3>
+            <div id="recentActivity" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <!-- Solicitudes de Revisión -->
+        <div class="card p-6">
+          <h3 class="text-sm font-bold text-slate-800 mb-4">📋 Solicitudes de Autorización de Acceso</h3>
+          <div id="reviewList" class="space-y-3"></div>
+        </div>
+
+      </div><!-- /tab-dashboard -->
+
+
+      <!-- ── TAB CARGA DE PROYECTO ── -->
+      <div id="tab-upload" class="hidden space-y-6 max-w-3xl mx-auto">
+        <div class="card p-8">
+          <h2 class="text-lg font-bold text-slate-800 mb-1">Registrar Nuevo Proyecto de Título</h2>
+          <p class="text-xs text-slate-500 mb-6">Completa la ficha técnica para indexar el proyecto en N.A.P.I.</p>
+
+          <div id="uploadSuccess" class="hidden mb-6 p-4 rounded-xl bg-cyan-50 border border-cyan-200 text-[#00B5E2] text-xs font-semibold flex items-center gap-3">
+            <span class="text-lg">✅</span> Proyecto ingresado correctamente en el repositorio N.A.P.I.
+          </div>
+
+          <div class="space-y-5">
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nombre del Proyecto *</label>
+              <input id="fNombre" type="text" placeholder="Ej: Sistema IoT de Monitoreo Energético para Planta Maipú" class="input-field w-full px-4 py-2.5 rounded-xl text-xs"/>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Carrera (Sede Maipú) *</label>
+                <select id="fCarrera" class="input-field w-full px-4 py-2.5 rounded-xl text-xs">
+                  <option value="Informática / Ing. en Computación">Informática / Ing. en Computación</option>
+                  <option value="Mecánica Automotriz e Industrial">Mecánica Automotriz e Industrial</option>
+                  <option value="Electricidad y Electrónica">Electricidad y Electrónica</option>
+                  <option value="Administración de Empresas">Administración de Empresas</option>
+                  <option value="Comercio Internacional">Comercio Internacional</option>
+                  <option value="Edificación y Construcción">Edificación y Construcción</option>
+                  <option value="Minería y Metalurgia">Minería y Metalurgia</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Año *</label>
+                <select id="fAnio" class="input-field w-full px-4 py-2.5 rounded-xl text-xs">
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Autores / Estudiantes *</label>
+              <input id="fAutores" type="text" placeholder="Ej: Diego Álvarez, Valentina Cruz" class="input-field w-full px-4 py-2.5 rounded-xl text-xs"/>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Descripción / Resumen Detallado *</label>
+              <textarea id="fDesc" rows="4" placeholder="Describe objetivos, problemática, solución y resultados..." class="input-field w-full px-4 py-2.5 rounded-xl text-xs leading-relaxed"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Stack / Tecnologías (separadas por coma)</label>
+              <input id="fStack" type="text" placeholder="ESP32, MQTT, Node.js, React, MongoDB" class="input-field w-full px-4 py-2.5 rounded-xl text-xs mb-2"/>
+              <div id="techTags" class="flex flex-wrap gap-1.5 min-h-[24px]"></div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Documento Adjunto (PDF Tesis)</label>
+              <div class="upload-zone p-6 text-center cursor-pointer" onclick="document.getElementById('pdfInput').click()">
+                <input id="pdfInput" type="file" accept=".pdf" class="hidden" onchange="handleFile(event)"/>
+                <div id="uploadDefault">
+                  <span class="text-3xl block mb-2">📄</span>
+                  <p class="text-xs font-bold text-slate-700">Haz clic para adjuntar el informe técnico PDF</p>
+                  <p class="text-[11px] text-slate-400 mt-1">PDF hasta 50MB (simulado)</p>
+                </div>
+                <div id="uploadSelected" class="hidden">
+                  <span class="text-3xl block mb-2 text-[#00B5E2]">✅</span>
+                  <p id="fileName" class="text-xs font-bold text-slate-800"></p>
+                  <p class="text-[11px] text-slate-400 mt-1">Documento cargado correctamente</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visibilidad Toggle -->
+            <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <div>
+                <p class="text-xs font-bold text-slate-800">Visibilidad en Catálogo</p>
+                <p id="visLabel" class="text-xs font-bold text-[#00B5E2] mt-0.5">Público (Visible para Estudiantes)</p>
+              </div>
+              <button type="button" id="visToggle" onclick="toggleVis()" class="w-12 h-6 rounded-full bg-[#00B5E2] relative transition-colors">
+                <div class="w-5 h-5 rounded-full bg-white absolute top-0.5 right-0.5 transition-transform"></div>
+              </button>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+              <button onclick="clearForm()" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors">Limpiar</button>
+              <button onclick="submitProject()" class="px-6 py-2.5 rounded-xl font-bold text-white text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-[#C41219] shadow-md shadow-red-500/20 transition-all">Guardar e Indexar Proyecto</button>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /tab-upload -->
+
+
+      <!-- ── TAB GESTOR DE PROYECTOS ── -->
+      <div id="tab-manage" class="hidden space-y-6">
+        <div class="card p-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-base font-bold text-slate-800">Gestor del Repositorio de Proyectos</h2>
+              <p class="text-xs text-slate-500">Mostrando <span id="showCount" class="text-cyan-700 font-bold">12</span> de <span id="totalCount" class="text-cyan-700 font-bold">12</span> proyectos</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <input id="manageSearch" oninput="filterTable()" type="text" placeholder="Buscar por título o autor..." class="input-field px-4 py-2 rounded-xl text-xs w-60"/>
+              <select id="manageFilter" onchange="filterTable()" class="input-field px-3 py-2 rounded-xl text-xs">
+                <option value="">Todas las carreras</option>
+                <option value="Informática">Informática</option>
+                <option value="Mecánica">Mecánica</option>
+                <option value="Electricidad">Electricidad</option>
+                <option value="Administración">Administración</option>
+                <option value="Comercio">Comercio</option>
+                <option value="Edificación">Edificación</option>
+                <option value="Minería">Minería</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Proyecto & Stack</th>
+                  <th>Carrera</th>
+                  <th>Año</th>
+                  <th>Autores</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="projectBody"></tbody>
+            </table>
+            <div id="manageEmpty" class="hidden p-8 text-center text-slate-500 text-xs">No se encontraron proyectos con esos criterios.</div>
+          </div>
+        </div>
+      </div><!-- /tab-manage -->
+
+
+      <!-- ── TAB MÉTRICAS ── -->
+      <div id="tab-reports" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="card p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">Proyectos por Carrera</h3>
+            <div id="metCarrera" class="space-y-4"></div>
+          </div>
+          <div class="card p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">Top Tecnologías más Empleadas</h3>
+            <div id="metTech" class="space-y-3"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="card p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">Crecimiento de Tesis por Año</h3>
+            <div id="yearChart" class="flex items-end gap-6 h-40 pt-4"></div>
+          </div>
+          <div class="card p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">Resumen del Repositorio</h3>
+            <div id="sysSummary" class="space-y-2"></div>
+          </div>
+        </div>
+      </div><!-- /tab-reports -->
+
+    </main>
+  </div>
+</div><!-- /adminScreen -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MÓDULO 3 · PANEL ESTUDIANTE
+═══════════════════════════════════════════════════════ -->
+<div id="studentScreen" class="hidden min-h-screen flex bg-[#F4F6F9]">
+
+  <!-- INACAP Intranet Sidebar (White, matching Image 2) -->
+  <aside class="w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col min-h-screen hidden md:flex">
+    
+    <!-- Logo INACAP Oficial (Cuadro rojo + texto inacap) -->
+    <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-[#ED1C24] flex items-center justify-center p-1.5 shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full text-white">
+          <path fill="#FFFFFF" d="M3 3h18v18H3V3zm4 4v10h10V7H7zm2 2h6v6H9V9z"/>
+        </svg>
+      </div>
+      <div class="leading-none">
+        <span class="text-xl font-black text-slate-900 tracking-tight">inacap</span>
+        <p class="text-[9px] font-bold text-[#ED1C24] uppercase tracking-widest mt-0.5">Sede Maipú</p>
+      </div>
+    </div>
+
+    <!-- Menú Intranet con Íconos Pastel Circulares (Image 2) -->
+    <nav class="flex-1 px-4 py-5 space-y-2 overflow-y-auto">
+      <a href="#" class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-orange-50/80 border border-orange-200/80 text-orange-900 transition-colors text-xs font-bold">
+        <span class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs">⊞</span>
+        <span>Académico</span>
+      </a>
+    </nav>
+
+    <!-- Footer Sidebar con enlaces institucionales -->
+    <div class="px-5 py-4 border-t border-slate-100 space-y-2 text-xs font-medium text-slate-500">
+      <a href="https://inacapmail.cl" target="_blank" class="block hover:text-[#ED1C24] transition-colors">INACAPMail ↗</a>
+      <a href="#" class="block hover:text-[#ED1C24] transition-colors">Políticas y Reglamentos</a>
+    </div>
+  </aside>
+
+  <!-- Contenedor Principal Alumno -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+    <!-- Mobile Topbar for Student -->
+    <div class="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-[#ED1C24] flex items-center justify-center p-1">
+          <svg viewBox="0 0 24 24" fill="none" class="w-full h-full text-white"><path fill="#FFFFFF" d="M3 3h18v18H3V3zm4 4v10h10V7H7zm2 2h6v6H9V9z"/></svg>
+        </div>
+        <span class="text-base font-black text-slate-900">inacap</span>
+      </div>
+      <button onclick="logout()" class="px-3 py-1 text-xs font-bold text-slate-600 hover:text-red-600">Cerrar Sesión</button>
+    </div>
+
+    <main class="p-6 md:p-8 max-w-7xl mx-auto w-full">
+
+      <!-- Banner Superior de Usuario (Gradiente Borgoña a Slate - Image 2) -->
+      <div class="portal-user-banner px-5 md:px-7 py-4 rounded-2xl flex items-center justify-between gap-4 mb-8 shadow-sm">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <span class="text-white/80 font-bold text-lg cursor-pointer">⋮</span>
+          <div class="w-9 h-9 rounded-full border-2 border-white/80 flex items-center justify-center text-white text-base shrink-0">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xs sm:text-sm md:text-base font-black text-white uppercase tracking-wide truncate">FLAVIO ALBERTO ESCOBAR MENDOZA</h2>
+            <p class="text-[10px] text-white/80 font-semibold tracking-wider uppercase">ALUMNO INACAP · SEDE MAIPÚ</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="logout()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/25 flex items-center gap-1.5 shadow-sm">
+            <span class="hidden sm:inline">Cerrar Sesión</span>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Título de Sección "Académico" + Buscador y Filtros -->
+      <div class="mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div>
+            <h1 class="text-2xl font-black text-slate-800 tracking-tight">Académico</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Repositorio Institucional de Proyectos de Título · INACAP Sede Maipú</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm" id="studentCount">12 proyectos disponibles</span>
+          </div>
+        </div>
+
+        <!-- Filtros integrados en tarjeta blanca estilizada -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div class="md:col-span-6 relative">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="studentSearch" oninput="filterCards()" type="text" placeholder="Buscar proyecto por tema, tecnología, autor..." class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium"/>
+          </div>
+          <div class="md:col-span-3">
+            <select id="carFilter" onchange="filterCards()" class="input-field w-full px-3 py-2.5 rounded-xl text-xs font-medium">
+              <option value="">Todas las Carreras</option>
+              <option value="Informática">Informática / Ing. en Computación</option>
+              <option value="Mecánica">Mecánica Automotriz e Industrial</option>
+              <option value="Electricidad">Electricidad y Electrónica</option>
+              <option value="Administración">Administración de Empresas</option>
+              <option value="Comercio">Comercio Internacional</option>
+              <option value="Edificación">Edificación y Construcción</option>
+              <option value="Minería">Minería y Metalurgia</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <select id="anioFilter" onchange="filterCards()" class="input-field w-full px-3 py-2.5 rounded-xl text-xs font-medium">
+              <option value="">Todos los Años</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+            </select>
+          </div>
+          <div class="md:col-span-1">
+            <select id="sortFilter" onchange="filterCards()" class="input-field w-full px-2 py-2.5 rounded-xl text-xs font-medium">
+              <option value="newest">Año ↓</option>
+              <option value="oldest">Año ↑</option>
+              <option value="az">A-Z</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grilla de Tarjetas Pastel INACAP (Image 2) -->
+      <div id="studentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+      <div id="studentEmpty" class="hidden p-12 text-center bg-white rounded-2xl border border-slate-200">
+        <span class="text-4xl block mb-3">🔍</span>
+        <h3 class="text-sm font-bold text-slate-800">No se encontraron proyectos con esos criterios</h3>
+        <p class="text-xs text-slate-500 mt-1">Prueba con otras palabras clave o restablece los filtros.</p>
+      </div>
+
+    </main>
+
+    <footer class="p-5 border-t border-slate-200 text-center text-xs text-slate-400 bg-white mt-auto">
+      © 2026 INACAP Sede Maipú · Repositorio Institucional N.A.P.I · Todos los derechos reservados.
+    </footer>
+
+  </div>
+</div><!-- /studentScreen -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL DETALLE DEL PROYECTO
+═══════════════════════════════════════════════════════ -->
+<div id="projModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm anim-fade">
+  <div class="card w-full max-w-2xl p-6 md:p-8 relative shadow-2xl">
+    <button onclick="closeProjModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-xl">✕</button>
+
+    <div class="flex items-center gap-3 mb-3">
+      <span id="mBadge" class="badge-admin"></span>
+      <span class="text-xs text-slate-500 font-semibold">Año: <span id="mAnio"></span></span>
+    </div>
+
+    <h2 id="mTitle" class="text-lg md:text-xl font-bold text-slate-800 leading-snug mb-3"></h2>
+    <p class="text-xs text-slate-500 font-medium mb-4">👤 Autores: <span id="mAutores" class="text-slate-800 font-bold"></span></p>
+
+    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
+      <p class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Resumen Ejecutivo</p>
+      <p id="mDesc" class="text-xs text-slate-600 leading-relaxed"></p>
+    </div>
+
+    <div class="mb-6">
+      <p class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Stack / Tecnologías</p>
+      <div id="mTechs" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Restricción de descarga obligatoria -->
+    <div class="p-4 rounded-xl bg-red-50 border border-red-200 mb-6 flex items-start gap-3">
+      <span class="text-xl">🔒</span>
+      <div>
+        <p class="text-xs font-bold text-red-700">Descarga restringida por normativa institucional</p>
+        <p class="text-[11px] text-slate-600 mt-0.5">El alumno no posee acceso directo al código fuente o informe completo sin autorización docente.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200">
+      <button onclick="sendToNapi()" class="px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[#ED1C24] text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
+        🤖 Analizar similitud con NAPI
+      </button>
+      <div class="flex gap-2">
+        <button onclick="requestAccess()" class="px-4 py-2.5 rounded-xl bg-[#ED1C24] text-white text-xs font-bold hover:bg-[#C41219] transition-colors shadow-sm shadow-red-500/20">Solicitar Acceso 🔒</button>
+        <button onclick="closeProjModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL DE EDICIÓN RÁPIDA (DOCENTE)
+═══════════════════════════════════════════════════════ -->
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm anim-fade">
+  <div class="card w-full max-w-lg p-6 relative shadow-2xl">
+    <button onclick="closeEdit()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-xl">✕</button>
+    <h3 class="text-base font-bold text-slate-800 mb-4">Editar Proyecto</h3>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Proyecto</label>
+        <input id="editNombre" type="text" class="input-field w-full px-3 py-2 rounded-xl text-xs"/>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Carrera</label>
+        <input id="editCarrera" type="text" class="input-field w-full px-3 py-2 rounded-xl text-xs"/>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Estado de Visibilidad</label>
+        <select id="editEstado" class="input-field w-full px-3 py-2 rounded-xl text-xs">
+          <option value="Público">Público</option>
+          <option value="Oculto">Oculto</option>
+          <option value="En Revisión">En Revisión</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+        <button onclick="closeEdit()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200">Cancelar</button>
+        <button onclick="saveEdit()" class="px-5 py-2 rounded-xl bg-[#ED1C24] text-white text-xs font-bold hover:bg-[#C41219] shadow-sm shadow-red-500/20">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MÓDULO 4 · ASISTENTE NAPI — CHATBOT INACAP (#ED1C24)
+═══════════════════════════════════════════════════════ -->
+<div id="napiWidget" style="display:none">
+
+  <!-- Panel de Chat -->
+  <div id="chatPanel" class="napi-panel hidden">
+
+    <!-- Header NAPI -->
+    <div class="napi-header flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#ED1C24] border border-red-300 text-white text-lg font-bold flex items-center justify-center shadow-md">🤖</div>
+        <div>
+          <h3 class="text-xs font-black text-white flex items-center gap-1.5">
+            Asistente NAPI <span class="badge-admin text-[9px] px-1.5 bg-white text-[#ED1C24]">IA</span>
+          </h3>
+          <p class="text-[10px] text-red-200 font-medium">Validación de Similitud · INACAP Maipú</p>
+        </div>
+      </div>
+      <button onclick="toggleChat()" class="text-slate-400 hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Quick Chips -->
+    <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 overflow-x-auto">
+      <button onclick="sendPreset('Quiero hacer un sistema IoT para monitoreo energético industrial')" class="text-[10px] bg-white border border-slate-200 hover:border-[#ED1C24] text-slate-700 hover:text-[#ED1C24] px-2 py-1 rounded-lg shrink-0 font-medium transition-colors">⚡ Validar idea IoT</button>
+      <button onclick="sendPreset('App móvil de gestión de stock con código QR y sincronización offline')" class="text-[10px] bg-white border border-slate-200 hover:border-[#ED1C24] text-slate-700 hover:text-[#ED1C24] px-2 py-1 rounded-lg shrink-0 font-medium transition-colors">📱 Evaluar App Móvil</button>
+      <button onclick="sendPreset('¿Qué alternativas tecnológicas me recomiendas para diferenciarme?')" class="text-[10px] bg-white border border-slate-200 hover:border-[#ED1C24] text-slate-700 hover:text-[#ED1C24] px-2 py-1 rounded-lg shrink-0 font-medium transition-colors">🌱 Innovación Stack</button>
+    </div>
+
+    <!-- Mensajes -->
+    <div id="chatBox" class="flex-1 p-4 overflow-y-auto bg-slate-50/50 space-y-1"></div>
+
+    <!-- Input -->
+    <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+      <input id="napiInput" type="text" placeholder="Escribe tu idea o nombre de proyecto..." class="input-field flex-1 px-3 py-2 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')sendMsg()"/>
+      <button onclick="sendMsg()" class="p-2 rounded-xl bg-[#ED1C24] hover:bg-[#C41219] text-white transition-colors shadow-md shadow-red-500/25">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- FAB NAPI (#ED1C24) -->
+  <button onclick="toggleChat()" class="napi-btn anim-glow-red relative">
+    <span class="text-xl">🤖</span>
+    <span class="text-xs font-bold">Asistente NAPI</span>
+    <span id="napiDot" class="w-3 h-3 rounded-full bg-red-400 absolute -top-1 -right-1 border-2 border-white animate-pulse"></span>
+  </button>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="js/PillNav.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

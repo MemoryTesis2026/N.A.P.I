@@ -1,0 +1,715 @@
+/* ═══════════════════════════════════════════════════════════
+   N.A.P.I – styles.css
+   Paleta e Identidad Oficial INACAP (Inspirada en Portal Institucional):
+   • Blanco Puro:                 #FFFFFF (Fondos, tarjetas, lienzos)
+   • Rojo Institucional INACAP:   #ED1C24 / #C41219 (Marca, acentos, botones primarios)
+   • Gris Suave / Canvas:         #F4F6F9 / #F8FAFC
+   • Gris Borde:                  #E2E8F0 / #CBD5E1
+   • Texto Oscuro / Slate:        #1E293B / #0F172A
+   • Banner Gradiente Usuario:    linear-gradient(90deg, #9E1B32 0%, #64748B 60%, #475569 100%)
+   • Tarjetas Pastel Académicas:  Rosa, Durazno, Menta, Cielo, Lavanda, Maíz
+═══════════════════════════════════════════════════════════ */
+
+:root {
+  --inacap-red:        #ED1C24;
+  --inacap-red-dark:   #C41219;
+  --inacap-red-light:  #FFF1F2;
+  --inacap-red-border: #FECDD3;
+  --bg-main:           #F4F6F9;
+  --bg-white:          #FFFFFF;
+  --border-gray:       #E2E8F0;
+  --text-dark:         #1E293B;
+  --text-muted:        #64748B;
+  --text-light:        #94A3B8;
+  --text-white:        #FFFFFF;
+}
+
+* { font-family: 'Inter', system-ui, -apple-system, sans-serif; box-sizing: border-box; }
+body { background: var(--bg-main); color: var(--text-dark); margin: 0; }
+
+/* ── Scrollbar Moderno ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F1F5F9; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #ED1C24; }
+
+/* ── Animaciones Fluídas ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlowRed {
+  0%, 100% { box-shadow: 0 0 12px rgba(237, 28, 36, 0.3); }
+  50% { box-shadow: 0 0 24px rgba(237, 28, 36, 0.6); }
+}
+
+.anim-fade { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-glow-red { animation: pulseGlowRed 2.4s ease-in-out infinite; }
+
+/* ── Pantalla de Login ── */
+.login-bg {
+  background: radial-gradient(circle at top right, rgba(237, 28, 36, 0.12), transparent 45%),
+              radial-gradient(circle at bottom left, rgba(237, 28, 36, 0.08), transparent 40%),
+              linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  min-height: 100vh;
+}
+
+.login-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+/* ── Campos de Entrada (Inputs) ── */
+.input-field {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  color: #1E293B;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.input-field::placeholder { color: #94A3B8; }
+.input-field:focus {
+  outline: none;
+  border-color: #ED1C24;
+  box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.18);
+}
+
+/* ── Role Pills ── */
+.role-pill {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  color: #475569;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.role-pill:hover {
+  border-color: #ED1C24;
+  color: #ED1C24;
+}
+.role-pill.active {
+  background: #ED1C24;
+  border-color: #ED1C24;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(237, 28, 36, 0.35);
+}
+
+/* ── Navbar Dashboard & Portal Estilo INACAP (Image 2) ── */
+.portal-user-banner {
+  background: linear-gradient(90deg, #9E1B32 0%, #64748B 60%, #475569 100%);
+  color: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.sidebar-white {
+  background: #FFFFFF !important;
+  border-right: 1px solid #E2E8F0;
+}
+
+.header-portal {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.nav-link,
+.nav-link-portal {
+  color: #475569;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-link:hover,
+.nav-link-portal:hover {
+  background: #FFF1F2;
+  color: #ED1C24;
+}
+.nav-link.active,
+.nav-link-portal.active {
+  background: #FFF1F2;
+  color: #ED1C24;
+  border-left: 4px solid #ED1C24;
+  font-weight: 700;
+}
+
+/* ── Tarjetas Modernas Pastel INACAP (Image 2) ── */
+.card-pastel-rose {
+  background: #FDF2F4;
+  border: 1px solid #FBCFE8;
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-pastel-peach {
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-pastel-mint {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-pastel-sky {
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-pastel-lavender {
+  background: #F5F3FF;
+  border: 1px solid #DDD6FE;
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-pastel-butter {
+  background: #FEFCE8;
+  border: 1px solid #FEF08A;
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-pastel-rose:hover,
+.card-pastel-peach:hover,
+.card-pastel-mint:hover,
+.card-pastel-sky:hover,
+.card-pastel-lavender:hover,
+.card-pastel-butter:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  border-color: #ED1C24;
+  box-shadow: 0 14px 30px rgba(237, 28, 36, 0.12);
+}
+
+.kpi-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-left-width: 4px;
+  border-radius: 14px;
+}
+
+/* ── Barras de Progreso ── */
+.progress-track {
+  height: 8px;
+  border-radius: 99px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #ED1C24, #C41219);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Tablas ── */
+.tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+.tbl th {
+  background: #F8FAFC;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 1px solid #E2E8F0;
+}
+.tbl tr { transition: background 0.15s ease; }
+.tbl tr:hover { background: #FFF1F2; }
+.tbl td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #E2E8F0;
+  color: #1E293B;
+}
+
+/* ── Badges y Chips INACAP ── */
+.badge-admin {
+  background: rgba(237, 28, 36, 0.12);
+  border: 1px solid rgba(237, 28, 36, 0.4);
+  color: #ED1C24;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 99px;
+}
+.badge-student {
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  color: #ED1C24;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 99px;
+}
+.badge-red {
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  color: #ED1C24;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+}
+.badge-tech {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+.badge-restricted {
+  background: rgba(237, 28, 36, 0.08);
+  border: 1px solid rgba(237, 28, 36, 0.3);
+  color: #ED1C24;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Zona de Subida ── */
+.upload-zone {
+  border: 2px dashed #CBD5E1;
+  border-radius: 14px;
+  background: #F8FAFC;
+  transition: all 0.2s ease;
+}
+.upload-zone:hover {
+  border-color: #ED1C24;
+  background: #FFF1F2;
+}
+
+/* ── Chat Widget NAPI ── */
+#napiWidget {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 999;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.napi-btn {
+  background: #ED1C24;
+  color: #FFFFFF;
+  border-radius: 99px;
+  padding: 13px 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 8px 24px rgba(237, 28, 36, 0.45);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.napi-btn:hover {
+  background: #C41219;
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(237, 28, 36, 0.6);
+}
+
+.napi-panel {
+  width: 390px;
+  height: 530px;
+  max-height: calc(100vh - 120px);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.napi-header {
+  background: #1E293B;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bubble-napi {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #1E293B;
+  border-radius: 0 14px 14px 14px;
+}
+.bubble-user {
+  background: #ED1C24 !important;
+  color: #FFFFFF !important;
+  border-radius: 14px 14px 0 14px;
+  box-shadow: 0 4px 14px rgba(237, 28, 36, 0.25);
+}
+
+.sim-card {
+  background: #FFFFFF;
+  border: 1.5px solid #ED1C24;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(237, 28, 36, 0.1);
+}
+
+/* ── Utilidades ── */
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+@media (max-width: 768px) {
+  #adminSidebar { display: none !important; }
+  .napi-panel { width: calc(100vw - 32px); }
+}
+
+/* ══════════════════════════════════════════════════
+   LANDING PAGE STYLES (BLANCO Y ROJO INACAP)
+══════════════════════════════════════════════════ */
+
+/* ── Navbar Landing Blanco INACAP ── */
+.landing-nav {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Botones Navbar de Acción ── */
+.btn-login-docente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  color: #1E293B;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-login-docente:hover {
+  background: #FFF1F2;
+  border-color: #ED1C24;
+  color: #ED1C24;
+  transform: translateY(-1px);
+}
+
+.btn-login-student {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #ED1C24;
+  border: 1.5px solid #ED1C24;
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(237, 28, 36, 0.35);
+}
+.btn-login-student:hover {
+  background: #C41219;
+  border-color: #C41219;
+  box-shadow: 0 6px 20px rgba(237, 28, 36, 0.5);
+  transform: translateY(-1px);
+}
+
+/* ── Carrusel Hero ── */
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+  pointer-events: none;
+}
+.carousel-slide.active {
+  opacity: 1;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.carousel-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.55) 50%, rgba(237, 28, 36, 0.15) 100%);
+}
+
+.carousel-content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.carousel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(237, 28, 36, 0.25);
+  border: 1px solid rgba(237, 28, 36, 0.8);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(12px);
+}
+
+.carousel-title {
+  font-size: clamp(1.8rem, 4.2vw, 3.5rem);
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  max-width: 820px;
+  margin-bottom: 1rem;
+}
+
+.carousel-subtitle {
+  font-size: clamp(0.85rem, 1.6vw, 1.1rem);
+  color: #E2E8F0;
+  max-width: 660px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.btn-carousel-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: #ED1C24;
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(237, 28, 36, 0.45);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-carousel-primary:hover {
+  background: #C41219;
+  box-shadow: 0 12px 32px rgba(237, 28, 36, 0.65);
+  transform: translateY(-2px);
+}
+
+.btn-carousel-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-carousel-secondary:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+.carousel-arrow:hover {
+  background: #ED1C24;
+  border-color: #ED1C24;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+.carousel-dot {
+  width: 28px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.carousel-dot.active {
+  background: #ED1C24;
+  width: 42px;
+  box-shadow: 0 0 10px rgba(237, 28, 36, 0.8);
+}
+
+/* ── Galería de Sedes INACAP ── */
+.sede-photo-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+.sede-photo-card:hover {
+  transform: translateY(-6px);
+  border-color: #ED1C24;
+  box-shadow: 0 18px 36px rgba(237, 28, 36, 0.15);
+}
+.sede-photo-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.sede-photo-card:hover .sede-photo-img {
+  transform: scale(1.04);
+}
+
+/* ── Stats Bar Institucional INACAP ── */
+.stats-strip {
+  background: linear-gradient(135deg, #ED1C24 0%, #C41219 100%);
+  color: #FFFFFF;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-number {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Tarjetas Sobre Nosotros & Origen ── */
+.feature-box {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s ease;
+}
+.feature-box:hover {
+  border-color: #ED1C24;
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(237, 28, 36, 0.1);
+}
+
+.feature-mini-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+.feature-mini-card:hover {
+  border-color: #ED1C24;
+  transform: translateX(4px);
+}
+
+/* ── NAPI Showcase ── */
+.napi-showcase-box {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+}
+.napi-showcase-header {
+  background: #1E293B;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Footer Institucional ── */
+.footer-inacap {
+  background: #0F172A;
+  border-top: 1px solid #334155;
+}
+.footer-link {
+  color: #94A3B8;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.footer-link:hover {
+  color: #ED1C24;
+  padding-left: 4px;
+}
