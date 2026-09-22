@@ -121,7 +121,21 @@ def get_doc_embedding(texto: str) -> list:
 # ──────────────────────────────────────────
 # RUTAS ESTÁTICAS Y FRONTEND
 # ──────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Buscar directorio raíz del proyecto con certeza en local y en Render
+def find_base_dir():
+    candidates = [
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), # ../ (raíz normal)
+        os.path.dirname(os.path.abspath(__file__)),                  # . (si corre en raíz)
+        os.getcwd(),                                                 # Directorio de trabajo
+        "/opt/render/project/src"                                    # Ruta Render estándar
+    ]
+    for c in candidates:
+        if os.path.exists(os.path.join(c, "index.html")):
+            return os.path.abspath(c)
+    return os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+BASE_DIR = find_base_dir()
+log.info(f"Directorio base detectado para estáticos: {BASE_DIR}")
 
 css_dir = os.path.join(BASE_DIR, "css")
 js_dir = os.path.join(BASE_DIR, "js")
@@ -141,6 +155,22 @@ if os.path.exists(assets_dir):
 def serve_index():
     index_path = os.path.join(BASE_DIR, "index.html")
     return FileResponse(index_path)
+
+@app.get("/img/{file_path:path}")
+def serve_img_fallback(file_path: str):
+    p1 = os.path.join(BASE_DIR, "img", file_path)
+    p2 = os.path.join(BASE_DIR, "assets", file_path)
+    if os.path.exists(p1): return FileResponse(p1)
+    if os.path.exists(p2): return FileResponse(p2)
+    raise HTTPException(status_code=404, detail="Imagen no encontrada")
+
+@app.get("/assets/{file_path:path}")
+def serve_assets_fallback(file_path: str):
+    p1 = os.path.join(BASE_DIR, "assets", file_path)
+    p2 = os.path.join(BASE_DIR, "img", file_path)
+    if os.path.exists(p1): return FileResponse(p1)
+    if os.path.exists(p2): return FileResponse(p2)
+    raise HTTPException(status_code=404, detail="Asset no encontrado")
 
 # ──────────────────────────────────────────
 # ENDPOINTS API

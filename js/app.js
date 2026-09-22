@@ -400,13 +400,20 @@ function showError(msg) {
 }
 
 function logout() {
-  // Ocultar todas las pantallas de la plataforma
+  // Resetear sesión del usuario
+  currentUser = null;
+  localStorage.removeItem('napi_user');
+
+  // Ocultar pantallas de plataforma
   document.getElementById('adminScreen')?.classList.add('hidden');
   document.getElementById('studentScreen')?.classList.add('hidden');
-  document.getElementById('napiWidget').style.display = 'none';
-  // Cerrar chat NAPI si estaba abierto
+  document.getElementById('napiWidget').style.display = 'flex';
+  
+  // Cerrar panel de chat y re-iniciar contexto de invitado
   napiOpen = false;
   document.getElementById('chatPanel')?.classList.add('hidden');
+  initNapi();
+
   // Mostrar landing
   const landing = document.getElementById('landingScreen');
   if (landing) {
@@ -767,50 +774,120 @@ function sendToNapi() {
 }
 
 // ══════════════════════════════════════════
-//  MÓDULO 4: ASISTENTE NAPI (TURQUESA #00B5E2)
+//  MÓDULO 4: ASISTENTE NAPI CON CHATS INDIVIDUALES
 // ══════════════════════════════════════════
-function initNapi() {
+
+function getChatStorageKey() {
+  if (currentUser && currentUser.email) {
+    return `napi_chat_${currentUser.email.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
+  }
+  return 'napi_chat_guest';
+}
+
+function saveChatHistory() {
   const box = document.getElementById('chatBox');
-  if (box && box.children.length===0)
-    addNapi(`¡Hola! 👋 Soy **NAPI**, el Asistente Inteligente de INACAP Sede Maipú.\n\nEscribe el **nombre o idea de tu proyecto** y analizaré en tiempo real la similitud contra el repositorio institucional para ayudarte a diferenciarte. 🚀`);
+  if (!box) return;
+  const key = getChatStorageKey();
+  try {
+    localStorage.setItem(key, box.innerHTML);
+  } catch (e) {
+    console.warn('No se pudo guardar historial local:', e);
+  }
+}
+
+function clearUserChat() {
+  const key = getChatStorageKey();
+  localStorage.removeItem(key);
+  const box = document.getElementById('chatBox');
+  if (box) box.innerHTML = '';
+  initNapi(true);
+  toast('🗑️ Historial de conversación reiniciado');
+}
+
+function initNapi(forceGreeting = false) {
+  const box = document.getElementById('chatBox');
+  if (!box) return;
+
+  // Actualizar indicador de privacidad en el header del chat
+  const privacyBadge = document.getElementById('chatPrivacyBadge');
+  if (privacyBadge) {
+    if (currentUser) {
+      const rolName = currentUser.rol === 'docente' ? 'Docente' : 'Estudiante';
+      privacyBadge.textContent = `🔒 Chat de ${currentUser.nombre.split(' ')[0]} (${rolName})`;
+    } else {
+      privacyBadge.textContent = `🔒 Chat Individual · INACAP Maipú`;
+    }
+  }
+
+  const key = getChatStorageKey();
+  const saved = localStorage.getItem(key);
+
+  if (!forceGreeting && saved && saved.trim().length > 0) {
+    box.innerHTML = saved;
+    box.scrollTop = box.scrollHeight;
+    return;
+  }
+
+  box.innerHTML = '';
+  if (currentUser && currentUser.rol === 'estudiante') {
+    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** en INACAP Sede Maipú.\n\nEscribe el **nombre o idea de tu proyecto de título** y analizaré en tiempo real la similitud contra el repositorio institucional para ayudarte a diferenciarte. 🚀`, false);
+  } else if (currentUser && currentUser.rol === 'docente') {
+    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI** en **Modo Docente**.\n\nPuedes consultar cualquier anteproyecto para validar originalidad, zonas de duplicación y antecedentes históricos en el repositorio institucional. 🎓`, false);
+  } else {
+    addNapi(`¡Hola! 👋 Soy **NAPI**, el Asistente Inteligente de INACAP Sede Maipú.\n\nEscribe el **nombre o idea de tu proyecto** y analizaré en tiempo real la similitud contra el repositorio de la sede para ayudarte a innovar. 🚀`, false);
+  }
 }
 
 function toggleChat() {
   napiOpen = !napiOpen;
   document.getElementById('chatPanel')?.classList.toggle('hidden', !napiOpen);
   document.getElementById('napiDot')?.classList.toggle('hidden', napiOpen);
-  if (napiOpen) document.getElementById('napiInput')?.focus();
+  if (napiOpen) {
+    initNapi();
+    document.getElementById('napiInput')?.focus();
+  }
 }
 
-function sendPreset(txt) { document.getElementById('napiInput').value = txt; sendMsg(); }
+function sendPreset(txt) {
+  const input = document.getElementById('napiInput');
+  if (input) input.value = txt;
+  sendMsg();
+}
 
-function addNapi(txt) {
+function addNapi(txt, save = true) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
   d.className = 'flex gap-2.5 items-start anim-fade mb-3.5';
   d.innerHTML = `
     <div class="w-8 h-8 rounded-full bg-cyan-500 border border-cyan-300 text-white text-sm font-bold flex items-center justify-center shrink-0 shadow">🤖</div>
     <div class="bubble-napi px-4 py-3 text-xs leading-relaxed max-w-[88%] shadow-sm">${fmt(txt)}</div>`;
-  box.appendChild(d); box.scrollTop=box.scrollHeight;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  if (save) saveChatHistory();
 }
 
-function addUser(txt) {
+function addUser(txt, save = true) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
   d.className = 'flex gap-2.5 items-start justify-end anim-fade mb-3.5';
   d.innerHTML = `
     <div class="bubble-user px-4 py-3 text-xs leading-relaxed max-w-[80%] shadow-sm">${txt}</div>
     <div class="w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-bold flex items-center justify-center shrink-0">👤</div>`;
-  box.appendChild(d); box.scrollTop=box.scrollHeight;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  if (save) saveChatHistory();
 }
 
 function addTyping() {
   const box = document.getElementById('chatBox'); if(!box) return null;
   const d = document.createElement('div');
-  d.id='typing'; d.className='flex gap-2.5 items-start anim-fade mb-3';
-  d.innerHTML=`<div class="w-8 h-8 rounded-full bg-cyan-500 border border-cyan-300 text-white text-sm font-bold flex items-center justify-center shrink-0">🤖</div>
+  d.id = 'typing';
+  d.className = 'flex gap-2.5 items-start anim-fade mb-3';
+  d.innerHTML = `<div class="w-8 h-8 rounded-full bg-cyan-500 border border-cyan-300 text-white text-sm font-bold flex items-center justify-center shrink-0">🤖</div>
     <div class="bubble-napi px-4 py-3"><div class="flex gap-1.5"><div class="dot-typing"></div><div class="dot-typing"></div><div class="dot-typing"></div></div></div>`;
-  box.appendChild(d); box.scrollTop=box.scrollHeight; return d;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  return d;
 }
 
 function fmt(t) {
@@ -828,12 +905,11 @@ function fmt(t) {
     .replace(/\n/g, '<br/>');
 }
 
-// Motor de análisis semántico local (fallback inteligente)
+// Motor de análisis semántico local garantizado
 function analyze(txt) {
   const lower = txt.toLowerCase();
-  const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3 && !['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero'].includes(w));
+  const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3 && !['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea'].includes(w));
   
-  // Buscar coincidencias en el catálogo de proyectos de Sede Maipú
   let bestMatch = null;
   let maxScore = 0;
 
@@ -843,7 +919,7 @@ function analyze(txt) {
     words.forEach(w => {
       if (haystack.includes(w)) hits += 1;
     });
-    const score = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 95) : 0;
+    const score = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.6), 94) : 0;
     if (score > maxScore) {
       maxScore = score;
       bestMatch = p;
@@ -851,26 +927,22 @@ function analyze(txt) {
   });
 
   let riesgo = 'SIN RIESGO';
-  let badgeColor = 'bg-emerald-500';
   if (maxScore >= 75) {
     riesgo = 'CRÍTICO';
-    badgeColor = 'bg-red-500';
   } else if (maxScore >= 55) {
     riesgo = 'ALTO';
-    badgeColor = 'bg-amber-500';
   } else if (maxScore >= 35) {
     riesgo = 'MODERADO';
-    badgeColor = 'bg-cyan-500';
   }
 
   if (bestMatch && maxScore >= 35) {
-    return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **${riesgo} (${maxScore}% similitud)**\n* **Proyecto histórico detectado:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})\n\n## 🔍 Análisis de Similitud\nSe identificó un solapamiento conceptual en las áreas de **${bestMatch.stack.slice(0, 3).join(', ')}** y el alcance funcional de la solución propuesta para INACAP Sede Maipú.\n\n## ⚠️ Zonas de Choque de Ideas\n- **Arquitectura base:** Enfoque similar en la recopilación o gestión de datos.\n- **Público objetivo:** Ya existe un anteproyecto que aborda una problemática análoga.\n\n## 🚀 Recomendaciones de Innovación\n1. **Edge AI / Analítica Predictiva:** Integra inferencia en tiempo real en lugar de procesamiento estático.\n2. **Arquitectura Serverless / Supabase:** Utiliza microservicios modernos con autenticación biométrica o WebSockets.\n3. **Caso de uso industrial específico:** Adapta el proyecto a una necesidad productiva real de la comuna de Maipú o la Región Metropolitana.\n\n## 💪 Próximo Paso\nRevisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor diferenciadora.`;
+    return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **${riesgo} (${maxScore}% similitud)**\n* **Proyecto histórico detectado:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})\n\n## 🔍 Análisis de Similitud\nSe identificó un solapamiento en las tecnologías **${bestMatch.stack.slice(0, 3).join(', ')}** y el objetivo funcional propuesto para INACAP Sede Maipú.\n\n## ⚠️ Zonas de Choque de Ideas\n- **Arquitectura base:** Coincidencia en recolección, análisis de señales o flujo de datos.\n- **Público objetivo:** Ya existe un trabajo que resuelve un desafío análogo en la sede.\n\n## 🚀 Recomendaciones de Innovación\n1. **Edge AI / Analítica Predictiva:** Integra inferencia en tiempo real en lugar de procesamiento estático.\n2. **Arquitectura Serverless / Supabase:** Emplea microservicios con WebSockets y eventos en tiempo real.\n3. **Caso de uso industrial específico:** Adapta la validación a una empresa o sector productivo concreto de Maipú.\n\n## 💪 Próximo Paso\nRevisa la ficha técnica del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
   }
 
-  return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **SIN RIESGO (0-15%)**\n* **Propuesta evaluada:** "${txt.substring(0, 60)}${txt.length > 60 ? '...' : ''}"\n\n🎉 **¡Excelente potencial innovador!**\nNo se detectaron proyectos previos con alta similitud en el catálogo institucional de INACAP Sede Maipú.\n\n## 🚀 Recomendaciones Técnicas\n1. **Stack Tecnológico:** Considera tecnologías como FastAPI, Supabase, Next.js/React Native y Gemini para máxima escalabilidad.\n2. **Validación:** Define métricas claras de impacto y pruebas de concepto antes del anteproyecto de título.\n\n## 💪 Próximo Paso\nRedacta el alcance técnico y preséntalo con confianza a tu docente guía.`;
+  return `## 📊 Diagnóstico de Originalidad\n\n* **Nivel de riesgo:** **SIN RIESGO (0-15%)**\n* **Propuesta evaluada:** "${txt.substring(0, 60)}${txt.length > 60 ? '...' : ''}"\n\n🎉 **¡Excelente potencial innovador!**\nNo se detectaron proyectos previos con alta similitud en el catálogo institucional de INACAP Sede Maipú.\n\n## 🚀 Recomendaciones Técnicas\n1. **Stack Tecnológico:** Considera tecnologías como FastAPI, Supabase, Next.js / React Native y modelos de IA para máxima escalabilidad.\n2. **Validación:** Define métricas claras de impacto y pruebas de concepto antes del anteproyecto de título.\n\n## 💪 Próximo Paso\nRedacta el alcance técnico y preséntalo con confianza a tu docente guía.`;
 }
 
-function addSimCard(p, pct) {
+function addSimCard(p, pct, save = true) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
   d.className = 'anim-fade mb-3 ml-8 cursor-pointer';
@@ -888,10 +960,12 @@ function addSimCard(p, pct) {
       </div>
       <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${p.desc}</p>
     </div>`;
-  box.appendChild(d); box.scrollTop = box.scrollHeight;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  if (save) saveChatHistory();
 }
 
-function addSimCardSupabase(sim) {
+function addSimCardSupabase(sim, save = true) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
   d.className = 'anim-fade mb-3 ml-8';
@@ -910,19 +984,23 @@ function addSimCardSupabase(sim) {
       </div>
       <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${sim.resumen || ''}</p>
     </div>`;
-  box.appendChild(d); box.scrollTop = box.scrollHeight;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  if (save) saveChatHistory();
 }
 
 async function sendMsg() {
   const input = document.getElementById('napiInput'); if(!input) return;
   const txt = input.value.trim(); if(!txt) return;
-  addUser(txt); input.value='';
+  addUser(txt);
+  input.value = '';
   const typing = addTyping();
 
   // 1. Intentar llamar a la API FastAPI + Supabase + Gemini
+  let responded = false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout max
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
 
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
@@ -935,6 +1013,7 @@ async function sendMsg() {
     if (res.ok) {
       const data = await res.json();
       if (typing) typing.remove();
+      responded = true;
 
       // Renderizar análisis de NAPI
       if (data.analisis) {
@@ -946,32 +1025,34 @@ async function sendMsg() {
       // Renderizar cards de proyectos de Supabase
       if (data.similares && data.similares.length > 0) {
         data.similares.forEach((sim, idx) => {
-          setTimeout(() => addSimCardSupabase(sim), 200 * (idx + 1));
+          setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
         });
       }
       return;
     }
   } catch (err) {
-    console.warn('API /analyze no disponible o en fallback:', err);
+    console.warn('Backend API /analyze con demora o no disponible:', err);
   }
 
-  // 2. Fallback local garantizado si el backend no está encendido o tiene demora
-  setTimeout(() => {
-    if (typing) typing.remove();
-    addNapi(analyze(txt));
+  // 2. Respaldo directo en frontend (Garantizado 100% sin importar el estado del servidor)
+  if (!responded) {
+    setTimeout(() => {
+      if (typing) typing.remove();
+      addNapi(analyze(txt));
 
-    const lower = txt.toLowerCase();
-    const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
-    const top = PROJECTS.map(p => {
-      const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
-      const cnt = words.filter(w => src.includes(w)).length;
-      return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 92) };
-    }).filter(x => x.pct >= 35).sort((a, b) => b.pct - a.pct)[0];
+      const lower = txt.toLowerCase();
+      const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
+      const top = PROJECTS.map(p => {
+        const src = (p.nombre + ' ' + p.desc + ' ' + p.stack.join(' ')).toLowerCase();
+        const cnt = words.filter(w => src.includes(w)).length;
+        return { p, pct: Math.min(Math.round(cnt / Math.max(words.length, 1) * 100 * 1.65), 92) };
+      }).filter(x => x.pct >= 35).sort((a, b) => b.pct - a.pct)[0];
 
-    if (top) {
-      setTimeout(() => addSimCard(top.p, top.pct), 250);
-    }
-  }, 400);
+      if (top) {
+        setTimeout(() => addSimCard(top.p, top.pct), 200);
+      }
+    }, 300);
+  }
 }
 
 // ══════════════════════════════════════════
