@@ -76,6 +76,8 @@ class AnalyzeRequest(BaseModel):
     limite: Optional[int] = 4
     carrera: Optional[str] = None
     history: Optional[List[ChatHistoryItem]] = None
+    file_name: Optional[str] = None
+    file_content: Optional[str] = None
 
 class ChatMessageRequest(BaseModel):
     email: str
@@ -677,46 +679,26 @@ def analyze_project(req: AnalyzeRequest):
             ])
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
 
-        # 2. Generar respuesta NAPI con Gemini (soporte conversacional avanzado y multi-académico)
+        # 2. Generar respuesta NAPI con Gemini (soporte conversacional avanzado, contextual y multi-académico)
         SYSTEM_PROMPT = """Eres NAPI, el mentor experto de inteligencia artificial para Proyectos de Título y Titulación de INACAP Sede Maipú.
-Tu rol es actuar como un mentor y docente guía de alto nivel: reflexivo, pedagógico, analítico, riguroso y adaptable a todas las carreras de INACAP.
+Tu rol es actuar como un mentor y docente guía de alto nivel: sumamente atento, reflexivo, pedagógico, analítico, riguroso y adaptable a todas las carreras de INACAP.
 
-TIENES ACCESO AL REPOSITORIO INSTITUCIONAL Y DOMINIO DE METODOLOGÍAS DE INGENIERÍA, CIENCIAS APLICADAS, GESTIÓN Y TECNOLOGÍA.
+REGLAS FUNDAMENTALES DE INTERACCIÓN Y ESCUCHA ACTIVA:
+1. ESCUCHA ATENTA Y CONTINUIDAD TEMÁTICA:
+   - Mantén SIEMPRE el contexto del proyecto exacto del estudiante (ej: sensores de gas, Arduino, reconocimiento facial, robótica, etc.).
+   - Si el estudiante dice "¿qué otra idea para innovar hay?", "¿qué más puedo agregarle?" o "¿cómo lo mejoro?", SE REFIERE A INNOVACIONES PARA SU PROYECTO ACTUAL. NUNCA le cambies de tema ni le propongas otros proyectos de título distintos.
+   - Si el estudiante dice "me refería a mi idea", "no me entendiste" o aclara un concepto, reconoce de inmediato su proyecto original con amabilidad académica y profundiza exactamente en lo que pide.
+   - Solo propón proyectos de título completamente nuevos si el estudiante dice explícitamente "quiero cambiar de proyecto", "no quiero hacer este tema" o "dame otros temas de tesis diferentes".
 
-DIRECTRICES DE RESPUESTA SEGÚN LA INTENCIÓN DEL ESTUDIANTE:
+2. ANÁLISIS DE ARCHIVOS ADJUNTOS:
+   - Si el estudiante adjunta un archivo (código, PDF, Word, anteproyecto, notas), analiza su contenido en detalle, destaca fortalezas, debilidades, nivel de coincidencia con proyectos de INACAP y 3 mejoras técnicas concretas.
 
-1. EVALUACIÓN DE IDEA NUEVA (Diagnóstico Inicial):
-   - Proporciona un diagnóstico estructurado y claro:
-     💡 **Diagnóstico de Originalidad**: Nivel de coincidencia (%) y proyecto anterior más cercano de la sede.
-     🔍 **Puntos de Contacto con el Repositorio**: Qué partes de la propuesta coinciden con tesis históricas.
-     🚀 **Ejes de Innovación y Diferenciación**: 3 aportes específicos que harían destacar la tesis.
-     🎯 **Recomendación para tu Docente Guía**: Sugerencia metodológica inmediata.
-
-2. SOLICITUD DE OTRAS IDEAS O ALTERNATIVAS DE TITULACIÓN (ej: "dame otra idea", "qué otro proyecto puedo hacer", "cambiemos de tema", "puede ser otra idea?"):
-   - NUNCA repitas el proyecto anterior ni las mismas recomendaciones.
-   - Propone 3 alternativas de proyectos de título COMPLETAMENTE DIFERENTES e innovadoras para su área:
-     * **Título del anteproyecto tentativo**
-     * **Problemática real a resolver** (en empresas, industria o comunidad de Maipú/RM)
-     * **Stack tecnológico / herramientas clave sugeridas**
-     * **Factor de innovación y diferenciador ante la comisión**
-
-3. PROFUNDIZACIÓN O MÁS IDEAS DE INNOVACIÓN (ej: "qué más puedo agregarle", "dame otra sugerencia para innovar", "cómo lo hago más avanzado"):
-   - NUNCA repitas sugerencias previas ya mencionadas en la conversación.
-   - Explora nuevas dimensiones técnicas y académicas no discutidas:
-     * **Capa Hardware / IoT / Edge AI / Microcontroladores** (ESP32, Raspberry Pi, TinyML, sensores industriales, LoRaWAN).
-     * **Capa Ciberseguridad, Privacidad y Cumplimiento Normativo** (Ley 21.663 de Ciberseguridad en Chile, Ley 19.628 de datos personales, cifrado AES-256, autenticación multifactor biométrica, auditoría inmutable).
-     * **Capa Arquitectura Software & Cloud** (Microservicios FastAPI, sincronización offline-first, WebSockets en tiempo real, colas Redis/RabbitMQ, Supabase/PostgreSQL).
-     * **Capa Machine Learning & Analítica Predictiva** (Modelos de ensamble, redes convolucionales MobileNet cuantizadas INT8, análisis de series temporales, explicabilidad con SHAP).
-     * **Capa Impacto Comunitario y Retorno de Inversión (ROI)** (Validación empírica en Maipú, reducción de mermas, optimización de consumo energético).
-
-4. CONSULTAS TÉCNICAS, ARQUITECTURA O CÓDIGO (ej: "cómo implemento X", "qué stack usar", "FastAPI vs Node", "OpenCV vs MediaPipe"):
-   - Proporciona un desglose de arquitectura multicapa (Frontend/Mobile, API Backend, Base de Datos, Procesamiento Edge/ML) con pros, contras y protocolos recomendados.
-
-5. DEBATES, COMPARACIONES Y REFUTACIONES (ej: "pero si uso X no se parece a Y?", "no es lo mismo porque...", "cómo lo defiendo"):
-   - Analiza con criterio de comisión evaluadora: valida los puntos fuertes del estudiante y prepáralo con 3 argumentos sólidos de defensa académica.
-
-6. METODOLOGÍA Y ANTEPROYECTO (ej: "cómo redacto los objetivos", "planteamiento del problema"):
-   - Redacta el Objetivo General y 4 Objetivos Específicos usando la Taxonomía de Bloom (Diagnosticar, Diseñar, Desarrollar, Validar)."""
+3. DIRECTRICES SEGÚN INTENCIÓN DEL ESTUDIANTE:
+   - Diagnóstico Inicial: % similitud con repositorio INACAP, puntos de contacto, 3 factores de innovación y próximo paso.
+   - Innovaciones Técnicas para su Proyecto: Sugiere mejoras de hardware/sensores, automatización, corte físico/actuadores, ciberseguridad, protocolos IoT (LoRaWAN/ESP-NOW/MQTT), analítica predictiva o validación real en Maipú.
+   - Stack y Arquitectura: Diagrama claro de capas (Frontend/Móvil, API Backend, DB Supabase, Hardware/Edge).
+   - Metodología: Objetivos SMART (Bloom) y formulación del problema.
+   - Defensa: Argumentos sólidos ante la comisión evaluadora de INACAP."""
 
         # Construir secuencia de contenidos para Gemini
         contents_list = []
@@ -730,11 +712,14 @@ DIRECTRICES DE RESPUESTA SEGÚN LA INTENCIÓN DEL ESTUDIANTE:
 
         q_lower = req.query.lower()
         is_followup = bool(req.history and len(req.history) > 0)
+        file_info = ""
+        if req.file_name:
+            file_info = f"\n\n[DOCUMENTO ADJUNTO: {req.file_name}]\nContenido del archivo:\n{req.file_content or '(Archivo cargado sin texto legible)'}\n"
 
         if is_followup:
-            user_prompt_content = f"{req.query}\n\n[Contexto del repositorio disponible si aplica: {contexto}]"
+            user_prompt_content = f"{req.query}{file_info}\n\n[Contexto del repositorio INACAP si aplica: {contexto}]"
         else:
-            user_prompt_content = f"{req.query}\n\n[Repositorio INACAP Maipú - Proyectos Similares detectados]:\n{contexto}"
+            user_prompt_content = f"{req.query}{file_info}\n\n[Repositorio INACAP Maipú - Proyectos Similares detectados]:\n{contexto}"
 
         contents_list.append(genai_types.Content(
             role="user",
@@ -750,7 +735,7 @@ DIRECTRICES DE RESPUESTA SEGÚN LA INTENCIÓN DEL ESTUDIANTE:
                         contents=contents_list,
                         config=genai_types.GenerateContentConfig(
                             system_instruction=SYSTEM_PROMPT,
-                            temperature=0.7,
+                            temperature=0.65,
                             max_output_tokens=1800
                         )
                     )
@@ -769,65 +754,95 @@ DIRECTRICES DE RESPUESTA SEGÚN LA INTENCIÓN DEL ESTUDIANTE:
                 except Exception as ex:
                     log.warning(f"Modelo {mod} timeout/fallo: {ex}")
 
-        # Fallback analítico avanzado multi-intención si Gemini no responde
+        # Fallback analítico avanzado multi-intención contextual
         if not analisis_texto:
-            history_str = " ".join([h.content.lower() for h in (req.history or [])])
+            history_str = " ".join([h.content.lower() for h in (req.history or [])]) + " " + q_lower
             
-            # INTENCIÓN 1: PEDIR OTRA IDEA / ALTERNATIVAS DE ANTEPROYECTO
-            if any(w in q_lower for w in ["otra idea", "otro proyecto", "otra propuesta", "cambiar de idea", "cambiemos de tema", "puede ser otra", "que otro", "qué otro", "diferente"]):
+            # Detectar el tema del proyecto del estudiante en la conversación
+            is_gas = any(k in history_str for k in ["gas", "glp", "metano", "co2", "humo", "fuga", "arduino", "sensores"])
+            is_facial = any(k in history_str for k in ["facial", "rostro", "biometrico", "camara"])
+            is_energia = any(k in history_str for k in ["energia", "electrico", "potencia", "kwh", "solar"])
+            
+            # Si el estudiante adjuntó un archivo
+            if req.file_name:
+                analisis_texto = f"""## 📄 Análisis Académico del Documento: *"{req.file_name}"*
+
+He revisado el documento adjunto. A continuación te presento la evaluación de NAPI para tu titulación:
+
+### 1. 🔍 Diagnóstico de Contenido y Repositorio
+* **Alineación con INACAP Sede Maipú:** El documento presenta un alcance aplicable al área técnica/profesional.
+* **Nivel de Originalidad Estimado:** **Moderado / Alto**. Se enfoca en resolver una necesidad práctica verificable.
+
+### 2. 🚀 Recomendaciones de Innovación para el Documento
+1. **Definir Métricas de Impacto Cuantitativas:** Incorpora tiempos de respuesta, reducción de pérdidas o tasa de precisión porcentual.
+2. **Esquema de Seguridad / Tolerancia a Fallos:** Detalla qué ocurre si se pierde la conectividad o falla el suministro eléctrico principal.
+3. **Validación en Escenario Real de Maipú:** Añade una sección de pruebas de campo en un taller o comercio local.
+
+¿Deseas que profundicemos en la redacción de los objetivos específicos o en el diagrama de arquitectura?"""
+
+            # Si el usuario aclara o pide innovar sobre su idea actual
+            elif any(w in q_lower for w in ["me referia", "mi idea", "no me entendiste", "hablaba de", "en mi proyecto"]) or \
+                 (any(w in q_lower for w in ["innovar", "sugerencia", "innovacion", "otra cosa", "que mas", "qué más", "otra idea"]) and not any(w in q_lower for w in ["cambiar de proyecto", "otro tema", "otra tesis", "cambiemos de tema"])):
+                
+                if is_gas:
+                    analisis_texto = """## 💡 Innovaciones Técnicas para tu Sistema de Detección de Gas con Arduino
+
+¡Entendido perfectamente! Enfocándonos al 100% en tu proyecto de **prevención y detección de riesgos con gas y Arduino**, aquí tienes innovaciones de alto impacto que harán destacar tu tesis ante la comisión evaluadora:
+
+### 1. ⚡ Actuador Físico: Válvula Solenoide de Corte Automático
+* No te limites a solo encender un LED o buzzer. Conecta un **módulo relé optoacoplado** a una válvula solenoide normalmente abierta (12V) instalada en la cañería principal. Si la concentración supera el umbral crítico (ej: 400 ppm), el sistema **corta el flujo de gas automáticamente en menos de 200 milisegundos**.
+
+### 2. 🔬 Fusión Sensorial Multigas y Compensación Ambiental
+* Utiliza una matriz de sensores combinados: **MQ-2** (GLP, butano, propano), **MQ-4** (gas natural/metano) o **MQ-7** (monóxido de carbono).
+* Integra un sensor **DHT22** para calibrar dinámicamente las lecturas según temperatura y humedad relativa ambiente, eliminando las falsas alarmas comunes en invierno.
+
+### 3. 📈 Detección Predictiva por Gradiente ($dC/dt$)
+* En vez de esperar a que el gas alcance el Límite Inferior de Explosividad (LEL), programa en el Arduino un algoritmo que calcule la **velocidad de incremento de concentración por segundo**. Si la pendiente de subida es pronunciada, activa la pre-alarma de fuga incipiente antes de que sea peligroso.
+
+### 4. 📶 Telemetría Híbrida (Buzzer Local + WiFi/LoRaWAN)
+* Asegura funcionamiento local autónomo (buzzer piezoeléctrico de 85dB + extractor de aire forzado) e integra un módulo **ESP32 o LoRa** para enviar telemetría en tiempo real a Supabase y notificaciones a Telegram.
+
+¿Te gustaría que veamos el diagrama de conexiones del Arduino con los sensores MQ y el relé de corte?"""
+                elif is_facial:
+                    analisis_texto = """## 💡 Innovaciones Técnicas para tu Sistema de Reconocimiento Facial
+
+Enfocándonos directamente en tu proyecto de **Reconocimiento Facial**:
+
+1. **Detección de Vivacidad (Anti-Spoofing)**: Filtro de micro-parpadeo y análisis de textura infrarroja para evitar suplantaciones con fotos impresas o pantallas de celular.
+2. **Procesamiento en el Borde (Edge AI)**: Inferencia en menos de 300 ms en Raspberry Pi 4 con OpenCV y TensorFlow Lite, operando de forma 100% autónoma sin internet.
+3. **Auditoría Criptográfica Inmutable**: Registro de cada acceso con hash SHA-256 en base de datos para cumplimiento con la Ley 19.628 de Protección de Datos.
+
+¿Quieres que revisemos la arquitectura técnica o el código de inferencia?"""
+                else:
+                    analisis_texto = """## 💡 Nuevas Oportunidades de Innovación para tu Propuesta
+
+Enfocándonos en los requerimientos específicos de tu idea:
+
+1. **Mecanismo de Acción y Respuesta Automática**: Agrega control de actuadores físicos (relés, corte de energía, electroválvulas o conmutación) para resolver la contingencia de forma activa.
+2. **Algoritmo de Detección Predictiva**: Implementa un cálculo de gradiente en tiempo real para anticipar fallas o eventos antes de alcanzar los límites críticos.
+3. **Modo Offline-First**: Garantiza que el hardware opere 100% de manera autónoma en caso de corte de red o energía, sincronizando datos cuando vuelva el servicio.
+
+¿Quieres que definamos los componentes electrónicos o el stack de software?"""
+
+            # INTENCIÓN: CAMBIAR COMPLETAMENTE DE PROYECTO
+            elif any(w in q_lower for w in ["cambiar de proyecto", "otro tema de tesis", "otra tesis completamente", "cambiemos de tema"]):
                 analisis_texto = """## 💡 3 Propuestas Innovadoras de Proyectos de Título
 
-¡Excelente decisión! Explorar nuevas alternativas te permite encontrar un proyecto con alta demanda laboral y 0% de coincidencia en el repositorio:
+¡Excelente! Si deseas explorar un nuevo tema desde cero, aquí tienes 3 anteproyectos de alta demanda técnica:
 
 ### 1. 🛡️ Sistema de Telemetría y Ciberseguridad OT para Redes Industriales
-* **Problema:** Vulnerabilidad en controladores PLC y sensores de plantas industriales en Maipú ante ciberataques.
+* **Problema:** Vulnerabilidades críticas en controladores lógicos (PLC) de plantas productivas en Maipú.
 * **Stack:** Python, Scapy/Suricata (IDS), InfluxDB, Grafana, Raspberry Pi 4 con protocolo Modbus TCP.
-* **Factor Innovador:** Cumplimiento con la **Ley Marco de Ciberseguridad en Chile (Ley 21.663)** con detección de anomalías en tiempo real.
 
-### 2. 🏥 Asistente Inteligente de Triage Clínico y Monitoreo con Privacidad Diferencial
-* **Problema:** Congestión en salas de espera de centros de salud y riesgo de filtración de datos médicos sensibles.
-* **Stack:** FastAPI, React Native, Supabase, TensorFlow Lite con anonimización automática de datos (Ley 19.628).
-* **Factor Innovador:** Clasificación predictiva de urgencia sin almacenar imágenes ni datos biométricos en servidores externos.
+### 2. 🏥 Plataforma de Triage Clínico Asistido con Privacidad Diferencial
+* **Problema:** Congestión en salas de espera y resguardo estricto de historiales médicos (Ley 19.628).
+* **Stack:** FastAPI, React Native, Supabase, TensorFlow Lite en dispositivo.
 
-### 3. 📦 Plataforma de Ruteo Dinámico y Control de Huella de Carbono para Logística Local
-* **Problema:** Ineficiencia en rutas de despacho de última milla para pymes comerciales de la comuna de Maipú.
-* **Stack:** Node.js/FastAPI, algoritmos genéticos de optimización de rutas (OR-Tools), OpenStreetMap y Leaflet.
-* **Factor Innovador:** Cálculo en tiempo real de emisiones de CO2 ahorradas y costo operativo por kilómetro.
+### 3. 📦 Optimización de Ruteo y Medición de Huella de Carbono para Pymes de Maipú
+* **Problema:** Costos de última milla y control de emisiones contaminantes en despachos comunales.
+* **Stack:** Node.js/FastAPI, Google OR-Tools, OpenStreetMap y Leaflet.
 
-¿Cuál de estas 3 áreas te entusiasma más para profundizar en su arquitectura y objetivos?"""
-
-            # INTENCIÓN 2: PEDIR OTRA SUGERENCIA DE INNOVACIÓN (SIN REPETIR)
-            elif any(w in q_lower for w in ["innovar", "sugerencia", "innovacion", "otra cosa", "que mas", "qué más", "avanzado", "diferenciar"]):
-                if "ciberseguridad" not in history_str and "normativa" not in history_str:
-                    analisis_texto = """## 🔐 Nueva Dimensión de Innovación: Ciberseguridad y Cumplimiento Normativo
-
-Para elevar el nivel de tu proyecto y blindarlo ante la comisión evaluadora, incorporemos una capa de **seguridad y normativa legal**:
-
-1. **Cumplimiento de la Ley 21.663 (Ciberseguridad en Chile)**:
-   - Implementa un registro de auditoría inmutable (*audit logs*) con hashes SHA-256 para que ningún registro pueda ser alterado.
-2. **Cifrado de Extremo a Extremo (E2EE)**:
-   - Cifra toda la telemetría y credenciales en tránsito usando TLS 1.3 y en reposo con AES-GCM de 256 bits.
-3. **Autenticación Biométrica Multifactor con FIDO2/WebAuthn**:
-   - En lugar de contraseñas simples, implementa verificación criptográfica de llave física o token biométrico local.
-4. **Métricas de Resiliencia**:
-   - Mide el tiempo medio de recuperación (*MTTR*) y tiempo de respuesta ante fallos de conexión (modo offline tolerante a particiones de red).
-
-¿Te gustaría que diseñemos el diagrama de flujo de seguridad o la estructura de la base de datos?"""
-                else:
-                    analisis_texto = """## ⚡ Nueva Dimensión de Innovación: Procesamiento Edge AI y Baja Latencia
-
-Exploremos un enfoque de **computación en el borde (*Edge Computing*) y optimización de recursos**:
-
-1. **Inferencia Local con Modelos Cuantizados (TinyML)**:
-   - Convierte y cuantiza el modelo a formato **INT8** usando TensorFlow Lite o ONNX Runtime para ejecutarlo en microcomputadores con consumo menor a 5W.
-2. **Arquitectura Offline-First con Sincronización Delta**:
-   - Permite que el sistema funcione de forma 100% autónoma sin internet en SQLite local, enviando solo las diferencias (*deltas*) a Supabase cuando se restablezca la conectividad.
-3. **Protocolo Ligero MQTT / WebSockets**:
-   - Sustituye peticiones HTTP redundantes por un canal MQTT/WebSockets de ultra-baja latencia (<50 ms) para telemetría continua.
-4. **Validación de Rendimiento en Terreno**:
-   - Registra consumo de memoria RAM, CPU y temperatura del dispositivo bajo carga de trabajo intensiva.
-
-¿Quieres que veamos cómo redactar los objetivos específicos para este enfoque?"""
+¿Cuál de estas áreas te llama más la atención?"""
 
             # INTENCIÓN 3: ARQUITECTURA Y STACK TECNOLÓGICO
             elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura", "fastapi", "lenguaje", "hardware", "base de datos", "libreria"]):

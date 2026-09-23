@@ -1719,13 +1719,27 @@
     <!-- Mensajes -->
     <div id="chatBox" class="flex-1 p-4 overflow-y-auto bg-slate-50/50 space-y-1"></div>
 
+    <!-- Preview de archivo adjunto -->
+    <div id="napiFilePreview" class="hidden px-3 py-1.5 bg-red-50 border-t border-red-100 flex items-center justify-between text-xs text-slate-700">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-sm">📎</span>
+        <span id="napiFileName" class="font-bold text-[#ED1C24] truncate">anteproyecto.pdf</span>
+        <span id="napiFileSize" class="text-[10px] text-slate-500 shrink-0"></span>
+      </div>
+      <button onclick="clearNapiFileAttachment()" class="text-slate-400 hover:text-red-500 font-bold px-1.5 py-0.5 rounded hover:bg-red-100 transition-colors" title="Quitar archivo">✕</button>
+    </div>
+
     <!-- Input -->
     <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
-      <input id="napiInput" type="text" placeholder="Escribe o habla por micrófono tu idea o consulta académica..." class="input-field flex-1 px-3 py-2 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')sendMsg()"/>
-      <button id="napiMicBtn" onclick="toggleVoiceInput()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors shadow-sm" title="Hablar por micrófono">
+      <input id="napiFileInput" type="file" accept=".pdf,.docx,.doc,.txt,.json,.csv,.py,.c,.cpp,.ino" class="hidden" onchange="handleNapiFileUpload(event)"/>
+      <button id="napiAttachBtn" onclick="document.getElementById('napiFileInput').click()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors shadow-sm shrink-0" title="Subir documento o código (PDF, Word, TXT, Arduino .ino, Python)">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      </button>
+      <input id="napiInput" type="text" placeholder="Escribe tu consulta o adjunta un archivo (+)..." class="input-field flex-1 px-3 py-2 rounded-xl text-xs font-medium" onkeydown="if(event.key==='Enter')sendMsg()"/>
+      <button id="napiMicBtn" onclick="toggleVoiceInput()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors shadow-sm shrink-0" title="Hablar por micrófono">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z"/></svg>
       </button>
-      <button onclick="sendMsg()" class="p-2 rounded-xl bg-[#ED1C24] hover:bg-[#C41219] text-white transition-colors shadow-md shadow-red-500/25" title="Enviar mensaje">
+      <button onclick="sendMsg()" class="p-2 rounded-xl bg-[#ED1C24] hover:bg-[#C41219] text-white transition-colors shadow-md shadow-red-500/25 shrink-0" title="Enviar mensaje">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
       </button>
     </div>

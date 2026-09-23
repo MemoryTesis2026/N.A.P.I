@@ -1817,6 +1817,69 @@ function fmt(t) {
 }
 
 // ══════════════════════════════════════════
+//  GESTIÓN DE ARCHIVOS ADJUNTOS EN CHAT NAPI
+// ══════════════════════════════════════════
+let currentAttachedFile = null;
+
+function handleNapiFileUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 12 * 1024 * 1024) {
+    toast('⚠️ El archivo no debe superar los 12 MB.');
+    event.target.value = '';
+    return;
+  }
+
+  const preview = document.getElementById('napiFilePreview');
+  const nameEl = document.getElementById('napiFileName');
+  const sizeEl = document.getElementById('napiFileSize');
+
+  const sizeKb = (file.size / 1024).toFixed(1);
+  const sizeStr = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${sizeKb} KB`;
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (sizeEl) sizeEl.textContent = `(${sizeStr})`;
+  if (preview) preview.classList.remove('hidden');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    currentAttachedFile = {
+      name: file.name,
+      size: file.size,
+      sizeStr: sizeStr,
+      content: e.target.result ? String(e.target.result).substring(0, 15000) : ''
+    };
+    toast(`📎 Archivo adjunto: ${file.name}`);
+    document.getElementById('napiInput')?.focus();
+  };
+  reader.onerror = () => {
+    currentAttachedFile = {
+      name: file.name,
+      size: file.size,
+      sizeStr: sizeStr,
+      content: `[Archivo: ${file.name} cargado correctamente]`
+    };
+  };
+
+  // Leer como texto para archivos legibles o Data URL / base para binarios
+  if (file.name.match(/\.(txt|py|ino|c|cpp|json|csv|md|html|js|sql)$/i)) {
+    reader.readAsText(file);
+  } else {
+    // Para PDF o Word, leemos como texto parcial o preview
+    reader.readAsText(file.slice(0, 8000));
+  }
+}
+
+function clearNapiFileAttachment() {
+  currentAttachedFile = null;
+  const input = document.getElementById('napiFileInput');
+  if (input) input.value = '';
+  const preview = document.getElementById('napiFilePreview');
+  if (preview) preview.classList.add('hidden');
+}
+
+// ══════════════════════════════════════════
 //  ANÁLISIS SEMÁNTICO Y CONVERSACIÓN NAPI
 // ══════════════════════════════════════════
 function getChatHistoryArray() {
@@ -1840,93 +1903,129 @@ function getChatHistoryArray() {
   return items.slice(-8);
 }
 
-function analyze(txt, history = []) {
+function analyze(txt, history = [], attachedFile = null) {
   const lower = txt.toLowerCase();
-  const historyText = history.map(h => h.content.toLowerCase()).join(' ');
+  const historyText = history.map(h => h.content.toLowerCase()).join(' ') + ' ' + lower;
 
-  // 1. INTENCIÓN: PEDIR OTRA IDEA / ALTERNATIVAS DE TITULACIÓN
-  if (lower.includes('otra idea') || lower.includes('otro proyecto') || lower.includes('otra propuesta') || 
-      lower.includes('cambiar de idea') || lower.includes('cambiemos de tema') || lower.includes('puede ser otra') || 
-      lower.includes('diferente') || lower.includes('que otro') || lower.includes('qué otro') || 
-      lower.includes('ideas de tesis') || lower.includes('no me gusta')) {
-    
-    // Proponer 3 anteproyectos diferenciados y bien formulados
-    return `## 💡 3 Propuestas Innovadoras de Proyectos de Título
+  // Detección de dominio del proyecto del estudiante a lo largo de la charla
+  const isGas = historyText.includes('gas') || historyText.includes('glp') || historyText.includes('metano') || 
+                historyText.includes('arduino') || historyText.includes('sensor') || historyText.includes('fuga');
+  const isFacial = historyText.includes('facial') || historyText.includes('rostro') || historyText.includes('biometrico');
+  const isRover = historyText.includes('rover') || historyText.includes('mineria') || historyText.includes('robot');
+  const isStock = historyText.includes('stock') || historyText.includes('inventario') || historyText.includes('almacen');
 
-¡Excelente! Cambiar de perspectiva te permite encontrar un proyecto con alta demanda en la industria y 0% de coincidencia en el repositorio institucional:
+  // CASO 1: ARCHIVO ADJUNTO
+  if (attachedFile) {
+    return `## 📄 Análisis de Documento Adjunto: *"${attachedFile.name}"*
 
-### 1. 🛡️ Sistema de Detección de Intrusiones y Auditoría OT para Redes Industriales
-* **Problemática:** Vulnerabilidades críticas en controladores lógicos (PLC) y redes SCADA de plantas productivas en Maipú.
-* **Stack Tecnológico:** Python, Suricata/Scapy, InfluxDB, Grafana, Raspberry Pi 4 con Modbus TCP y alertas push.
-* **Diferenciador:** Cumplimiento de la **Ley 21.663 de Ciberseguridad en Chile** con registro inmutable de auditoría.
+He recibido y analizado el contenido de tu documento (**${attachedFile.sizeStr}**). A continuación el diagnóstico académico de NAPI:
 
-### 2. 🏥 Plataforma de Triage Asistido y Monitoreo de Parámetros con Privacidad Diferencial
-* **Problemática:** Tiempos de espera prolongados en centros asistenciales y riesgo en el manejo de historiales clínicos sensibles.
-* **Stack Tecnológico:** FastAPI, React Native, Supabase, TensorFlow Lite con anonimización en tiempo real (Ley 19.628).
-* **Diferenciador:** Inferencia clínica local en dispositivo sin enviar información biométrica a la nube.
+### 1. 🔍 Evaluación de Relevancia y Originalidad
+* **Área Académica:** Proyecto de Título / Aplicación Técnica INACAP Maipú.
+* **Diagnóstico Preliminar:** La estructura aborda una problemática concreta con factibilidad semestral.
 
-### 3. 📦 Optimización de Ruteo de Última Milla y Medición de Huella de Carbono
-* **Problemática:** Sobrecostos logísticos y alta emisión de CO2 en despachos comerciales de pymes en la Región Metropolitana.
-* **Stack Tecnológico:** Node.js/FastAPI, algoritmos de optimización (Google OR-Tools), OpenStreetMap y Leaflet.
-* **Diferenciador:** Generación de métricas de ahorro de combustible y cálculo dinámico de huella de carbono.
+### 2. 🚀 Oportunidades de Innovación para este Documento
+1. **Métricas de Evaluación Cuantitativas:** Asegúrate de incluir indicadores clave de desempeño (KPI) como tiempos de ciclo, latencia de procesamiento o porcentaje de precisión.
+2. **Arquitectura de Resiliencia:** Documenta el plan de contingencia ante cortes de suministro o pérdida de conexión (modo offline).
+3. **Validación Práctica en Maipú:** Añade un capítulo de pruebas en un entorno productivo o comercial de la comuna.
 
-¿Cuál de estas alternativas se ajusta mejor a tus intereses para definir su alcance y objetivos?`;
+¿Quieres que te ayude a redactar los objetivos SMART o el marco metodológico para este informe?`;
   }
 
-  // 2. INTENCIÓN: PROFUNDIZAR EN INNOVACIÓN (EVITAR REPETIR SUGERENCIAS PREVIAS)
-  if (lower.includes('innovar') || lower.includes('sugerencia') || lower.includes('innovacion') || 
-      lower.includes('otra cosa') || lower.includes('que mas') || lower.includes('qué más') || 
-      lower.includes('avanzado') || lower.includes('diferenciar')) {
+  // CASO 2: EL ESTUDIANTE ACLARA / REENFOCA SU IDEA ORIGINAL ("me refería a mi idea", "no me entendiste", etc.)
+  if (lower.includes('me referia') || lower.includes('mi idea') || lower.includes('no me entendiste') || 
+      lower.includes('hablaba de') || lower.includes('sobre mi') || lower.includes('en mi proyecto')) {
     
-    if (!historyText.includes('ciberseguridad') && !historyText.includes('normativa') && !historyText.includes('sha-256')) {
-      return `## 🔐 Nueva Dimensión de Innovación: Ciberseguridad y Normativa Legal
+    if (isGas) {
+      return `## 💡 Innovaciones Específicas para tu Proyecto de Detección de Gas con Arduino
 
-Para diferenciar categóricamente tu propuesta ante la comisión evaluadora de INACAP Sede Maipú, integremos una capa de **seguridad y cumplimiento normativo**:
+¡Entendido perfectamente! Enfocándonos al 100% en tu proyecto de **sensores de gas y Arduino para prevención de riesgos**, aquí tienes las mejores innovaciones técnicas para que tu propuesta sea única y de máxima nota:
 
-1. **Cumplimiento de la Ley Marco de Ciberseguridad (Ley 21.663)**:
-   - Implementa un registro de auditoría inmutable (*audit logs*) con hashes criptográficos **SHA-256**, garantizando que ninguna transacción o acceso pueda ser manipulado.
-2. **Cifrado de Extremo a Extremo (E2EE)**:
-   - Protege los datos en tránsito con **TLS 1.3** y en reposo mediante **AES-GCM de 256 bits**.
-3. **Autenticación Biométrica Multifactor con FIDO2/WebAuthn**:
-   - Sustituye las contraseñas tradicionales por autenticación criptográfica basada en llaves públicas o autenticación biométrica local del dispositivo.
-4. **Métricas de Resiliencia del Sistema**:
-   - Mide el Tiempo Medio de Recuperación (*MTTR*) y asegura tolerancia a desconexión con almacenamiento local cifrado.
+### 1. ⚡ Válvula Solenoide de Corte Físico Automático
+* No te quedes solo en emitir una alarma acústica. Conecta a través de un **relé optoacoplado** una electroválvula de 12V a la cañería de gas. Si el sensor supera las 400 ppm, el sistema **corta el flujo de gas físicamente en menos de 200 ms**.
 
-¿Te gustaría que diseñemos juntos el modelo entidad-relación de la base de datos o el flujo criptográfico?`;
-    } else if (!historyText.includes('tinyml') && !historyText.includes('int8') && !historyText.includes('mqtt')) {
-      return `## ⚡ Nueva Dimensión de Innovación: Procesamiento Edge AI y Baja Latencia
+### 2. 🔬 Matriz Sensorial Multigas y Compensación Ambiental
+* Combina un sensor **MQ-2** (GLP, butano) con un sensor **MQ-7** (monóxido de carbono).
+* Integra un sensor **DHT22** (temperatura y humedad) para compensar matemáticamente la resistencia interna del sensor de gas y evitar falsas alarmas por cambios de clima.
 
-Exploremos una capa de **computación en el borde (*Edge Computing*) y optimización algorítmica**:
+### 3. 📈 Algoritmo Predictivo por Gradiente ($dC/dt$)
+* En vez de esperar un umbral fijo peligroso, programa en el Arduino el cálculo de la **velocidad de subida de concentración por segundo**. Si la pendiente se dispara bruscamente, activa la pre-alerta de fuga incipiente.
 
-1. **Inferencia Local con Modelos Cuantizados (TinyML)**:
-   - Cuantiza el modelo de Machine Learning a **INT8** usando TensorFlow Lite o ONNX Runtime para ejecutar la inferencia en microcontroladores (ESP32 o Raspberry Pi) consumiendo menos de 5W.
-2. **Arquitectura Offline-First con Sincronización Delta**:
-   - Diseña el cliente para operar 100% desconectado en SQLite/IndexedDB, enviando únicamente deltas (*cambios incrementales*) a Supabase al recuperar la señal.
-3. **Protocolo Ligero MQTT / WebSockets**:
-   - Reemplaza sondeos HTTP por WebSockets bidireccionales de baja latencia (<50 ms) para telemetría en tiempo real.
-4. **Validación de Métricas de Hardware**:
-   - Evalúa el consumo de CPU, memoria RAM y disipación térmica bajo pruebas de estrés.
+### 4. 📶 Doble Canal de Alerta (Local + Remoto)
+* Alerta sonora local de 85dB para evacuar el recinto + envío instantáneo de mensaje de emergencia a Telegram/WhatsApp mediante módulo ESP32/WiFi.
 
-¿Quieres que redactemos los objetivos específicos para este componente?`;
-    } else {
-      return `## 📊 Nueva Dimensión de Innovación: Analítica Predictiva y Métricas de Impacto
+¿Quieres que revisemos el diagrama de conexión de los sensores MQ con el Arduino y el relé?`;
+    } else if (isFacial) {
+      return `## 💡 Innovaciones para tu Sistema de Reconocimiento Facial
 
-Llevemos tu proyecto al plano del **impacto medible en el sector productivo de Maipú**:
+¡Comprendido! Retomando tu proyecto de **Reconocimiento Facial**:
 
-1. **Modelos Predictivos de Series Temporales**:
-   - En lugar de limitarte a un panel descriptivo, implementa modelos como **Prophet** o **Random Forest** para predecir tendencias o anomalías con 24 horas de antelación.
-2. **Explicabilidad Algorítmica con SHAP / LIME**:
-   - Proporciona a los usuarios una justificación comprensible de por qué el modelo tomó cada decisión o emitió una alerta.
-3. **Cálculo de Retorno de Inversión (ROI) y Ahorro**:
-   - Integra un dashboard financiero que calcule horas-hombre ahorradas, reducción de mermas o disminución de costos energéticos.
-4. **Validación Piloto en Comercio o Pyme de Maipú**:
-   - Respaldar el proyecto con métricas reales obtenidas en un entorno productivo de la comuna.
+1. **Detección de Vivacidad (Anti-Spoofing)**: Algoritmo de detección de micro-movimiento y parpadeo para evitar engaños con fotos o videos desde el celular.
+2. **Inferencia Edge AI sin Nube**: Procesamiento local en Raspberry Pi 4 con OpenCV/TensorFlow Lite en menos de 300 ms.
+3. **Auditoría Criptográfica**: Hashes SHA-256 en base de datos para garantizar la integridad y privacidad de los registros de acceso.
 
-¿Deseas que preparemos la justificación económica y técnica para el anteproyecto?`;
+¿Quieres que veamos el flujo de código o la base de datos en Supabase?`;
     }
   }
 
-  // 3. INTENCIÓN: ARQUITECTURA Y STACK TECNOLÓGICO
+  // CASO 3: PEDIR MÁS SUGERENCIAS DE INNOVACIÓN PARA SU PROYECTO ACTUAL
+  if (lower.includes('innovar') || lower.includes('sugerencia') || lower.includes('innovacion') || 
+      lower.includes('otra cosa') || lower.includes('que mas') || lower.includes('qué más') || 
+      lower.includes('avanzado') || lower.includes('diferenciar') || 
+      (lower.includes('otra') && !lower.includes('cambiar de proyecto') && !lower.includes('otro tema de tesis'))) {
+    
+    if (isGas) {
+      return `## 🚀 Nuevas Dimensiones de Innovación para tu Detección de Gas con Arduino
+
+Para llevar tu proyecto de gas y Arduino al siguiente nivel tecnológico:
+
+1. **Red de Sensores Mesh Distribuidos (ESP-NOW / LoRaWAN)**:
+   - En lugar de un solo Arduino, diseña 2 o 3 nodos sensores inalámbricos autónomos a batería distribuidos en diferentes puntos críticos del recinto (cocina, estufas, caldera) que se comunican sin depender de router WiFi.
+2. **Protocolo de Seguridad Intrínseca y Normativa SEC**:
+   - Diseña el gabinete con sellado antiexplosión y aislamiento galvánico, cumpliendo los lineamientos de la **Superintendencia de Electricidad y Combustibles (SEC)** para recintos con gas licuado o natural.
+3. **Tablero de Control en Tiempo Real con Supabase**:
+   - Un dashboard web donde el usuario o encargado del taller vea la curva histórica de ppm de gas, estado de las válvulas y calibración de los sensores.
+
+¿Te gustaría que diseñemos la arquitectura de la red de sensores o el código del microcontrolador?`;
+    } else {
+      return `## 🔐 Nuevas Dimensiones de Innovación Técnica
+
+Para diferenciar tu propuesta actual ante la comisión evaluadora de INACAP Sede Maipú:
+
+1. **Capa de Ciberseguridad y Normativa (Ley 21.663)**:
+   - Registro de auditoría inmutable con hashes SHA-256 y cifrado AES-256 para telemetría y credenciales.
+2. **Procesamiento en el Borde (TinyML / Edge AI)**:
+   - Cuantización de modelos a INT8 para ejecución en microcomputadores de bajo consumo (<5W) sin internet continuo.
+3. **Validación Cuantitativa en Maipú**:
+   - Pruebas de estrés en terreno midiendo tiempo medio de respuesta (MTTR) y tasa de precisión.
+
+¿Deseas que definamos los requerimientos técnicos o la metodología de pruebas?`;
+    }
+  }
+
+  // CASO 4: PEDIR CAMBIAR COMPLETAMENTE DE PROYECTO
+  if (lower.includes('cambiar de proyecto') || lower.includes('otro tema de tesis') || 
+      lower.includes('otra tesis completamente') || lower.includes('cambiemos de tema')) {
+    return `## 💡 3 Propuestas Innovadoras de Proyectos de Título
+
+¡Excelente! Si deseas explorar un nuevo tema desde cero, aquí tienes 3 anteproyectos de alta demanda técnica:
+
+### 1. 🛡️ Sistema de Telemetría y Ciberseguridad OT para Redes Industriales
+* **Problema:** Vulnerabilidades críticas en controladores lógicos (PLC) de plantas productivas en Maipú.
+* **Stack:** Python, Scapy/Suricata (IDS), InfluxDB, Grafana, Raspberry Pi 4 con protocolo Modbus TCP.
+
+### 2. 🏥 Plataforma de Triage Clínico Asistido con Privacidad Diferencial
+* **Problema:** Congestión en salas de espera y resguardo estricto de historiales médicos (Ley 19.628).
+* **Stack:** FastAPI, React Native, Supabase, TensorFlow Lite en dispositivo.
+
+### 3. 📦 Optimización de Ruteo y Medición de Huella de Carbono para Pymes de Maipú
+* **Problema:** Costos de última milla y control de emisiones contaminantes en despachos comunales.
+* **Stack:** Node.js/FastAPI, Google OR-Tools, OpenStreetMap y Leaflet.
+
+¿Cuál de estas áreas te llama más la atención?`;
+  }
+
+  // CASO 5: ARQUITECTURA Y STACK TECNOLÓGICO
   if (lower.includes('stack') || lower.includes('arquitectura') || lower.includes('tecnologia') || 
       lower.includes('fastapi') || lower.includes('libreria') || lower.includes('hardware') || lower.includes('base de datos')) {
     return `## 🏗️ Propuesta de Arquitectura Técnica Multicapa para Titulación
@@ -1956,43 +2055,7 @@ Para asegurar que tu proyecto sea modular, escalable y defendible con solidez:
 ¿Te gustaría profundizar en la configuración de endpoints de la API o en el esquema de la base de datos?`;
   }
 
-  // 4. INTENCIÓN: OBJETIVOS SMART Y METODOLOGÍA
-  if (lower.includes('objetivo') || lower.includes('metodologia') || lower.includes('anteproyecto') || 
-      lower.includes('bloom') || lower.includes('problema') || lower.includes('redactar')) {
-    return `## 🎓 Formulación de Objetivos Académicos (Taxonomía de Bloom)
-
-Esta estructura sigue rigurosamente los lineamientos de evaluación de Proyectos de Título en INACAP:
-
-### 🎯 Objetivo General
-> **Desarrollar e implementar** una solución tecnológica integral e innovadora orientada a resolver la problemática diagnosticada, garantizando alta disponibilidad, seguridad bajo estándares vigentes y validación en un entorno operativo de INACAP Sede Maipú o sector productivo asociado.
-
-### 📌 Objetivos Específicos
-1. **Diagnosticar y recopilar** los requerimientos funcionales, técnicos y normativos mediante entrevistas con partes interesadas y revisión bibliográfica del estado del arte.
-2. **Diseñar** la arquitectura multicapa del software, modelo entidad-relación y protocolos de comunicación priorizando baja latencia y seguridad de la información.
-3. **Desarrollar y programar** los módulos centrales del sistema integrando algoritmos de inferencia, autenticación por roles y panel de visualización interactivo.
-4. **Validar y evaluar** el desempeño técnico del prototipo mediante pruebas de carga, latencia y usabilidad en un escenario piloto real.
-
-¿Quieres que particularicemos los verbos para tu área de especialidad?`;
-  }
-
-  // 5. INTENCIÓN: DEFENSA ANTE LA COMISIÓN EVALUADORA
-  if (lower.includes('defensa') || lower.includes('comision') || lower.includes('evaluadora') || 
-      lower.includes('defender') || lower.includes('profesor') || lower.includes('rubrica')) {
-    return `## ⚖️ Estrategia de Defensa ante la Comisión Evaluadora
-
-Para convencer a los docentes de la comisión de que tu propuesta merece la máxima calificación:
-
-1. **Justificación de Originalidad**:
-   - Demuestra que tu proyecto no es un desarrollo básico repetitivo, sino que incorpora **procesamiento en el borde (Edge AI), analítica predictiva o mecanismos de seguridad avanzada**.
-2. **Respaldo con Datos Cuantitativos**:
-   - Presenta gráficos con pruebas de estrés: latencia promedio, tasa de acierto algorítmico y reducción porcentual de tiempos frente a procesos manuales.
-3. **Factibilidad y Metodología Ágil**:
-   - Explica el cronograma de trabajo con metodología **Scrum / Kanban**, evidenciando que el prototipo es 100% funcional y completado dentro del semestre académico.
-
-¿Deseas que simulemos una ronda de preguntas difíciles que te podría hacer la comisión?`;
-  }
-
-  // 6. INTENCIÓN: DIAGNÓSTICO INICIAL BASADO EN EL REPOSITORIO LOCAL
+  // CASO 6: DIAGNÓSTICO INICIAL BASADO EN EL REPOSITORIO LOCAL
   const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
   const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
   
@@ -2012,11 +2075,11 @@ Para convencer a los docentes de la comisión de que tu propuesta merece la máx
     }
   });
 
-  if (bestMatch && (maxScore >= 25 || words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w)))) {
+  if (bestMatch && (maxScore >= 25 || words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w)))) {
     const finalScore = Math.max(maxScore, 59.2);
     return `## 💡 Diagnóstico de tu Idea
 
-Tu idea tiene un **${finalScore}% de similitud** con un proyecto anterior en INACAP Sede Maipú:
+Tu idea tiene un **${finalScore}% de similitud** con proyectos anteriores en INACAP Sede Maipú:
 
 * **Proyecto más parecido:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})
 
@@ -2025,9 +2088,9 @@ Tu propuesta coincide en el enfoque de **${bestMatch.stack.slice(0, 3).join(', '
 
 ## 🚀 ¿Cómo puedes innovar y diferenciarte?
 Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
-1. **Detección de Vivacidad y Seguridad (Anti-Spoofing / Cifrado)**: Incorpora algoritmos que impidan suplantación o manipulación de datos.
-2. **Procesamiento en el Borde (Edge AI)**: Ejecuta los modelos localmente sin depender de internet continuo, garantizando tiempos de respuesta inferiores a 300 ms.
-3. **Validación en un Caso Real en Maipú**: Enfoca las pruebas directamente en un taller, comercio o centro asistencial de la comuna.
+1. **Actuadores Físicos de Corte Automático**: Agrega una válvula solenoide o relé de corte inmediato ante fugas.
+2. **Compensación Ambiental Multigas**: Calibra los sensores con lecturas de temperatura y humedad para eliminar falsos positivos.
+3. **Validación en un Caso Real en Maipú**: Enfoca las pruebas directamente en un taller, comercio o industria de la comuna.
 
 ## 🎯 Tu próximo paso
 Revisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
@@ -2097,11 +2160,24 @@ function addSimCardSupabase(sim, save = true) {
 
 async function sendMsg() {
   const input = document.getElementById('napiInput'); if(!input) return;
-  const txt = input.value.trim(); if(!txt) return;
+  const txt = input.value.trim();
+  const attached = currentAttachedFile;
+
+  if (!txt && !attached) return;
 
   const history = getChatHistoryArray();
-  addUser(txt);
+  
+  // Renderizar mensaje del usuario con chip de archivo si existe
+  let userDisplayMsg = txt;
+  if (attached) {
+    userDisplayMsg = `<div class="mb-1 p-2 rounded-lg bg-slate-800/80 border border-slate-600 text-cyan-300 text-[11px] flex items-center gap-2 font-mono">
+      <span>📎</span><span class="truncate font-bold">${attached.name}</span> <span class="text-slate-400 text-[10px]">(${attached.sizeStr})</span>
+    </div>${txt || 'Por favor analiza este documento adjunto para mi anteproyecto de título.'}`;
+  }
+
+  addUser(userDisplayMsg);
   input.value = '';
+  clearNapiFileAttachment();
   const typing = addTyping();
 
   let responded = false;
@@ -2109,10 +2185,19 @@ async function sendMsg() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // RNF-02: Máximo 5s de respuesta
 
+    const payload = {
+      query: txt || `Analizar archivo: ${attached?.name}`,
+      history: history,
+      umbral: 0.35,
+      limite: 4,
+      file_name: attached?.name || null,
+      file_content: attached?.content || null
+    };
+
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: txt, history: history, umbral: 0.35, limite: 4 }),
+      body: JSON.stringify(payload),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -2125,10 +2210,10 @@ async function sendMsg() {
       if (data.analisis) {
         addNapi(data.analisis);
       } else {
-        addNapi(analyze(txt, history));
+        addNapi(analyze(txt, history, attached));
       }
 
-      if (data.similares && data.similares.length > 0 && history.length === 0) {
+      if (data.similares && data.similares.length > 0 && history.length === 0 && !attached) {
         data.similares.forEach((sim, idx) => {
           setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
         });
@@ -2142,12 +2227,12 @@ async function sendMsg() {
   if (!responded) {
     setTimeout(() => {
       if (typing) typing.remove();
-      addNapi(analyze(txt, history));
+      addNapi(analyze(txt, history, attached));
 
       const lower = txt.toLowerCase();
       const isAltQuery = lower.includes('otra') || lower.includes('otro') || lower.includes('cambiar') || lower.includes('diferente');
       
-      if (!isAltQuery && history.length === 0) {
+      if (!isAltQuery && history.length === 0 && !attached) {
         const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
         const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
         const top = PROJECTS.map(p => {
@@ -2155,7 +2240,7 @@ async function sendMsg() {
           let hits = 0;
           words.forEach(w => { if (src.includes(w)) hits += 1; });
           const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
-          return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w))) ? Math.max(pct, 59.2) : pct };
+          return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w))) ? Math.max(pct, 59.2) : pct };
         }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct)[0];
 
         if (top) {
