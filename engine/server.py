@@ -787,7 +787,7 @@ Qué parte específica de la idea del estudiante NO está cubierta por los proye
         if not analisis_texto:
             history_str = " ".join([h.content.lower() for h in (req.history or [])]) + " " + q_lower
             
-            # Detectar si es consulta de seguimiento o aclaración
+            # INTENCIÓN 1: Seguimiento o aclaración específica de innovación
             if is_followup and any(w in q_lower for w in ["innovar", "sugerencia", "diferenciar", "me referia", "mi idea", "que mas", "qué más", "otra cosa"]):
                 if "gas" in history_str or "arduino" in history_str or "sensor" in history_str:
                     analisis_texto = """Tu propuesta de **sensores de gas y Arduino** presenta los siguientes puntos de contacto y vacíos detectados en el repositorio:
@@ -821,6 +821,56 @@ Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
 > *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
 
+            # INTENCIÓN 2: ARQUITECTURA Y STACK TECNOLÓGICO
+            elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura", "fastapi", "lenguaje", "hardware", "base de datos", "libreria"]):
+                analisis_texto = """Para estructurar tu anteproyecto con solidez técnica en INACAP Sede Maipú, esta es la arquitectura recomendada:
+
+### Arquitectura Técnica Sugerida
+* **Frontend:** Vanilla JS / Vite para máxima velocidad y ligereza sin sobrecarga de dependencias.
+* **Backend:** FastAPI (Python 3.11+) con endpoints REST asíncronos y validación Pydantic.
+* **Persistencia y Auth:** PostgreSQL gestionado en Supabase con Row Level Security (RLS) y roles (Estudiante, Docente, Admin).
+* **IA / Embeddings:** Modelos de inferencia local o API de bajo coste con vector similarity.
+
+### Lectura del Gap
+En el repositorio de la sede abundan arquitecturas monolíticas web tradicionales; diferenciarte con una API desacoplada y tiempo real aporta valor académico tangible.
+
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
+
+            # INTENCIÓN 3: METODOLOGÍA Y FORMULACIÓN DE OBJETIVOS
+            elif any(w in q_lower for w in ["objetivo", "metodologia", "anteproyecto", "problema", "bloom", "redactar"]):
+                analisis_texto = """Para tu anteproyecto de título en INACAP Sede Maipú, esta estructura de objetivos cumple con el estándar de titulación (Taxonomía de Bloom):
+
+### Propuesta de Objetivos
+* **Objetivo General:** Desarrollar e implementar un sistema tecnológico que resuelva la problemática identificada, garantizando disponibilidad y validación experimental en un entorno real de la comuna de Maipú.
+* **Objetivos Específicos:**
+  1. *Diagnosticar* los requerimientos técnicos y funcionales mediante levantamiento directo con usuarios.
+  2. *Diseñar* la arquitectura de software y el modelo de datos asegurando persistencia y roles.
+  3. *Implementar* los módulos funcionales del prototipo con procesamiento de datos y panel web.
+  4. *Validar* el rendimiento del sistema mediante pruebas de carga, latencia y usabilidad con usuarios finales.
+
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
+
+            # INTENCIÓN 4: SEGUIMIENTO GENERAL O DEFENSA
+            elif is_followup:
+                analisis_texto = """Para defender tu propuesta frente a la comisión evaluadora de INACAP Sede Maipú, enfócate en estos tres pilares de justificación:
+
+### Estrategia de Defensa Académica
+1. **Diferenciación técnica:** Supera las limitaciones de proyectos anteriores agregando procesamiento en tiempo real o alertas automáticas.
+2. **Impacto medible:** Define indicadores claros (tiempo de respuesta, porcentaje de precisión o reducción de costos operativos).
+3. **Factibilidad:** Asegura que el alcance esté debidamente delimitado para el semestre lectivo de titulación.
+
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
+
+            # INTENCIÓN 5: REPORTE DE SIMILITUD (CON PROYECTOS COINCIDENTES EN REPOSITORIO)
             elif similares:
                 top_projs = similares[:2]
                 evidencia_txt = ""
@@ -848,6 +898,8 @@ Los proyectos del repositorio abordan soluciones generales o en otros contextos.
 Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
 > *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
+
+            # INTENCIÓN 6: SIN COINCIDENCIAS RELEVANTES (IDEA ORIGINAL / 0% SIMILITUD)
             else:
                 analisis_texto = f"""No encuentro proyectos con similitud relevante sobre el umbral en el repositorio de INACAP Sede Maipú para la propuesta: *"{req.query}"*.
 
@@ -858,111 +910,6 @@ No se registran antecedentes directos que aborden este problema específico con 
 Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
 > *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
-
-            # INTENCIÓN 3: ARQUITECTURA Y STACK TECNOLÓGICO
-            elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura", "fastapi", "lenguaje", "hardware", "base de datos", "libreria"]):
-                analisis_texto = """## 🏗️ Propuesta de Arquitectura Técnica Multicapa para Titulación
-
-Para garantizar alta escalabilidad y fácil defensa ante tu docente guía, esta es la arquitectura recomendada:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. CAPA DE PRESENTACIÓN & INTERFAZ                         │
-│    • Web Dashboard: Vanilla JS / React + Tailwind CSS       │
-│    • App Móvil: React Native / PWA (Offline-First)          │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ REST API / WebSockets
-┌──────────────────────────────▼──────────────────────────────┐
-│ 2. CAPA DE LÓGICA & INFERENCIA (BACKEND)                    │
-│    • Motor API: FastAPI (Python 3.11) con Uvicorn asíncrono │
-│    • Modelos IA/ML: OpenCV / MediaPipe / Scikit-Learn       │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Supabase SDK / SQL
-┌──────────────────────────────▼──────────────────────────────┐
-│ 3. CAPA DE PERSISTENCIA & TIEMPO REAL                       │
-│    • Base de Datos: PostgreSQL (Supabase) con RLS           │
-│    • Almacenamiento: Supabase Storage para evidencias       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Protocolos y Rendimiento
-* **Autenticación**: JWT con Roles (Estudiante / Docente / Admin)
-* **Latencia objetivo**: Inferencia < 300 ms en local
-* **Persistencia**: Caché en memoria para consultas recurrentes
-
-¿Quieres que profundicemos en la estructura de tablas de la base de datos o en los endpoints de la API?"""
-
-            # INTENCIÓN 4: METODOLOGÍA Y FORMULACIÓN DE OBJETIVOS
-            elif any(w in q_lower for w in ["objetivo", "metodologia", "anteproyecto", "problema", "bloom", "redactar"]):
-                analisis_texto = """## 🎓 Formulación de Objetivos Académicos (Taxonomía de Bloom)
-
-Para tu anteproyecto de título en INACAP Sede Maipú, esta estructura de objetivos cumple con el estándar de titulación:
-
-### 🎯 Objetivo General
-> **Desarrollar e implementar** un sistema tecnológico e innovador que resuelva la problemática identificada, garantizando alta disponibilidad, seguridad y validación en un entorno operativo real de la Sede Maipú o sector productivo asociado.
-
-### 📌 Objetivos Específicos
-1. **Diagnosticar y recopilar** los requerimientos funcionales, técnicos y de seguridad mediante levantamiento de información con usuarios y revisión del estado del arte.
-2. **Diseñar** la arquitectura de software, modelo de datos y esquemas de comunicación bajo estándares de alta disponibilidad y bajo consumo de recursos.
-3. **Implementar y programar** los módulos funcionales del sistema integrando procesamiento de datos, algoritmos de inferencia y panel de administración interactivo.
-4. **Validar y evaluar** el rendimiento del prototipo mediante pruebas de carga, latencia y usabilidad en un escenario práctico real.
-
-¿Quieres que ajustemos los verbos específicos según el área exacta de tu carrera?"""
-
-            # INTENCIÓN 5: COMPARACIÓN O DEFENSA ANTE COMISIÓN
-            elif is_followup:
-                analisis_texto = """## ⚖️ Análisis Crítico y Estrategia de Defensa Académica
-
-Al plantear tu proyecto ante la comisión evaluadora de INACAP Sede Maipú, estos son los 3 argumentos clave que demostrarán la originalidad y valor de tu trabajo:
-
-1. **Superación de Limitaciones de Proyectos Previos**:
-   - Los proyectos históricos solían ser monolíticos o dependientes de conexión constante. Tu propuesta introduce **procesamiento local (Edge), alertas en tiempo real y alta seguridad**.
-2. **Impacto Cuantitativo Medible**:
-   - Tu proyecto no solo crea software, sino que mide métricas reales: reducción de tiempos de respuesta, precisión algorítmica y eficiencia de costos.
-3. **Viabilidad Técnica y Factibilidad**:
-   - Demuestra que el prototipo está acotado al tiempo de titulación (1 semestre), utilizando librerías probadas y metodologías ágiles (Scrum/Kanban).
-
-¿Deseas que redactemos la justificación del proyecto para tu informe escrito?"""
-
-            # INTENCIÓN 6: DIAGNÓSTICO INICIAL CON PROYECTOS SIMILARES
-            elif similares:
-                top = similares[0]
-                proyectos_lista = "\n".join([
-                    f"- **{s.get('titulo')}** ({s.get('porcentaje_similitud', 60)}% parecido) — *{s.get('carrera')} · {s.get('anio')}*"
-                    for s in similares[:2]
-                ])
-                analisis_texto = f"""## 💡 Diagnóstico de tu Idea
-
-Tu idea tiene un **{top_similitud}% de similitud** con proyectos previos en INACAP Sede Maipú.
-
-* **Proyecto más parecido:** *"{top.get('titulo')}"* ({top.get('anio')})
-
-## 🔍 ¿En qué se parece?
-Tu propuesta coincide en el objetivo principal con estos trabajos registrados en la sede:
-{proyectos_lista}
-
-## 🚀 ¿Cómo puedes innovar y diferenciarte?
-Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
-1. **Agregar alertas automáticas y tiempo real:** Notificaciones instantáneas al celular (por WhatsApp, Telegram o correo) cuando se detecte alguna anomalía.
-2. **Incorporar predicción simple con IA:** En lugar de solo mostrar datos actuales, usa un modelo que anticipe qué pasará en las próximas horas.
-3. **Aplicarlo a un caso real en Maipú:** Enfoca la solución directamente en un taller, comercio o industria de la comuna.
-
-## 🎯 Tu próximo paso
-Revisa el proyecto anterior para ver qué le faltó y preséntale esta propuesta mejorada a tu profesor guía."""
-            else:
-                analisis_texto = f"""## 💡 Diagnóstico de tu Idea
-
-* **Nivel de coincidencia:** **0% (Idea Original)**
-* **Propuesta:** "{req.query}"
-
-🎉 **¡Excelente idea!** No hay proyectos registrados en INACAP Sede Maipú que se parezcan a lo que propones.
-
-## 🚀 ¿Cómo asegurar el éxito de tu proyecto?
-1. **Tecnologías recomendadas:** Elige herramientas modernas y fáciles de integrar como FastAPI, Supabase y React/Next.js.
-2. **Pruebas prácticas:** Diseña un prototipo funcional pequeño antes de construir todo el sistema completo.
-
-## 🎯 Tu próximo paso
-Empieza a redactar el resumen de tu anteproyecto y coméntalo con tu docente guía."""
 
         return {
             "query": req.query,
