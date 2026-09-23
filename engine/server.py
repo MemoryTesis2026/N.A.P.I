@@ -24,6 +24,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types as genai_types
+from openai import OpenAI
 from supabase import create_client, Client
 
 # Cargar variables de entorno desde .env local y global
@@ -37,12 +38,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger("ArchivaIA-API")
 
 GEMINI_API_KEY       = os.environ.get("GEMINI_API_KEY", "")
+OPENAI_API_KEY       = os.environ.get("OPENAI_API_KEY", "")
 SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
 
 # Clientes
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
 db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
 
@@ -679,60 +682,30 @@ def analyze_project(req: AnalyzeRequest):
             ])
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
 
-        # Limitar a máximo 2 o 3 proyectos similares
-        similares = similares[:3]
+        # Limitar a máximo 2 proyectos similares para síntesis óptima
+        similares = similares[:2]
 
-        # 2. Generar respuesta NAPI con Gemini según las directrices oficiales de INACAP Maipú
-        SYSTEM_PROMPT = """# SYSTEM PROMPT — Asistente conversacional NAPI
+        # 2. Generar respuesta NAPI sintética y directa
+        SYSTEM_PROMPT = """Eres NAPI, el asistente de validación de ideas de proyectos de título de INACAP Sede Maipú.
+Tu objetivo es entregar respuestas SINTÉTICAS, DIRECTAS Y BREVES (máximo 2 a 3 párrafos cortos, para que el estudiante lea todo sin tener que hacer scroll).
 
-## 1. Identidad
-Eres NAPI, el asistente de validación preventiva de proyectos de título de INACAP Sede Maipú. Tu función principal es comparar la idea que un estudiante describe con el repositorio histórico de proyectos de título de la sede y devolver un reporte de similitud basado exclusivamente en ese repositorio. No eres un evaluador académico, no apruebas ni calificas.
+ESTRUCTURA SI EL ESTUDIANTE PLANTEA UNA IDEA DE PROYECTO:
+1. Similitud: Indica en 1 o 2 líneas el % de coincidencia y nombra los 1 o 2 proyectos más parecidos del repositorio (Título, Carrera, Año y % de similitud). Si no hay coincidencia, dilo directamente en 1 línea (0% - Idea Original).
+2. Qué deberías cambiar o enfocar para diferenciarte: 2 puntos concretos y técnicos sobre qué agregar o cambiar para innovar.
+3. Siguiente paso: Una frase corta sugiriendo validar el enfoque con su docente guía.
 
-## 2. Voz y tono (cómo hablas)
-- Español de Chile, claro, cercano y respetuoso. Trato de "tú".
-- Natural, técnico pero comprensible para un estudiante de pregrado (sin jerga innecesaria; si usas un término técnico, acláralo brevemente).
-- Empático con la realidad del proceso de titulación. Conciso y estructurado. Nada de párrafos largos ni relleno motivacional.
-- Cero marketing, cero emojis decorativos (usa solo viñetas claras y legibles).
-- Nunca inventas proyectos ni afirmas certeza que no tengas. Si el repositorio no arroja evidencia, indícalo con claridad.
+ESTRUCTURA EN PREGUNTAS DE SEGUIMIENTO (ej: "¿cómo innovar?", "¿sensores?", "¿otra opción?", "¿qué cambiar?"):
+- Responde DIRECTAMENTE a la pregunta del estudiante en 2 o 3 viñetas concisas manteniendo el contexto de su idea. No repitas la lista de proyectos anteriores ni cambies de tema.
 
-## 3. Reglas duras de contenido
-1. NO apruebas, NO rechazas, NO calificas. La decisión de titulación es 100% del docente guía. Tú entregas evidencia referencial.
-2. NO inventas proyectos. Solo mencionas los documentos presentes en el repositorio contextual adjunto.
-3. Máximo 2 a 3 proyectos coincidentes (no abrumar al estudiante).
-4. NO redactas la tesis ni impones soluciones: señalas qué partes se solapan y qué ángulos el repositorio NO cubre (gap detectable) para que el estudiante defina su diferenciación.
-5. Al rol estudiante solo le muestras metadatos, porcentaje de coincidencia, fragmento/snippet relevante y resumen.
-
-## 4. Protocolo de respuesta de similitud (Estructura obligatoria)
-Toda consulta sobre una idea o proyecto debe responderse en este orden fijo:
-
-**a) Veredicto en una línea:**
-Ejemplo: "Tu idea coincide parcialmente con 2 proyectos registrados en el repositorio de INACAP Sede Maipú." o "No se registran proyectos con similitud relevante en el repositorio."
-
-**b) Evidencia (máximo 2 a 3 proyectos):**
-Para cada proyecto coincidente:
-- **Título**: *Nombre del proyecto* (Carrera · Año · Autores)
-- **Similitud**: [X]%
-- **Fragmento coincidente (Snippet)**: "Fragmento del repositorio" [doc_id]
-- **Punto de coincidencia**: Explicación concisa de qué concepto o tecnología comparten.
-
-**c) Lectura del Gap (Espacio de diferenciación):**
-Qué parte específica de la idea del estudiante NO está cubierta por los proyectos previos (por ejemplo: aplicación en un sector específico de Maipú, uso de hardware particular, actuadores físicos o protocolos no implementados antes).
-
-**d) Siguiente paso:**
-"Lleva este reporte a tu docente guía; él o ella define si la propuesta avanza."
-
-**e) Banner legal obligatorio (literal al final):**
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*
-
-## 5. Respuestas a consultas de seguimiento o aclaraciones
-- Si el estudiante aclara su idea (ej: "me refería a mi idea de gas con Arduino"), responde con naturalidad, reconoce su proyecto original y analiza el gap técnico específico de ese proyecto frente al repositorio.
-- Si pide cómo diferenciarse o innovar en su idea, detalla 2 o 3 vacíos técnicos del repositorio aplicables a su proyecto.
-- Si la consulta es demasiado vaga, pide cortésmente describirla en 1 o 2 frases indicando problema y tecnología."""
+REGLAS ESTRICTAS:
+- Español de Chile cercano, profesional, trato de "tú".
+- Respuestas breves, directas y sin murallas de texto.
+- Cero relleno, sin IDs de documentos, sin fragmentos gigantescos de texto, sin disclaimers largos."""
 
         # Construir secuencia de contenidos para Gemini
         contents_list = []
         if req.history and len(req.history) > 0:
-            for item in req.history[-8:]:
+            for item in req.history[-6:]:
                 r = "user" if item.role in ["user", "human"] else "model"
                 contents_list.append(genai_types.Content(
                     role=r,
@@ -746,7 +719,7 @@ Qué parte específica de la idea del estudiante NO está cubierta por los proye
             file_info = f"\n\n[DOCUMENTO ADJUNTO: {req.file_name}]\nContenido:\n{req.file_content or '(Documento cargado)'}\n"
 
         if is_followup:
-            user_prompt_content = f"{req.query}{file_info}\n\n[Contexto del repositorio INACAP (máximo 3 proyectos): {contexto}]"
+            user_prompt_content = f"{req.query}{file_info}\n\n[Contexto del repositorio INACAP: {contexto}]"
         else:
             user_prompt_content = f"{req.query}{file_info}\n\n[Repositorio INACAP Maipú - Proyectos detectados]:\n{contexto}"
 
@@ -756,6 +729,7 @@ Qué parte específica de la idea del estudiante NO está cubierta por los proye
         ))
 
         analisis_texto = ""
+        # Intentar con Gemini
         if gemini_client:
             def _llamar_gemini(mod_name):
                 try:
@@ -765,7 +739,7 @@ Qué parte específica de la idea del estudiante NO está cubierta por los proye
                         config=genai_types.GenerateContentConfig(
                             system_instruction=SYSTEM_PROMPT,
                             temperature=0.4,
-                            max_output_tokens=1400
+                            max_output_tokens=600
                         )
                     )
                     return resp.text if resp and resp.text else ""
@@ -776,140 +750,112 @@ Qué parte específica de la idea del estudiante NO está cubierta por los proye
             for mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=4.5)
+                    analisis_texto = fut.result(timeout=4.0)
                     if analisis_texto:
                         log.info(f"Respuesta generada exitosamente con {mod}")
                         break
                 except Exception as ex:
                     log.warning(f"Modelo {mod} timeout/fallo: {ex}")
 
-        # Fallback analítico estructurado y natural (máximo 2-3 proyectos y formato oficial)
+        # Intentar con OpenAI si Gemini no respondió
+        if not analisis_texto and openai_client:
+            try:
+                oa_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+                if req.history:
+                    for h in req.history[-6:]:
+                        role_name = "user" if h.role in ["user", "human"] else "assistant"
+                        oa_messages.append({"role": role_name, "content": h.content})
+                oa_messages.append({"role": "user", "content": user_prompt_content})
+                
+                resp_oa = openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=oa_messages,
+                    temperature=0.4,
+                    max_tokens=450,
+                    timeout=4.5
+                )
+                if resp_oa.choices and resp_oa.choices[0].message.content:
+                    analisis_texto = resp_oa.choices[0].message.content.strip()
+                    log.info("Respuesta generada exitosamente con OpenAI gpt-4o-mini")
+            except Exception as oax:
+                log.warning(f"OpenAI fallback error: {oax}")
+
+        # Fallback analítico sintético, conciso y adaptativo
         if not analisis_texto:
             history_str = " ".join([h.content.lower() for h in (req.history or [])]) + " " + q_lower
             
-            # INTENCIÓN 1: Seguimiento o aclaración específica de innovación
-            if is_followup and any(w in q_lower for w in ["innovar", "sugerencia", "diferenciar", "me referia", "mi idea", "que mas", "qué más", "otra cosa"]):
-                if "gas" in history_str or "arduino" in history_str or "sensor" in history_str:
-                    analisis_texto = """Tu propuesta de **sensores de gas y Arduino** presenta los siguientes puntos de contacto y vacíos detectados en el repositorio:
+            if is_followup:
+                if any(w in q_lower for w in ["juego", "videojuego", "unity", "godot", "unreal"]) or "juego" in history_str:
+                    analisis_texto = """Para diferenciar e innovar en tu proyecto de **juegos con IA**, te recomiendo:
 
-### Evidencia en el Repositorio
-* **Proyecto coincidente:** *"Rover Teleoperado para Minería Subterránea con Sensores de Gas"* (Minería y Metalurgia · 2025)
-  - **Similitud estimada:** 71%
-  - **Punto de coincidencia:** Uso de sensores para detección de gases (CO/CH4).
+1. **Comportamiento adaptativo de NPCs:** Diseñar agentes con árboles de comportamiento o redes neuronales simples que aprendan del estilo de juego del usuario en tiempo real.
+2. **Generación procedural con IA:** Generar mapas, misiones o dificultades dinámicas según la habilidad del jugador.
+3. **Control no convencional:** Integrar visión computacional (ej. MediaPipe/OpenCV) para interacción gestual con el juego.
 
-### Lectura del Gap (Espacio de Diferenciación)
-Revisando los registros de la sede, los proyectos previos se enfocaron en vehículos de exploración remota en faenas mineras. El repositorio **NO cubre** los siguientes aspectos:
-1. **Actuación de corte electromecánico:** Integración de válvula solenoide para interrumpir el paso de gas en menos de 200 ms ante fugas domiciliarias o de taller.
-2. **Compensación ambiental:** Calibración dinámica multigas (MQ-2 / MQ-7) cruzada con temperatura y humedad (DHT22) para evitar falsas alarmas.
-3. **Aplicación fija en instalaciones de Maipú:** Monitoreo estacionario continuo en cocinas industriales o talleres locales bajo normativa SEC.
+Coméntalo con tu docente guía para definir el motor y alcance."""
 
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+                elif any(w in q_lower for w in ["sensor", "arduino", "esp32", "iot", "hardware", "gas"]) or "sensor" in history_str or "gas" in history_str:
+                    analisis_texto = """Para innovar en tu propuesta con **sensores y hardware**:
 
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
+1. **Actuación y respuesta automática:** Integrar un actuador de corte físico o relé ante eventos críticos con tiempo de respuesta inferior a 200 ms.
+2. **Filtrado local en el borde (Edge):** Calibración cruzada en el microcontrolador (ESP32/Arduino) para evitar falsas alarmas por temperatura o humedad.
+3. **Modo resiliente offline:** Asegurar que el dispositivo siga operando y protegiendo la instalación aun si se corta la conexión a internet.
+
+Lleva este enfoque a tu docente guía para definir el anteproyecto."""
+
+                elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura"]):
+                    analisis_texto = """Para estructurar técnicamente tu anteproyecto:
+
+• **Frontend:** Vanilla JS / Vite para máxima velocidad y ligereza.
+• **Backend:** FastAPI (Python 3.11) con endpoints REST asíncronos.
+• **Persistencia & Auth:** PostgreSQL en Supabase con roles de usuario.
+
+Valida esta arquitectura con tu docente guía según los requerimientos de tu carrera."""
+
                 else:
-                    analisis_texto = """Respecto a tu consulta de seguimiento, analizando los registros de la sede:
+                    analisis_texto = f"""Para diferenciar tu propuesta y darle mayor valor de titulación:
 
-### Lectura del Gap detectable
-El repositorio muestra trabajos orientados al registro y visualización de datos, pero **no registra soluciones** que integren:
-1. Procesamiento local en el borde (Edge AI) con operación autónoma sin conexión a internet.
-2. Mecanismos de auditoría inmutable o cumplimiento de la Ley 21.663 de Ciberseguridad.
-3. Validación experimental con métricas de rendimiento en un entorno real de Maipú.
+1. **Automatización activa:** Que el sistema no solo muestre datos, sino que ejecute acciones o alertas en tiempo real.
+2. **Aplicación local verificable:** Enfocar la solución en una necesidad concreta de una empresa, taller o comunidad de Maipú.
+3. **Modo offline-first:** Operación autónoma tolerante a fallas de conectividad.
 
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+Presenta estos puntos a tu docente guía para validar el enfoque."""
 
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
-
-            # INTENCIÓN 2: ARQUITECTURA Y STACK TECNOLÓGICO
-            elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura", "fastapi", "lenguaje", "hardware", "base de datos", "libreria"]):
-                analisis_texto = """Para estructurar tu anteproyecto con solidez técnica en INACAP Sede Maipú, esta es la arquitectura recomendada:
-
-### Arquitectura Técnica Sugerida
-* **Frontend:** Vanilla JS / Vite para máxima velocidad y ligereza sin sobrecarga de dependencias.
-* **Backend:** FastAPI (Python 3.11+) con endpoints REST asíncronos y validación Pydantic.
-* **Persistencia y Auth:** PostgreSQL gestionado en Supabase con Row Level Security (RLS) y roles (Estudiante, Docente, Admin).
-* **IA / Embeddings:** Modelos de inferencia local o API de bajo coste con vector similarity.
-
-### Lectura del Gap
-En el repositorio de la sede abundan arquitecturas monolíticas web tradicionales; diferenciarte con una API desacoplada y tiempo real aporta valor académico tangible.
-
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
-
-            # INTENCIÓN 3: METODOLOGÍA Y FORMULACIÓN DE OBJETIVOS
-            elif any(w in q_lower for w in ["objetivo", "metodologia", "anteproyecto", "problema", "bloom", "redactar"]):
-                analisis_texto = """Para tu anteproyecto de título en INACAP Sede Maipú, esta estructura de objetivos cumple con el estándar de titulación (Taxonomía de Bloom):
-
-### Propuesta de Objetivos
-* **Objetivo General:** Desarrollar e implementar un sistema tecnológico que resuelva la problemática identificada, garantizando disponibilidad y validación experimental en un entorno real de la comuna de Maipú.
-* **Objetivos Específicos:**
-  1. *Diagnosticar* los requerimientos técnicos y funcionales mediante levantamiento directo con usuarios.
-  2. *Diseñar* la arquitectura de software y el modelo de datos asegurando persistencia y roles.
-  3. *Implementar* los módulos funcionales del prototipo con procesamiento de datos y panel web.
-  4. *Validar* el rendimiento del sistema mediante pruebas de carga, latencia y usabilidad con usuarios finales.
-
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
-
-            # INTENCIÓN 4: SEGUIMIENTO GENERAL O DEFENSA
-            elif is_followup:
-                analisis_texto = """Para defender tu propuesta frente a la comisión evaluadora de INACAP Sede Maipú, enfócate en estos tres pilares de justificación:
-
-### Estrategia de Defensa Académica
-1. **Diferenciación técnica:** Supera las limitaciones de proyectos anteriores agregando procesamiento en tiempo real o alertas automáticas.
-2. **Impacto medible:** Define indicadores claros (tiempo de respuesta, porcentaje de precisión o reducción de costos operativos).
-3. **Factibilidad:** Asegura que el alcance esté debidamente delimitado para el semestre lectivo de titulación.
-
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
-
-            # INTENCIÓN 5: REPORTE DE SIMILITUD (CON PROYECTOS COINCIDENTES EN REPOSITORIO)
             elif similares:
                 top_projs = similares[:2]
-                evidencia_txt = ""
-                for idx, s in enumerate(top_projs, start=1):
-                    pct = int(s.get("porcentaje_similitud", 60))
-                    doc_id = s.get("id", idx)
-                    evidencia_txt += f"""* **Proyecto {idx}:** *"{s.get('titulo')}"* ({s.get('carrera', 'Carrera INACAP')} · {s.get('anio', 2025)} · {s.get('autores', 'Autores')})
-  - **Similitud:** {pct}%
-  - **Fragmento coincidente:** "{s.get('resumen', '')[:140]}..." [doc_id: #{doc_id}]
-  - **Punto de coincidencia:** Coincide en el enfoque general y el uso de tecnologías base similares.
+                lista_projs = "\n".join([
+                    f"• *{s.get('titulo')}* ({s.get('carrera', 'INACAP')} · {s.get('anio', 2025)}) — **{int(s.get('porcentaje_similitud', 60))}% de similitud**"
+                    for s in top_projs
+                ])
+                
+                if "juego" in q_lower or "videojuego" in q_lower:
+                    sug1 = "**Mecánicas adaptativas con IA:** NPCs con toma de decisiones dinámica y ajuste de dificultad en tiempo real."
+                    sug2 = "**Generación procedural o control por visión:** Crear niveles dinámicos o control por cámara/gestos."
+                elif "gas" in q_lower or "sensor" in q_lower or "arduino" in q_lower:
+                    sug1 = "**Corte automático en tiempo real:** Añadir actuador de corte electromecánico y calibración ambiental multigas."
+                    sug2 = "**Modo autónomo offline:** Operación continua sin dependencia de internet."
+                else:
+                    sug1 = "**Automatización activa:** Diseñar mecanismos de respuesta inmediata ante eventos críticos."
+                    sug2 = "**Validación experimental:** Evaluar el prototipo con métricas reales en una PyME o taller de Maipú."
 
-"""
-                analisis_texto = f"""Tu idea coincide parcialmente con {len(top_projs)} proyectos registrados en el repositorio de INACAP Sede Maipú.
+                analisis_texto = f"""Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:
 
-### Evidencia en el Repositorio
-{evidencia_txt.strip()}
+{lista_projs}
 
-### Lectura del Gap (Espacio de Diferenciación)
-Los proyectos del repositorio abordan soluciones generales o en otros contextos. Tu oportunidad de diferenciación radica en:
-1. Incorporar mecanismos de respuesta activa o automatización en tiempo real.
-2. Diseñar un esquema de contingencia offline ante pérdidas de red.
-3. Validar el prototipo con datos y pruebas medibles en una empresa o taller de Maipú.
+### ¿Qué deberías enfocar para diferenciarte?
+1. {sug1}
+2. {sug2}
 
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+Valida este enfoque con tu docente guía para definir el alcance."""
 
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
-
-            # INTENCIÓN 6: SIN COINCIDENCIAS RELEVANTES (IDEA ORIGINAL / 0% SIMILITUD)
             else:
-                analisis_texto = f"""No encuentro proyectos con similitud relevante sobre el umbral en el repositorio de INACAP Sede Maipú para la propuesta: *"{req.query}"*.
+                analisis_texto = f"""No se registran proyectos similares en INACAP Sede Maipú para la propuesta: *"{req.query}"* (0% de coincidencia · Idea Original).
 
-### Lectura del Repositorio
-No se registran antecedentes directos que aborden este problema específico con el mismo alcance técnico en la sede.
+### ¿Cómo enfocarla con éxito?
+1. **Alcance acotado:** Define un prototipo funcional que puedas construir y evaluar en el semestre de titulación.
+2. **Métricas cuantitativas:** Mide tiempos de respuesta, precisión o impacto operativo real.
 
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*"""
+Presenta este resumen inicial a tu docente guía para avanzar."""
 
         return {
             "query": req.query,
@@ -921,13 +867,18 @@ Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
     except Exception as e:
         log.error(f"Error en /api/analyze: {e}")
-        # En vez de 500 que rompe el frontend, devolver respuesta analítica segura:
         return {
             "query": req.query,
-            "top_similitud": 50.0,
+            "top_similitud": 40.0,
             "nivel_riesgo": "MODERADO",
             "similares": [],
-            "analisis": f"""## 📊 Diagnóstico de Originalidad (Modo Asistente)\n\n* **Idea consultada:** "{req.query}"\n* **Diagnóstico:** Tu propuesta ha sido recibida por NAPI.\n\n## 🔍 Recomendaciones Técnicas\n- Define con claridad el problema específico que resolverá tu proyecto en el entorno de INACAP Sede Maipú.\n- Selecciona un stack tecnológico moderno (FastAPI, React Native, Supabase, sensores IoT o modelos de Machine Learning).\n- Diferencia tu solución respecto a proyectos genéricos enfocándote en métricas de impacto real y validación práctica.\n\n## 💪 Próximo Paso\nPrepara el resumen técnico de tu propuesta y valídalo con tu docente guía."""
+            "analisis": f"""Tu propuesta ha sido recibida por NAPI.
+
+### Recomendaciones para innovar:
+1. **Enfoque técnico:** Integra procesamiento en tiempo real o automatización activa.
+2. **Validación:** Evalúa el sistema con datos prácticos en un entorno real de Maipú.
+
+Valida estos puntos con tu docente guía para el anteproyecto."""
         }
 
 if __name__ == "__main__":

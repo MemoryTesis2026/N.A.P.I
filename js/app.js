@@ -1772,6 +1772,7 @@ function addNapi(txt, save = true) {
     <div class="bubble-napi px-4 py-3 text-xs leading-relaxed max-w-[88%] shadow-sm">${fmt(txt)}</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
+  setTimeout(() => { box.scrollTop = box.scrollHeight; }, 80);
   if (save) {
     saveChatHistory();
     saveChatMessageToDb('napi', txt);
@@ -1788,6 +1789,7 @@ function addUser(txt, save = true) {
     <div class="w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-bold flex items-center justify-center shrink-0">👤</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
+  setTimeout(() => { box.scrollTop = box.scrollHeight; }, 80);
   if (save) {
     saveChatHistory();
     saveChatMessageToDb('user', txt);
@@ -1910,50 +1912,58 @@ function getChatHistoryArray() {
 function analyze(txt, history = [], attachedFile = null) {
   const lower = txt.toLowerCase();
   const historyText = history.map(h => h.content.toLowerCase()).join(' ') + ' ' + lower;
-
-  const isGas = historyText.includes('gas') || historyText.includes('glp') || historyText.includes('metano') || 
-                historyText.includes('arduino') || historyText.includes('sensor') || historyText.includes('fuga');
+  const isFollowup = history.length > 0;
 
   // CASO ARCHIVO ADJUNTO
   if (attachedFile) {
-    return `He procesado el archivo adjunto *"${attachedFile.name}"* (${attachedFile.sizeStr}).
+    return `He analizado el archivo adjunto *"${attachedFile.name}"* (${attachedFile.sizeStr}).
 
-### Evidencia y Relación con el Repositorio
-* **Alineación:** El contenido del documento coincide con el área técnica de INACAP Sede Maipú.
-* **Similitud estimada:** 45% (Sin duplicidad directa detectada).
+### Diagnóstico Rápido:
+• **Alineación:** Coincide con temáticas del área de INACAP Sede Maipú (~45% de similitud referencial).
+• **Qué deberías fortalecer:** Define métricas de evaluación de desempeño y un protocolo de operación offline.
 
-### Lectura del Gap
-El documento define el problema inicial. Los aspectos no cubiertos que puedes fortalecer son:
-1. Métricas de evaluación y tiempo de respuesta cuantitativos.
-2. Protocolo de tolerancia a fallos y modo offline.
-
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
+Valida el alcance con tu docente guía para el anteproyecto.`;
   }
 
-  // CONSULTA DE SEGUIMIENTO / ACLARACIÓN ("me refería a mi idea", "qué otra innovación", etc.)
-  if (history.length > 0 && (lower.includes('me referia') || lower.includes('mi idea') || lower.includes('innovar') || lower.includes('sugerencia') || lower.includes('diferenciar'))) {
-    if (isGas) {
-      return `Tu propuesta de **sensores de gas y Arduino** presenta las siguientes oportunidades frente al repositorio:
+  // CONSULTA DE SEGUIMIENTO / ACLARACIÓN
+  if (isFollowup) {
+    if (lower.includes('juego') || lower.includes('videojuego') || historyText.includes('juego')) {
+      return `Para diferenciar e innovar en tu proyecto de **juegos con IA**:
 
-### Evidencia en el Repositorio
-* **Proyecto coincidente:** *"Rover Teleoperado para Minería Subterránea con Sensores de Gas"* (Minería y Metalurgia · 2025)
-  - **Similitud:** 71%
-  - **Punto de coincidencia:** Uso de sensores para detección de gases inflamables.
+1. **Comportamiento adaptativo de NPCs:** Implementa árboles de comportamiento o redes neuronales que adapten los personajes al estilo de juego del usuario.
+2. **Generación procedural con IA:** Diseña mapas, acertijos o dificultad dinámica generada en tiempo real.
+3. **Control gestual o por visión:** Agrega control por cámara (OpenCV/MediaPipe) para mecánicas no convencionales.
 
-### Lectura del Gap (Espacio de Diferenciación)
-Los proyectos históricos se orientaron a exploración móvil subterránea. El repositorio **NO cubre**:
-1. **Actuación de corte electromecánico:** Integración de válvula solenoide para interrumpir el flujo de gas en < 200 ms ante concentración crítica.
-2. **Compensación ambiental:** Calibración multigas (MQ-2 / MQ-7) ajustada con sensor DHT22 para evitar falsos positivos por humedad.
-3. **Monitoreo estacionario para Maipú:** Aplicación en talleres o cocinas comerciales bajo estándares SEC.
-
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
+Coméntalo con tu docente guía para definir el motor y alcance.`;
     }
+
+    if (lower.includes('sensor') || lower.includes('arduino') || lower.includes('esp32') || lower.includes('gas') || historyText.includes('gas')) {
+      return `Para innovar en tu propuesta con **sensores y hardware**:
+
+1. **Actuación física automática:** Agrega un relé o válvula de corte ante eventos críticos con respuesta menor a 200 ms.
+2. **Filtrado en el borde (Edge):** Calibración cruzada multigas/temperatura en el microcontrolador para evitar falsas alarmas.
+3. **Modo resiliente offline:** Asegura operación continua aun sin conexión a internet.
+
+Valida estos puntos con tu docente guía para el anteproyecto.`;
+    }
+
+    if (lower.includes('stack') || lower.includes('tecnologia') || lower.includes('arquitectura')) {
+      return `Arquitectura recomendada para tu anteproyecto:
+
+• **Frontend:** Vanilla JS / Vite para máxima velocidad y ligereza.
+• **Backend:** FastAPI (Python 3.11) con endpoints REST asíncronos.
+• **Persistencia & Auth:** Supabase (PostgreSQL) con roles y RLS.
+
+Valida este stack con tu docente guía según los requerimientos de tu carrera.`;
+    }
+
+    return `Para diferenciar tu propuesta y darle mayor valor académico:
+
+1. **Automatización activa:** Que el sistema no sea solo informativo, sino que ejecute acciones o alertas en tiempo real.
+2. **Validación local:** Evalúa el prototipo con datos y pruebas en un escenario práctico de la comuna de Maipú.
+3. **Modo offline-first:** Garantiza operación tolerante a pérdidas de red.
+
+Lleva este enfoque a tu docente guía para acotar el alcance final.`;
   }
 
   // DIAGNÓSTICO INICIAL (MÁXIMO 2 PROYECTOS COINCIDENTES)
@@ -1969,40 +1979,37 @@ Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
   }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct).slice(0, 2);
 
   if (matched.length > 0) {
-    const top = matched[0];
-    const topPct = Math.round(top.pct);
+    const listaBlock = matched.map(m => `• *"${m.p.nombre}"* (${shortC(m.p.carrera)} · ${m.p.anio}) — **${Math.round(m.pct)}% de similitud**`).join('\n');
 
-    let evidenciaBlock = matched.map((m, i) => `* **Proyecto ${i+1}:** *"${m.p.nombre}"* (${m.p.carrera} · ${m.p.anio} · ${m.p.autores})
-  - **Similitud:** ${Math.round(m.pct)}%
-  - **Snippet:** "${m.p.desc.substring(0, 130)}..." [doc_id: #${m.p.id}]
-  - **Punto de coincidencia:** Comparte el uso de tecnologías base en ${m.p.stack.slice(0, 2).join(', ')}.`).join('\n\n');
+    let sug1 = "Automatización activa: Integra mecanismos de respuesta inmediata ante eventos críticos.";
+    let sug2 = "Validación experimental: Evalúa el prototipo con métricas reales en una PyME o taller de Maipú.";
 
-    return `Tu idea coincide parcialmente con ${matched.length} proyectos registrados en el repositorio de INACAP Sede Maipú.
+    if (lower.includes('juego') || lower.includes('videojuego')) {
+      sug1 = "Mecánicas adaptativas con IA: NPCs inteligentes con comportamiento no predecible y ajuste dinámico de dificultad.";
+      sug2 = "Generación procedural: Creación de niveles o acertijos dinámicos en tiempo real según el rendimiento del jugador.";
+    } else if (lower.includes('gas') || lower.includes('sensor') || lower.includes('arduino')) {
+      sug1 = "Corte automático en tiempo real: Interrupción física electromecánica en < 200 ms y calibración ambiental.";
+      sug2 = "Operación offline-first: Monitoreo continuo autónomo sin dependencia de internet.";
+    }
 
-### Evidencia en el Repositorio
-${evidenciaBlock}
+    return `Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:
 
-### Lectura del Gap (Espacio de Diferenciación)
-Los proyectos existentes se enfocaron en soluciones generales. Tu propuesta puede diferenciarse abordando:
-1. Automatización activa o corte directo ante eventos críticos.
-2. Arquitectura con soporte offline tolerante a fallos de red.
-3. Pruebas y validación en un caso de uso real de la comuna de Maipú.
+${listaBlock}
 
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+### ¿Qué deberías enfocar para diferenciarte?
+1. **${sug1.split(':')[0]}:** ${sug1.split(':')[1] || sug1}
+2. **${sug2.split(':')[0]}:** ${sug2.split(':')[1] || sug2}
 
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
+Valida este enfoque con tu docente guía para definir el alcance del anteproyecto.`;
   }
 
-  return `No encuentro proyectos similares en el repositorio de INACAP Sede Maipú para la consulta ingresada.
+  return `No se registran proyectos similares en INACAP Sede Maipú para tu propuesta (0% de coincidencia · Idea Original).
 
-### Lectura del Repositorio
-No se registran antecedentes directos que aborden este problema con el mismo enfoque en la sede.
+### ¿Cómo enfocarla con éxito?
+1. **Alcance acotado:** Diseña un prototipo funcional medible durante el semestre de titulación.
+2. **Métricas cuantitativas:** Mide tiempos de respuesta, precisión o reducción de costos reales.
 
-### Siguiente Paso
-Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
-
-> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
+Presenta el resumen inicial a tu docente guía para avanzar.`;
 }
 
 function addSimCard(p, pct, save = true) {
@@ -2013,18 +2020,17 @@ function addSimCard(p, pct, save = true) {
   d.innerHTML = `
     <div onclick="openProjModal(${p.id})" class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
       <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
+        <div class="w-10 h-10 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
           ${pct}%
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-xs font-bold text-slate-800 leading-tight">${p.nombre}</p>
-          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(p.carrera)} · ${p.anio} · <span class="text-slate-500">${p.autores}</span></p>
+          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(p.carrera)} · ${p.anio}</p>
         </div>
       </div>
-      <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${p.desc}</p>
     </div>`;
   box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
+  box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
   if (save) saveChatHistory();
 }
 
@@ -2037,18 +2043,17 @@ function addSimCardSupabase(sim, save = true) {
   d.innerHTML = `
     <div class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
       <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
+        <div class="w-10 h-10 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
           ${pct}%
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-xs font-bold text-slate-800 leading-tight">${sim.titulo}</p>
-          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(sim.carrera || '')} · ${sim.anio || 2025} · <span class="text-slate-500">${sim.autores || 'Autores INACAP'}</span></p>
+          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(sim.carrera || '')} · ${sim.anio || 2025}</p>
         </div>
       </div>
-      <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">${sim.resumen || ''}</p>
     </div>`;
   box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
+  box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
   if (save) saveChatHistory();
 }
 
