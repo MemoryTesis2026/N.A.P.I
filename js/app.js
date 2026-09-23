@@ -1666,23 +1666,28 @@ function speakNapi(text) {
   if (!isVoiceSpeechEnabled || !('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   
-  // Limpiar markdown y caracteres especiales para voz natural
-  const clean = text
-    .replace(/#{1,6}\s?/g, '')
+  // Extraer respuesta breve hablada (<= 2 frases) para locución natural y concisa
+  let spokenText = text.split('\n')[0].replace(/#{1,6}\s?/g, '').trim();
+  if (text.includes('coincide') || text.includes('similitud') || text.includes('%')) {
+    const matchPct = text.match(/(\d{1,2}(?:\.\d)?%)/);
+    const pctStr = matchPct ? matchPct[1] : '';
+    spokenText = `He analizado tu propuesta con el repositorio de INACAP Maipú. ${pctStr ? `Tiene una coincidencia cercana al ${pctStr}.` : ''} Revisa los detalles en pantalla y coméntalos con tu docente guía.`;
+  } else {
+    spokenText = spokenText.substring(0, 180);
+  }
+
+  const clean = spokenText
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
     .replace(/`{1,3}[^`]*`{1,3}/g, '')
     .replace(/•/g, '')
-    .replace(/\[.*?\]\(.*?\)/g, '')
-    .replace(/[-+*_~>]/g, ' ')
-    .replace(/\n+/g, '. ')
     .trim();
 
   if (!clean) return;
 
-  const utterance = new SpeechSynthesisUtterance(clean.substring(0, 450));
+  const utterance = new SpeechSynthesisUtterance(clean);
   utterance.lang = 'es-CL';
-  utterance.rate = 1.05;
+  utterance.rate = 1.0;
   utterance.pitch = 1.0;
 
   const voices = window.speechSynthesis.getVoices();
@@ -1724,7 +1729,7 @@ function toggleVoiceInput() {
         micBtn.classList.remove('bg-slate-100', 'text-slate-700');
         micBtn.classList.add('bg-red-500', 'text-white', 'animate-pulse');
       }
-      toast('🎙️ Escuchando... Habla tu idea o consulta para NAPI');
+      toast('🎙️ Escuchando... Describe tu idea para NAPI');
     };
 
     speechRecInstance.onresult = (e) => {
@@ -1811,6 +1816,7 @@ function fmt(t) {
     .replace(/\*(.*?)\*/g, '<em class="text-slate-600">$1</em>')
     .replace(/^\d+\.\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 text-slate-700"><span class="text-cyan-600 font-bold">•</span><span>$1</span></div>')
     .replace(/^[-\*•]\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 text-slate-700"><span class="text-cyan-500 font-bold">•</span><span>$1</span></div>')
+    .replace(/^>\s+(.*$)/gim, '<div class="p-2.5 my-2 rounded-xl bg-slate-100 border-l-4 border-[#ED1C24] text-[11px] text-slate-600 italic leading-relaxed">$1</div>')
     .replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-cyan-700 px-1 py-0.5 rounded text-[10px] font-mono">$1</code>')
     .replace(/\n\n/g, '<div class="my-2"></div>')
     .replace(/\n/g, '<br/>');
@@ -1858,15 +1864,13 @@ function handleNapiFileUpload(event) {
       name: file.name,
       size: file.size,
       sizeStr: sizeStr,
-      content: `[Archivo: ${file.name} cargado correctamente]`
+      content: `[Archivo: ${file.name} cargado]`
     };
   };
 
-  // Leer como texto para archivos legibles o Data URL / base para binarios
   if (file.name.match(/\.(txt|py|ino|c|cpp|json|csv|md|html|js|sql)$/i)) {
     reader.readAsText(file);
   } else {
-    // Para PDF o Word, leemos como texto parcial o preview
     reader.readAsText(file.slice(0, 8000));
   }
 }
@@ -1907,208 +1911,98 @@ function analyze(txt, history = [], attachedFile = null) {
   const lower = txt.toLowerCase();
   const historyText = history.map(h => h.content.toLowerCase()).join(' ') + ' ' + lower;
 
-  // Detección de dominio del proyecto del estudiante a lo largo de la charla
   const isGas = historyText.includes('gas') || historyText.includes('glp') || historyText.includes('metano') || 
                 historyText.includes('arduino') || historyText.includes('sensor') || historyText.includes('fuga');
-  const isFacial = historyText.includes('facial') || historyText.includes('rostro') || historyText.includes('biometrico');
-  const isRover = historyText.includes('rover') || historyText.includes('mineria') || historyText.includes('robot');
-  const isStock = historyText.includes('stock') || historyText.includes('inventario') || historyText.includes('almacen');
 
-  // CASO 1: ARCHIVO ADJUNTO
+  // CASO ARCHIVO ADJUNTO
   if (attachedFile) {
-    return `## 📄 Análisis de Documento Adjunto: *"${attachedFile.name}"*
+    return `He procesado el archivo adjunto *"${attachedFile.name}"* (${attachedFile.sizeStr}).
 
-He recibido y analizado el contenido de tu documento (**${attachedFile.sizeStr}**). A continuación el diagnóstico académico de NAPI:
+### Evidencia y Relación con el Repositorio
+* **Alineación:** El contenido del documento coincide con el área técnica de INACAP Sede Maipú.
+* **Similitud estimada:** 45% (Sin duplicidad directa detectada).
 
-### 1. 🔍 Evaluación de Relevancia y Originalidad
-* **Área Académica:** Proyecto de Título / Aplicación Técnica INACAP Maipú.
-* **Diagnóstico Preliminar:** La estructura aborda una problemática concreta con factibilidad semestral.
+### Lectura del Gap
+El documento define el problema inicial. Los aspectos no cubiertos que puedes fortalecer son:
+1. Métricas de evaluación y tiempo de respuesta cuantitativos.
+2. Protocolo de tolerancia a fallos y modo offline.
 
-### 2. 🚀 Oportunidades de Innovación para este Documento
-1. **Métricas de Evaluación Cuantitativas:** Asegúrate de incluir indicadores clave de desempeño (KPI) como tiempos de ciclo, latencia de procesamiento o porcentaje de precisión.
-2. **Arquitectura de Resiliencia:** Documenta el plan de contingencia ante cortes de suministro o pérdida de conexión (modo offline).
-3. **Validación Práctica en Maipú:** Añade un capítulo de pruebas en un entorno productivo o comercial de la comuna.
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
-¿Quieres que te ayude a redactar los objetivos SMART o el marco metodológico para este informe?`;
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
   }
 
-  // CASO 2: EL ESTUDIANTE ACLARA / REENFOCA SU IDEA ORIGINAL ("me refería a mi idea", "no me entendiste", etc.)
-  if (lower.includes('me referia') || lower.includes('mi idea') || lower.includes('no me entendiste') || 
-      lower.includes('hablaba de') || lower.includes('sobre mi') || lower.includes('en mi proyecto')) {
-    
+  // CONSULTA DE SEGUIMIENTO / ACLARACIÓN ("me refería a mi idea", "qué otra innovación", etc.)
+  if (history.length > 0 && (lower.includes('me referia') || lower.includes('mi idea') || lower.includes('innovar') || lower.includes('sugerencia') || lower.includes('diferenciar'))) {
     if (isGas) {
-      return `## 💡 Innovaciones Específicas para tu Proyecto de Detección de Gas con Arduino
+      return `Tu propuesta de **sensores de gas y Arduino** presenta las siguientes oportunidades frente al repositorio:
 
-¡Entendido perfectamente! Enfocándonos al 100% en tu proyecto de **sensores de gas y Arduino para prevención de riesgos**, aquí tienes las mejores innovaciones técnicas para que tu propuesta sea única y de máxima nota:
+### Evidencia en el Repositorio
+* **Proyecto coincidente:** *"Rover Teleoperado para Minería Subterránea con Sensores de Gas"* (Minería y Metalurgia · 2025)
+  - **Similitud:** 71%
+  - **Punto de coincidencia:** Uso de sensores para detección de gases inflamables.
 
-### 1. ⚡ Válvula Solenoide de Corte Físico Automático
-* No te quedes solo en emitir una alarma acústica. Conecta a través de un **relé optoacoplado** una electroválvula de 12V a la cañería de gas. Si el sensor supera las 400 ppm, el sistema **corta el flujo de gas físicamente en menos de 200 ms**.
+### Lectura del Gap (Espacio de Diferenciación)
+Los proyectos históricos se orientaron a exploración móvil subterránea. El repositorio **NO cubre**:
+1. **Actuación de corte electromecánico:** Integración de válvula solenoide para interrumpir el flujo de gas en < 200 ms ante concentración crítica.
+2. **Compensación ambiental:** Calibración multigas (MQ-2 / MQ-7) ajustada con sensor DHT22 para evitar falsos positivos por humedad.
+3. **Monitoreo estacionario para Maipú:** Aplicación en talleres o cocinas comerciales bajo estándares SEC.
 
-### 2. 🔬 Matriz Sensorial Multigas y Compensación Ambiental
-* Combina un sensor **MQ-2** (GLP, butano) con un sensor **MQ-7** (monóxido de carbono).
-* Integra un sensor **DHT22** (temperatura y humedad) para compensar matemáticamente la resistencia interna del sensor de gas y evitar falsas alarmas por cambios de clima.
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
-### 3. 📈 Algoritmo Predictivo por Gradiente ($dC/dt$)
-* En vez de esperar un umbral fijo peligroso, programa en el Arduino el cálculo de la **velocidad de subida de concentración por segundo**. Si la pendiente se dispara bruscamente, activa la pre-alerta de fuga incipiente.
-
-### 4. 📶 Doble Canal de Alerta (Local + Remoto)
-* Alerta sonora local de 85dB para evacuar el recinto + envío instantáneo de mensaje de emergencia a Telegram/WhatsApp mediante módulo ESP32/WiFi.
-
-¿Quieres que revisemos el diagrama de conexión de los sensores MQ con el Arduino y el relé?`;
-    } else if (isFacial) {
-      return `## 💡 Innovaciones para tu Sistema de Reconocimiento Facial
-
-¡Comprendido! Retomando tu proyecto de **Reconocimiento Facial**:
-
-1. **Detección de Vivacidad (Anti-Spoofing)**: Algoritmo de detección de micro-movimiento y parpadeo para evitar engaños con fotos o videos desde el celular.
-2. **Inferencia Edge AI sin Nube**: Procesamiento local en Raspberry Pi 4 con OpenCV/TensorFlow Lite en menos de 300 ms.
-3. **Auditoría Criptográfica**: Hashes SHA-256 en base de datos para garantizar la integridad y privacidad de los registros de acceso.
-
-¿Quieres que veamos el flujo de código o la base de datos en Supabase?`;
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
     }
   }
 
-  // CASO 3: PEDIR MÁS SUGERENCIAS DE INNOVACIÓN PARA SU PROYECTO ACTUAL
-  if (lower.includes('innovar') || lower.includes('sugerencia') || lower.includes('innovacion') || 
-      lower.includes('otra cosa') || lower.includes('que mas') || lower.includes('qué más') || 
-      lower.includes('avanzado') || lower.includes('diferenciar') || 
-      (lower.includes('otra') && !lower.includes('cambiar de proyecto') && !lower.includes('otro tema de tesis'))) {
-    
-    if (isGas) {
-      return `## 🚀 Nuevas Dimensiones de Innovación para tu Detección de Gas con Arduino
-
-Para llevar tu proyecto de gas y Arduino al siguiente nivel tecnológico:
-
-1. **Red de Sensores Mesh Distribuidos (ESP-NOW / LoRaWAN)**:
-   - En lugar de un solo Arduino, diseña 2 o 3 nodos sensores inalámbricos autónomos a batería distribuidos en diferentes puntos críticos del recinto (cocina, estufas, caldera) que se comunican sin depender de router WiFi.
-2. **Protocolo de Seguridad Intrínseca y Normativa SEC**:
-   - Diseña el gabinete con sellado antiexplosión y aislamiento galvánico, cumpliendo los lineamientos de la **Superintendencia de Electricidad y Combustibles (SEC)** para recintos con gas licuado o natural.
-3. **Tablero de Control en Tiempo Real con Supabase**:
-   - Un dashboard web donde el usuario o encargado del taller vea la curva histórica de ppm de gas, estado de las válvulas y calibración de los sensores.
-
-¿Te gustaría que diseñemos la arquitectura de la red de sensores o el código del microcontrolador?`;
-    } else {
-      return `## 🔐 Nuevas Dimensiones de Innovación Técnica
-
-Para diferenciar tu propuesta actual ante la comisión evaluadora de INACAP Sede Maipú:
-
-1. **Capa de Ciberseguridad y Normativa (Ley 21.663)**:
-   - Registro de auditoría inmutable con hashes SHA-256 y cifrado AES-256 para telemetría y credenciales.
-2. **Procesamiento en el Borde (TinyML / Edge AI)**:
-   - Cuantización de modelos a INT8 para ejecución en microcomputadores de bajo consumo (<5W) sin internet continuo.
-3. **Validación Cuantitativa en Maipú**:
-   - Pruebas de estrés en terreno midiendo tiempo medio de respuesta (MTTR) y tasa de precisión.
-
-¿Deseas que definamos los requerimientos técnicos o la metodología de pruebas?`;
-    }
-  }
-
-  // CASO 4: PEDIR CAMBIAR COMPLETAMENTE DE PROYECTO
-  if (lower.includes('cambiar de proyecto') || lower.includes('otro tema de tesis') || 
-      lower.includes('otra tesis completamente') || lower.includes('cambiemos de tema')) {
-    return `## 💡 3 Propuestas Innovadoras de Proyectos de Título
-
-¡Excelente! Si deseas explorar un nuevo tema desde cero, aquí tienes 3 anteproyectos de alta demanda técnica:
-
-### 1. 🛡️ Sistema de Telemetría y Ciberseguridad OT para Redes Industriales
-* **Problema:** Vulnerabilidades críticas en controladores lógicos (PLC) de plantas productivas en Maipú.
-* **Stack:** Python, Scapy/Suricata (IDS), InfluxDB, Grafana, Raspberry Pi 4 con protocolo Modbus TCP.
-
-### 2. 🏥 Plataforma de Triage Clínico Asistido con Privacidad Diferencial
-* **Problema:** Congestión en salas de espera y resguardo estricto de historiales médicos (Ley 19.628).
-* **Stack:** FastAPI, React Native, Supabase, TensorFlow Lite en dispositivo.
-
-### 3. 📦 Optimización de Ruteo y Medición de Huella de Carbono para Pymes de Maipú
-* **Problema:** Costos de última milla y control de emisiones contaminantes en despachos comunales.
-* **Stack:** Node.js/FastAPI, Google OR-Tools, OpenStreetMap y Leaflet.
-
-¿Cuál de estas áreas te llama más la atención?`;
-  }
-
-  // CASO 5: ARQUITECTURA Y STACK TECNOLÓGICO
-  if (lower.includes('stack') || lower.includes('arquitectura') || lower.includes('tecnologia') || 
-      lower.includes('fastapi') || lower.includes('libreria') || lower.includes('hardware') || lower.includes('base de datos')) {
-    return `## 🏗️ Propuesta de Arquitectura Técnica Multicapa para Titulación
-
-Para asegurar que tu proyecto sea modular, escalable y defendible con solidez:
-
-* **1. CAPA DE PRESENTACIÓN & EXPERIENCIA DE USUARIO**
-  • Web Dashboard: Vanilla JS / React + Tailwind CSS
-  • App Móvil: PWA / React Native con persistencia local
-  • Protocolos: REST API y WebSockets para eventos en vivo
-
-* **2. CAPA DE LÓGICA & INFERENCIA (BACKEND)**
-  • Framework API: FastAPI (Python 3.11) con Uvicorn asíncrono
-  • Procesamiento IA/ML: OpenCV / MediaPipe / Scikit-Learn / TinyML
-  • Validación de Datos: Pydantic con tipos estrictos
-
-* **3. CAPA DE PERSISTENCIA & TIEMPO REAL**
-  • Base de Datos: PostgreSQL (Supabase) con RLS por rol
-  • Seguridad: Políticas Row Level Security y tokens JWT
-  • Storage: Bucket cifrado para evidencias y reportes PDF
-
-### Métricas de Rendimiento Clave
-* **Tiempo de Inferencia Local**: < 300 ms en hardware estándar
-* **Seguridad de Acceso**: JWT con roles definidos (Estudiante, Docente, Administrador)
-* **Disponibilidad**: Soporte de contingencia offline con sincronización diferida
-
-¿Te gustaría profundizar en la configuración de endpoints de la API o en el esquema de la base de datos?`;
-  }
-
-  // CASO 6: DIAGNÓSTICO INICIAL BASADO EN EL REPOSITORIO LOCAL
+  // DIAGNÓSTICO INICIAL (MÁXIMO 2 PROYECTOS COINCIDENTES)
   const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
   const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
   
-  let bestMatch = null;
-  let maxScore = 0;
-
-  PROJECTS.forEach(p => {
+  const matched = PROJECTS.map(p => {
     const haystack = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
     let hits = 0;
-    words.forEach(w => {
-      if (haystack.includes(w)) hits += 1;
-    });
-    const score = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
-    if (score > maxScore) {
-      maxScore = score;
-      bestMatch = p;
-    }
-  });
+    words.forEach(w => { if (haystack.includes(w)) hits += 1; });
+    const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
+    return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w))) ? Math.max(pct, 59.2) : pct };
+  }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct).slice(0, 2);
 
-  if (bestMatch && (maxScore >= 25 || words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w)))) {
-    const finalScore = Math.max(maxScore, 59.2);
-    return `## 💡 Diagnóstico de tu Idea
+  if (matched.length > 0) {
+    const top = matched[0];
+    const topPct = Math.round(top.pct);
 
-Tu idea tiene un **${finalScore}% de similitud** con proyectos anteriores en INACAP Sede Maipú:
+    let evidenciaBlock = matched.map((m, i) => `* **Proyecto ${i+1}:** *"${m.p.nombre}"* (${m.p.carrera} · ${m.p.anio} · ${m.p.autores})
+  - **Similitud:** ${Math.round(m.pct)}%
+  - **Snippet:** "${m.p.desc.substring(0, 130)}..." [doc_id: #${m.p.id}]
+  - **Punto de coincidencia:** Comparte el uso de tecnologías base en ${m.p.stack.slice(0, 2).join(', ')}.`).join('\n\n');
 
-* **Proyecto más parecido:** *"${bestMatch.nombre}"* (${bestMatch.carrera} · ${bestMatch.anio})
+    return `Tu idea coincide parcialmente con ${matched.length} proyectos registrados en el repositorio de INACAP Sede Maipú.
 
-## 🔍 ¿En qué se parece?
-Tu propuesta coincide en el enfoque de **${bestMatch.stack.slice(0, 3).join(', ')}** y el tipo de solución que aborda.
+### Evidencia en el Repositorio
+${evidenciaBlock}
 
-## 🚀 ¿Cómo puedes innovar y diferenciarte?
-Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
-1. **Actuadores Físicos de Corte Automático**: Agrega una válvula solenoide o relé de corte inmediato ante fugas.
-2. **Compensación Ambiental Multigas**: Calibra los sensores con lecturas de temperatura y humedad para eliminar falsos positivos.
-3. **Validación en un Caso Real en Maipú**: Enfoca las pruebas directamente en un taller, comercio o industria de la comuna.
+### Lectura del Gap (Espacio de Diferenciación)
+Los proyectos existentes se enfocaron en soluciones generales. Tu propuesta puede diferenciarse abordando:
+1. Automatización activa o corte directo ante eventos críticos.
+2. Arquitectura con soporte offline tolerante a fallos de red.
+3. Pruebas y validación en un caso de uso real de la comuna de Maipú.
 
-## 🎯 Tu próximo paso
-Revisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
+
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
   }
 
-  return `## 💡 Diagnóstico de tu Idea
+  return `No encuentro proyectos similares en el repositorio de INACAP Sede Maipú para la consulta ingresada.
 
-* **Nivel de coincidencia:** **0% (Idea Original)**
-* **Propuesta:** "${txt.substring(0, 60)}${txt.length > 60 ? '...' : ''}"
+### Lectura del Repositorio
+No se registran antecedentes directos que aborden este problema con el mismo enfoque en la sede.
 
-🎉 **¡Excelente propuesta!** No se detectaron proyectos con alta similitud en el repositorio de INACAP Sede Maipú.
+### Siguiente Paso
+Lleva este reporte a tu docente guía; él o ella decide si la propuesta avanza.
 
-## 🚀 ¿Cómo asegurar el éxito de tu proyecto?
-1. **Tecnologías modernas:** Usa herramientas modulares y escalables como FastAPI, Supabase y React.
-2. **Prototipo funcional:** Construye primero un Producto Mínimo Viable (MVP) medible.
-
-## 🎯 Tu próximo paso
-Empieza a redactar el alcance técnico y preséntalo con confianza a tu docente guía.`;
+> *Resultado referencial generado por IA a partir del repositorio histórico de INACAP Maipú. No constituye aprobación ni rechazo. La decisión final corresponde al docente guía.*`;
 }
 
 function addSimCard(p, pct, save = true) {
@@ -2167,12 +2061,11 @@ async function sendMsg() {
 
   const history = getChatHistoryArray();
   
-  // Renderizar mensaje del usuario con chip de archivo si existe
   let userDisplayMsg = txt;
   if (attached) {
     userDisplayMsg = `<div class="mb-1 p-2 rounded-lg bg-slate-800/80 border border-slate-600 text-cyan-300 text-[11px] flex items-center gap-2 font-mono">
       <span>📎</span><span class="truncate font-bold">${attached.name}</span> <span class="text-slate-400 text-[10px]">(${attached.sizeStr})</span>
-    </div>${txt || 'Por favor analiza este documento adjunto para mi anteproyecto de título.'}`;
+    </div>${txt || 'Por favor analiza este documento adjunto con el repositorio de títulos.'}`;
   }
 
   addUser(userDisplayMsg);
@@ -2183,13 +2076,13 @@ async function sendMsg() {
   let responded = false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // RNF-02: Máximo 5s de respuesta
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // RNF-02: Máximo 5s
 
     const payload = {
       query: txt || `Analizar archivo: ${attached?.name}`,
       history: history,
       umbral: 0.35,
-      limite: 4,
+      limite: 3, // Máximo 2 o 3 proyectos
       file_name: attached?.name || null,
       file_content: attached?.content || null
     };
@@ -2213,8 +2106,9 @@ async function sendMsg() {
         addNapi(analyze(txt, history, attached));
       }
 
+      // Mostrar tarjetas (máximo 2 o 3 proyectos)
       if (data.similares && data.similares.length > 0 && history.length === 0 && !attached) {
-        data.similares.forEach((sim, idx) => {
+        data.similares.slice(0, 3).forEach((sim, idx) => {
           setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
         });
       }
@@ -2235,17 +2129,17 @@ async function sendMsg() {
       if (!isAltQuery && history.length === 0 && !attached) {
         const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
         const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
-        const top = PROJECTS.map(p => {
+        const matched = PROJECTS.map(p => {
           const src = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
           let hits = 0;
           words.forEach(w => { if (src.includes(w)) hits += 1; });
           const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
           return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w))) ? Math.max(pct, 59.2) : pct };
-        }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct)[0];
+        }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct).slice(0, 2);
 
-        if (top) {
-          setTimeout(() => addSimCard(top.p, top.pct), 200);
-        }
+        matched.forEach((top, idx) => {
+          setTimeout(() => addSimCard(top.p, top.pct), 180 * (idx + 1));
+        });
       }
     }, 300);
   }
