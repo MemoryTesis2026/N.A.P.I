@@ -1641,6 +1641,123 @@ function sendPreset(txt) {
   sendMsg();
 }
 
+// ══════════════════════════════════════════
+//  ASISTENCIA POR VOZ (SPEECH TO TEXT & TTS)
+// ══════════════════════════════════════════
+let isVoiceSpeechEnabled = false;
+let isVoiceListening = false;
+let speechRecInstance = null;
+
+function toggleVoiceSpeech() {
+  isVoiceSpeechEnabled = !isVoiceSpeechEnabled;
+  const btn = document.getElementById('napiTtsBtn');
+  if (btn) {
+    btn.classList.toggle('text-red-400', isVoiceSpeechEnabled);
+    btn.classList.toggle('text-white/70', !isVoiceSpeechEnabled);
+    btn.classList.toggle('bg-white/20', isVoiceSpeechEnabled);
+  }
+  toast(isVoiceSpeechEnabled ? '🔊 Voz de NAPI activada (Lectura en voz alta)' : '🔇 Voz de NAPI desactivada');
+  if (!isVoiceSpeechEnabled && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+function speakNapi(text) {
+  if (!isVoiceSpeechEnabled || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  
+  // Limpiar markdown y caracteres especiales para voz natural
+  const clean = text
+    .replace(/#{1,6}\s?/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/•/g, '')
+    .replace(/\[.*?\]\(.*?\)/g, '')
+    .replace(/[-+*_~>]/g, ' ')
+    .replace(/\n+/g, '. ')
+    .trim();
+
+  if (!clean) return;
+
+  const utterance = new SpeechSynthesisUtterance(clean.substring(0, 450));
+  utterance.lang = 'es-CL';
+  utterance.rate = 1.05;
+  utterance.pitch = 1.0;
+
+  const voices = window.speechSynthesis.getVoices();
+  const esVoice = voices.find(v => v.lang.startsWith('es-CL') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-MX') || v.lang.includes('es'));
+  if (esVoice) utterance.voice = esVoice;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function toggleVoiceInput() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    toast('⚠️ Tu navegador no soporta reconocimiento de voz nativo. Usa Chrome o Edge.');
+    return;
+  }
+
+  const micBtn = document.getElementById('napiMicBtn');
+  const input = document.getElementById('napiInput');
+
+  if (isVoiceListening) {
+    if (speechRecInstance) speechRecInstance.stop();
+    isVoiceListening = false;
+    if (micBtn) {
+      micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+      micBtn.classList.add('bg-slate-100', 'text-slate-700');
+    }
+    return;
+  }
+
+  try {
+    speechRecInstance = new SpeechRec();
+    speechRecInstance.lang = 'es-CL';
+    speechRecInstance.interimResults = false;
+    speechRecInstance.maxAlternatives = 1;
+
+    speechRecInstance.onstart = () => {
+      isVoiceListening = true;
+      if (micBtn) {
+        micBtn.classList.remove('bg-slate-100', 'text-slate-700');
+        micBtn.classList.add('bg-red-500', 'text-white', 'animate-pulse');
+      }
+      toast('🎙️ Escuchando... Habla tu idea o consulta para NAPI');
+    };
+
+    speechRecInstance.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      if (input) input.value = transcript;
+      toast(`🎙️ "${transcript}"`);
+      setTimeout(() => sendMsg(), 500);
+    };
+
+    speechRecInstance.onerror = (e) => {
+      console.warn('SpeechRecognition error:', e);
+      isVoiceListening = false;
+      if (micBtn) {
+        micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+        micBtn.classList.add('bg-slate-100', 'text-slate-700');
+      }
+    };
+
+    speechRecInstance.onend = () => {
+      isVoiceListening = false;
+      if (micBtn) {
+        micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+        micBtn.classList.add('bg-slate-100', 'text-slate-700');
+      }
+    };
+
+    speechRecInstance.start();
+  } catch (err) {
+    console.error('Error iniciando SpeechRecognition:', err);
+    toast('⚠️ No se pudo acceder al micrófono.');
+  }
+}
+
 function addNapi(txt, save = true) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
@@ -1654,6 +1771,7 @@ function addNapi(txt, save = true) {
     saveChatHistory();
     saveChatMessageToDb('napi', txt);
   }
+  speakNapi(txt);
 }
 
 function addUser(txt, save = true) {
@@ -1724,7 +1842,165 @@ function getChatHistoryArray() {
 
 function analyze(txt, history = []) {
   const lower = txt.toLowerCase();
-  const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'unos', 'unas', 'ver', 'las', 'los', 'que', 'una', 'uno'];
+  const historyText = history.map(h => h.content.toLowerCase()).join(' ');
+
+  // 1. INTENCIÓN: PEDIR OTRA IDEA / ALTERNATIVAS DE TITULACIÓN
+  if (lower.includes('otra idea') || lower.includes('otro proyecto') || lower.includes('otra propuesta') || 
+      lower.includes('cambiar de idea') || lower.includes('cambiemos de tema') || lower.includes('puede ser otra') || 
+      lower.includes('diferente') || lower.includes('que otro') || lower.includes('qué otro') || 
+      lower.includes('ideas de tesis') || lower.includes('no me gusta')) {
+    
+    // Proponer 3 anteproyectos diferenciados y bien formulados
+    return `## 💡 3 Propuestas Innovadoras de Proyectos de Título
+
+¡Excelente! Cambiar de perspectiva te permite encontrar un proyecto con alta demanda en la industria y 0% de coincidencia en el repositorio institucional:
+
+### 1. 🛡️ Sistema de Detección de Intrusiones y Auditoría OT para Redes Industriales
+* **Problemática:** Vulnerabilidades críticas en controladores lógicos (PLC) y redes SCADA de plantas productivas en Maipú.
+* **Stack Tecnológico:** Python, Suricata/Scapy, InfluxDB, Grafana, Raspberry Pi 4 con Modbus TCP y alertas push.
+* **Diferenciador:** Cumplimiento de la **Ley 21.663 de Ciberseguridad en Chile** con registro inmutable de auditoría.
+
+### 2. 🏥 Plataforma de Triage Asistido y Monitoreo de Parámetros con Privacidad Diferencial
+* **Problemática:** Tiempos de espera prolongados en centros asistenciales y riesgo en el manejo de historiales clínicos sensibles.
+* **Stack Tecnológico:** FastAPI, React Native, Supabase, TensorFlow Lite con anonimización en tiempo real (Ley 19.628).
+* **Diferenciador:** Inferencia clínica local en dispositivo sin enviar información biométrica a la nube.
+
+### 3. 📦 Optimización de Ruteo de Última Milla y Medición de Huella de Carbono
+* **Problemática:** Sobrecostos logísticos y alta emisión de CO2 en despachos comerciales de pymes en la Región Metropolitana.
+* **Stack Tecnológico:** Node.js/FastAPI, algoritmos de optimización (Google OR-Tools), OpenStreetMap y Leaflet.
+* **Diferenciador:** Generación de métricas de ahorro de combustible y cálculo dinámico de huella de carbono.
+
+¿Cuál de estas alternativas se ajusta mejor a tus intereses para definir su alcance y objetivos?`;
+  }
+
+  // 2. INTENCIÓN: PROFUNDIZAR EN INNOVACIÓN (EVITAR REPETIR SUGERENCIAS PREVIAS)
+  if (lower.includes('innovar') || lower.includes('sugerencia') || lower.includes('innovacion') || 
+      lower.includes('otra cosa') || lower.includes('que mas') || lower.includes('qué más') || 
+      lower.includes('avanzado') || lower.includes('diferenciar')) {
+    
+    if (!historyText.includes('ciberseguridad') && !historyText.includes('normativa') && !historyText.includes('sha-256')) {
+      return `## 🔐 Nueva Dimensión de Innovación: Ciberseguridad y Normativa Legal
+
+Para diferenciar categóricamente tu propuesta ante la comisión evaluadora de INACAP Sede Maipú, integremos una capa de **seguridad y cumplimiento normativo**:
+
+1. **Cumplimiento de la Ley Marco de Ciberseguridad (Ley 21.663)**:
+   - Implementa un registro de auditoría inmutable (*audit logs*) con hashes criptográficos **SHA-256**, garantizando que ninguna transacción o acceso pueda ser manipulado.
+2. **Cifrado de Extremo a Extremo (E2EE)**:
+   - Protege los datos en tránsito con **TLS 1.3** y en reposo mediante **AES-GCM de 256 bits**.
+3. **Autenticación Biométrica Multifactor con FIDO2/WebAuthn**:
+   - Sustituye las contraseñas tradicionales por autenticación criptográfica basada en llaves públicas o autenticación biométrica local del dispositivo.
+4. **Métricas de Resiliencia del Sistema**:
+   - Mide el Tiempo Medio de Recuperación (*MTTR*) y asegura tolerancia a desconexión con almacenamiento local cifrado.
+
+¿Te gustaría que diseñemos juntos el modelo entidad-relación de la base de datos o el flujo criptográfico?`;
+    } else if (!historyText.includes('tinyml') && !historyText.includes('int8') && !historyText.includes('mqtt')) {
+      return `## ⚡ Nueva Dimensión de Innovación: Procesamiento Edge AI y Baja Latencia
+
+Exploremos una capa de **computación en el borde (*Edge Computing*) y optimización algorítmica**:
+
+1. **Inferencia Local con Modelos Cuantizados (TinyML)**:
+   - Cuantiza el modelo de Machine Learning a **INT8** usando TensorFlow Lite o ONNX Runtime para ejecutar la inferencia en microcontroladores (ESP32 o Raspberry Pi) consumiendo menos de 5W.
+2. **Arquitectura Offline-First con Sincronización Delta**:
+   - Diseña el cliente para operar 100% desconectado en SQLite/IndexedDB, enviando únicamente deltas (*cambios incrementales*) a Supabase al recuperar la señal.
+3. **Protocolo Ligero MQTT / WebSockets**:
+   - Reemplaza sondeos HTTP por WebSockets bidireccionales de baja latencia (<50 ms) para telemetría en tiempo real.
+4. **Validación de Métricas de Hardware**:
+   - Evalúa el consumo de CPU, memoria RAM y disipación térmica bajo pruebas de estrés.
+
+¿Quieres que redactemos los objetivos específicos para este componente?`;
+    } else {
+      return `## 📊 Nueva Dimensión de Innovación: Analítica Predictiva y Métricas de Impacto
+
+Llevemos tu proyecto al plano del **impacto medible en el sector productivo de Maipú**:
+
+1. **Modelos Predictivos de Series Temporales**:
+   - En lugar de limitarte a un panel descriptivo, implementa modelos como **Prophet** o **Random Forest** para predecir tendencias o anomalías con 24 horas de antelación.
+2. **Explicabilidad Algorítmica con SHAP / LIME**:
+   - Proporciona a los usuarios una justificación comprensible de por qué el modelo tomó cada decisión o emitió una alerta.
+3. **Cálculo de Retorno de Inversión (ROI) y Ahorro**:
+   - Integra un dashboard financiero que calcule horas-hombre ahorradas, reducción de mermas o disminución de costos energéticos.
+4. **Validación Piloto en Comercio o Pyme de Maipú**:
+   - Respaldar el proyecto con métricas reales obtenidas en un entorno productivo de la comuna.
+
+¿Deseas que preparemos la justificación económica y técnica para el anteproyecto?`;
+    }
+  }
+
+  // 3. INTENCIÓN: ARQUITECTURA Y STACK TECNOLÓGICO
+  if (lower.includes('stack') || lower.includes('arquitectura') || lower.includes('tecnologia') || 
+      lower.includes('fastapi') || lower.includes('libreria') || lower.includes('hardware') || lower.includes('base de datos')) {
+    return `## 🏗️ Propuesta de Arquitectura Técnica Multicapa para Titulación
+
+Para asegurar que tu proyecto sea modular, escalable y defendible con solidez:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. CAPA DE PRESENTACIÓN & EXPERIENCIA DE USUARIO           │
+│    • Web Dashboard: Vanilla JS / React + Tailwind CSS       │
+│    • App Móvil: PWA / React Native con persistencia local   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ REST API / WebSockets
+┌──────────────────────────────▼──────────────────────────────┐
+│ 2. CAPA DE LÓGICA & INFERENCIA (BACKEND)                    │
+│    • Framework: FastAPI (Python 3.11) con Uvicorn asíncrono │
+│    • Procesamiento IA/ML: OpenCV / MediaPipe / Scikit-Learn │
+│    • Validación: Pydantic con tipos estrictos               │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Supabase Client / SQL Seguro
+┌──────────────────────────────▼──────────────────────────────┐
+│ 3. CAPA DE PERSISTENCIA & TIEMPO REAL                       │
+│    • Base de Datos: PostgreSQL (Supabase) con RLS           │
+│    • Seguridad: Políticas Row Level Security por rol        │
+│    • Storage: Bucket para evidencias y reportes PDF         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Métricas de Rendimiento Clave
+* **Tiempo de Inferencia Local**: < 300 ms en hardware estándar
+* **Seguridad de Acceso**: JWT con roles definidos (Estudiante, Docente, Administrador)
+* **Disponibilidad**: Soporte de contingencia offline con sincronización diferida
+
+¿Te gustaría profundizar en la configuración de endpoints de la API o en el esquema de la base de datos?`;
+  }
+
+  // 4. INTENCIÓN: OBJETIVOS SMART Y METODOLOGÍA
+  if (lower.includes('objetivo') || lower.includes('metodologia') || lower.includes('anteproyecto') || 
+      lower.includes('bloom') || lower.includes('problema') || lower.includes('redactar')) {
+    return `## 🎓 Formulación de Objetivos Académicos (Taxonomía de Bloom)
+
+Esta estructura sigue rigurosamente los lineamientos de evaluación de Proyectos de Título en INACAP:
+
+### 🎯 Objetivo General
+> **Desarrollar e implementar** una solución tecnológica integral e innovadora orientada a resolver la problemática diagnosticada, garantizando alta disponibilidad, seguridad bajo estándares vigentes y validación en un entorno operativo de INACAP Sede Maipú o sector productivo asociado.
+
+### 📌 Objetivos Específicos
+1. **Diagnosticar y recopilar** los requerimientos funcionales, técnicos y normativos mediante entrevistas con partes interesadas y revisión bibliográfica del estado del arte.
+2. **Diseñar** la arquitectura multicapa del software, modelo entidad-relación y protocolos de comunicación priorizando baja latencia y seguridad de la información.
+3. **Desarrollar y programar** los módulos centrales del sistema integrando algoritmos de inferencia, autenticación por roles y panel de visualización interactivo.
+4. **Validar y evaluar** el desempeño técnico del prototipo mediante pruebas de carga, latencia y usabilidad en un escenario piloto real.
+
+¿Quieres que particularicemos los verbos para tu área de especialidad?`;
+  }
+
+  // 5. INTENCIÓN: DEFENSA ANTE LA COMISIÓN EVALUADORA
+  if (lower.includes('defensa') || lower.includes('comision') || lower.includes('evaluadora') || 
+      lower.includes('defender') || lower.includes('profesor') || lower.includes('rubrica')) {
+    return `## ⚖️ Estrategia de Defensa ante la Comisión Evaluadora
+
+Para convencer a los docentes de la comisión de que tu propuesta merece la máxima calificación:
+
+1. **Justificación de Originalidad**:
+   - Demuestra que tu proyecto no es un desarrollo básico repetitivo, sino que incorpora **procesamiento en el borde (Edge AI), analítica predictiva o mecanismos de seguridad avanzada**.
+2. **Respaldo con Datos Cuantitativos**:
+   - Presenta gráficos con pruebas de estrés: latencia promedio, tasa de acierto algorítmico y reducción porcentual de tiempos frente a procesos manuales.
+3. **Factibilidad y Metodología Ágil**:
+   - Explica el cronograma de trabajo con metodología **Scrum / Kanban**, evidenciando que el prototipo es 100% funcional y completado dentro del semestre académico.
+
+¿Deseas que simulemos una ronda de preguntas difíciles que te podría hacer la comisión?`;
+  }
+
+  // 6. INTENCIÓN: DIAGNÓSTICO INICIAL BASADO EN EL REPOSITORIO LOCAL
+  const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
   const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
   
   let bestMatch = null;
@@ -1756,24 +2032,12 @@ Tu propuesta coincide en el enfoque de **${bestMatch.stack.slice(0, 3).join(', '
 
 ## 🚀 ¿Cómo puedes innovar y diferenciarte?
 Para que tu proyecto sea único y destaque en tu titulación, puedes hacer lo siguiente:
-1. **Agregar alertas automáticas:** Envío de notificaciones inmediatas al celular (por WhatsApp o Telegram) ante cualquier evento.
-2. **Usar predicción simple con IA:** En vez de solo medir variables actuales, programa un modelo que anticipe anomalías o eventos futuros.
-3. **Aplicarlo a un caso real en Maipú:** Enfoca las pruebas directamente en un taller, empresa o comercio de la comuna.
+1. **Detección de Vivacidad y Seguridad (Anti-Spoofing / Cifrado)**: Incorpora algoritmos que impidan suplantación o manipulación de datos.
+2. **Procesamiento en el Borde (Edge AI)**: Ejecuta los modelos localmente sin depender de internet continuo, garantizando tiempos de respuesta inferiores a 300 ms.
+3. **Validación en un Caso Real en Maipú**: Enfoca las pruebas directamente en un taller, comercio o centro asistencial de la comuna.
 
 ## 🎯 Tu próximo paso
 Revisa la ficha del proyecto coincidente y enfoca tu anteproyecto en una propuesta de valor única.`;
-  }
-
-  if (history && history.length > 0) {
-    if (lower.includes('no se') || lower.includes('parece') || lower.includes('verdad') || lower.includes('razon')) {
-      return `¡Buena observación! Si bien pueden compartir conceptos base, la clave está en el **enfoque de valor** que le des:
-
-1. **Diferenciador tecnológico:** En lugar de hacer solo registro o visualización de datos, agrega procesamiento predictivo o alertas inmediatas (por ejemplo a Telegram o WhatsApp).
-2. **Aplicación real:** Valida tu prototipo resolviendo un problema concreto en un taller, empresa o comercio de Maipú.
-
-Con esos dos puntos, tu profesor guía y la comisión verán una propuesta con personalidad propia e innovadora. ¿Te gustaría que detallemos qué herramientas técnicas podrías sumar?`;
-    }
-    return `¡Comprendido! Al plantear tu proyecto con ese enfoque y sumarle validaciones en un entorno real de Maipú, tu propuesta se vuelve mucho más sólida y defendible ante tu docente guía. ¿Quieres que veamos el alcance técnico o las tecnologías recomendadas?`;
   }
 
   return `## 💡 Diagnóstico de tu Idea
@@ -1784,8 +2048,8 @@ Con esos dos puntos, tu profesor guía y la comisión verán una propuesta con p
 🎉 **¡Excelente propuesta!** No se detectaron proyectos con alta similitud en el repositorio de INACAP Sede Maipú.
 
 ## 🚀 ¿Cómo asegurar el éxito de tu proyecto?
-1. **Tecnologías modernas:** Usa herramientas fáciles y escalables como FastAPI, Supabase y React/Next.js.
-2. **Prototipo funcional:** Construye primero una prueba pequeña y medible.
+1. **Tecnologías modernas:** Usa herramientas modulares y escalables como FastAPI, Supabase y React.
+2. **Prototipo funcional:** Construye primero un Producto Mínimo Viable (MVP) medible.
 
 ## 🎯 Tu próximo paso
 Empieza a redactar el alcance técnico y preséntalo con confianza a tu docente guía.`;
@@ -1888,18 +2152,22 @@ async function sendMsg() {
       addNapi(analyze(txt, history));
 
       const lower = txt.toLowerCase();
-      const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
-      const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
-      const top = PROJECTS.map(p => {
-        const src = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
-        let hits = 0;
-        words.forEach(w => { if (src.includes(w)) hits += 1; });
-        const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
-        return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w))) ? Math.max(pct, 59.2) : pct };
-      }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct)[0];
+      const isAltQuery = lower.includes('otra') || lower.includes('otro') || lower.includes('cambiar') || lower.includes('diferente');
+      
+      if (!isAltQuery && history.length === 0) {
+        const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
+        const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
+        const top = PROJECTS.map(p => {
+          const src = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
+          let hits = 0;
+          words.forEach(w => { if (src.includes(w)) hits += 1; });
+          const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
+          return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim'].includes(w))) ? Math.max(pct, 59.2) : pct };
+        }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct)[0];
 
-      if (top) {
-        setTimeout(() => addSimCard(top.p, top.pct), 200);
+        if (top) {
+          setTimeout(() => addSimCard(top.p, top.pct), 200);
+        }
       }
     }, 300);
   }

@@ -677,30 +677,51 @@ def analyze_project(req: AnalyzeRequest):
             ])
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
 
-        # 2. Generar respuesta NAPI con Gemini (soporte conversacional natural estilo Antigravity)
-        SYSTEM_PROMPT = """Eres NAPI, el asistente de inteligencia artificial y mentor experto de proyectos de título de INACAP Sede Maipú.
-Tu personalidad es cercana, motivadora, pedagógica, clara y técnica (exactamente como un asistente de IA avanzado estilo Antigravity o ChatGPT).
+        # 2. Generar respuesta NAPI con Gemini (soporte conversacional avanzado y multi-académico)
+        SYSTEM_PROMPT = """Eres NAPI, el mentor experto de inteligencia artificial para Proyectos de Título y Titulación de INACAP Sede Maipú.
+Tu rol es actuar como un mentor y docente guía de alto nivel: reflexivo, pedagógico, analítico, riguroso y adaptable a todas las carreras de INACAP.
 
-Tienes acceso al catálogo de proyectos de título históricos de INACAP Sede Maipú.
+TIENES ACCESO AL REPOSITORIO INSTITUCIONAL Y DOMINIO DE METODOLOGÍAS DE INGENIERÍA, CIENCIAS APLICADAS, GESTIÓN Y TECNOLOGÍA.
 
-PAUTAS DE COMPORTAMIENTO:
-1. SI EL ESTUDIANTE TE PRESENTA UNA IDEA O ANTEPROYECTO NUEVO POR PRIMERA VEZ (ej: "tengo una idea con reconocimiento facial", "quiero hacer un proyecto de monitoreo energético"):
-   - Proporciona un diagnóstico visual, amigable y estructurado:
-     💡 **Diagnóstico de tu Idea**: Menciona el % de coincidencia estimado y el título del proyecto previo más parecido de la sede.
-     🔍 **¿En qué se parece?**: Explica de forma sencilla qué partes, sensores o enfoque coinciden con trabajos anteriores.
-     🚀 **¿Cómo puedes innovar y diferenciarte?**: Entrega 3 ideas prácticas, modernas y claras para hacerlo único.
-     🎯 **Tu próximo paso**: Un consejo motivador y directo para su anteproyecto.
+DIRECTRICES DE RESPUESTA SEGÚN LA INTENCIÓN DEL ESTUDIANTE:
 
-2. SI EL ESTUDIANTE HACE PREGUNTAS DE SEGUIMIENTO, PIDE RECOMENDACIONES O CONTINÚA LA CONVERSACIÓN (ej: "qué me recomendarías agregar más a esta idea", "cómo implemento eso", "qué sensores o librerías usarías", "no se parecería a X proyecto?", "¿por qué?"):
-   - RESPONDE DE FORMA 100% CONVERSACIONAL, EXPERTA Y DIRECTA.
-   - ¡NO repitas el diagnóstico de porcentaje ni la plantilla rígida!
-   - Da sugerencias técnicas específicas (ej: para reconocimiento facial -> detección de vivacidad/liveness, edge computing con Raspberry Pi, alertas a Telegram, validación offline).
-   - Mantén el hilo de la conversación y formula preguntas interesantes para guiar al estudiante."""
+1. EVALUACIÓN DE IDEA NUEVA (Diagnóstico Inicial):
+   - Proporciona un diagnóstico estructurado y claro:
+     💡 **Diagnóstico de Originalidad**: Nivel de coincidencia (%) y proyecto anterior más cercano de la sede.
+     🔍 **Puntos de Contacto con el Repositorio**: Qué partes de la propuesta coinciden con tesis históricas.
+     🚀 **Ejes de Innovación y Diferenciación**: 3 aportes específicos que harían destacar la tesis.
+     🎯 **Recomendación para tu Docente Guía**: Sugerencia metodológica inmediata.
+
+2. SOLICITUD DE OTRAS IDEAS O ALTERNATIVAS DE TITULACIÓN (ej: "dame otra idea", "qué otro proyecto puedo hacer", "cambiemos de tema", "puede ser otra idea?"):
+   - NUNCA repitas el proyecto anterior ni las mismas recomendaciones.
+   - Propone 3 alternativas de proyectos de título COMPLETAMENTE DIFERENTES e innovadoras para su área:
+     * **Título del anteproyecto tentativo**
+     * **Problemática real a resolver** (en empresas, industria o comunidad de Maipú/RM)
+     * **Stack tecnológico / herramientas clave sugeridas**
+     * **Factor de innovación y diferenciador ante la comisión**
+
+3. PROFUNDIZACIÓN O MÁS IDEAS DE INNOVACIÓN (ej: "qué más puedo agregarle", "dame otra sugerencia para innovar", "cómo lo hago más avanzado"):
+   - NUNCA repitas sugerencias previas ya mencionadas en la conversación.
+   - Explora nuevas dimensiones técnicas y académicas no discutidas:
+     * **Capa Hardware / IoT / Edge AI / Microcontroladores** (ESP32, Raspberry Pi, TinyML, sensores industriales, LoRaWAN).
+     * **Capa Ciberseguridad, Privacidad y Cumplimiento Normativo** (Ley 21.663 de Ciberseguridad en Chile, Ley 19.628 de datos personales, cifrado AES-256, autenticación multifactor biométrica, auditoría inmutable).
+     * **Capa Arquitectura Software & Cloud** (Microservicios FastAPI, sincronización offline-first, WebSockets en tiempo real, colas Redis/RabbitMQ, Supabase/PostgreSQL).
+     * **Capa Machine Learning & Analítica Predictiva** (Modelos de ensamble, redes convolucionales MobileNet cuantizadas INT8, análisis de series temporales, explicabilidad con SHAP).
+     * **Capa Impacto Comunitario y Retorno de Inversión (ROI)** (Validación empírica en Maipú, reducción de mermas, optimización de consumo energético).
+
+4. CONSULTAS TÉCNICAS, ARQUITECTURA O CÓDIGO (ej: "cómo implemento X", "qué stack usar", "FastAPI vs Node", "OpenCV vs MediaPipe"):
+   - Proporciona un desglose de arquitectura multicapa (Frontend/Mobile, API Backend, Base de Datos, Procesamiento Edge/ML) con pros, contras y protocolos recomendados.
+
+5. DEBATES, COMPARACIONES Y REFUTACIONES (ej: "pero si uso X no se parece a Y?", "no es lo mismo porque...", "cómo lo defiendo"):
+   - Analiza con criterio de comisión evaluadora: valida los puntos fuertes del estudiante y prepáralo con 3 argumentos sólidos de defensa académica.
+
+6. METODOLOGÍA Y ANTEPROYECTO (ej: "cómo redacto los objetivos", "planteamiento del problema"):
+   - Redacta el Objetivo General y 4 Objetivos Específicos usando la Taxonomía de Bloom (Diagnosticar, Diseñar, Desarrollar, Validar)."""
 
         # Construir secuencia de contenidos para Gemini
         contents_list = []
         if req.history and len(req.history) > 0:
-            for item in req.history[-8:]:
+            for item in req.history[-10:]:
                 r = "user" if item.role in ["user", "human"] else "model"
                 contents_list.append(genai_types.Content(
                     role=r,
@@ -708,12 +729,10 @@ PAUTAS DE COMPORTAMIENTO:
                 ))
 
         q_lower = req.query.lower()
-        is_followup = bool(req.history and len(req.history) > 0) and any(
-            w in q_lower for w in ["que ", "qué ", "como ", "cómo ", "cual ", "cuál ", "recomiendas", "recomendarías", "agregar", "sumar", "y si", "por que", "por qué", "no se", "¿no", "tienes", "pero", "gracias", "ok", "más"]
-        )
+        is_followup = bool(req.history and len(req.history) > 0)
 
         if is_followup:
-            user_prompt_content = req.query
+            user_prompt_content = f"{req.query}\n\n[Contexto del repositorio disponible si aplica: {contexto}]"
         else:
             user_prompt_content = f"{req.query}\n\n[Repositorio INACAP Maipú - Proyectos Similares detectados]:\n{contexto}"
 
@@ -732,7 +751,7 @@ PAUTAS DE COMPORTAMIENTO:
                         config=genai_types.GenerateContentConfig(
                             system_instruction=SYSTEM_PROMPT,
                             temperature=0.7,
-                            max_output_tokens=1500
+                            max_output_tokens=1800
                         )
                     )
                     return resp.text if resp and resp.text else ""
@@ -740,36 +759,142 @@ PAUTAS DE COMPORTAMIENTO:
                     log.warning(f"Error llamando {mod_name}: {e}")
                     return ""
 
-            for mod in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-pro"]:
+            for mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=5.0)
+                    analisis_texto = fut.result(timeout=4.5)
                     if analisis_texto:
                         log.info(f"Respuesta generada exitosamente con {mod}")
                         break
                 except Exception as ex:
                     log.warning(f"Modelo {mod} timeout/fallo: {ex}")
 
-        # Fallback analítico garantizado con lenguaje simple y conversacional
+        # Fallback analítico avanzado multi-intención si Gemini no responde
         if not analisis_texto:
-            if is_followup:
-                if any(k in q_lower for k in ["facial", "rostro", "camara", "reconocimiento", "acceso", "seguridad"]):
-                    analisis_texto = """Para potenciar y hacer única tu idea de **Reconocimiento Facial**, te recomiendo agregar estas innovaciones clave:
+            history_str = " ".join([h.content.lower() for h in (req.history or [])])
+            
+            # INTENCIÓN 1: PEDIR OTRA IDEA / ALTERNATIVAS DE ANTEPROYECTO
+            if any(w in q_lower for w in ["otra idea", "otro proyecto", "otra propuesta", "cambiar de idea", "cambiemos de tema", "puede ser otra", "que otro", "qué otro", "diferente"]):
+                analisis_texto = """## 💡 3 Propuestas Innovadoras de Proyectos de Título
 
-1. **Detección de Vivacidad (Anti-Spoofing / Liveness Detection)**: Implementa un filtro que detecte parpadeo o micro-movimientos para evitar que engañen a la cámara con una foto impresa o un video desde el celular.
-2. **Procesamiento en el Borde (Edge AI)**: Ejecuta la inferencia localmente en una Raspberry Pi 4 o microcomputador, evitando enviar video continuo a la nube y garantizando respuesta en menos de 300 ms.
-3. **Alertas en Tiempo Real con Captura**: Si se detecta un intento de acceso no autorizado, envía automáticamente una alerta instantánea con la foto a un canal seguro de Telegram o WhatsApp.
-4. **Modo Offline-First**: Almacena las marcas de acceso localmente en caso de caída de red y sincronízalas a la base de datos Supabase cuando vuelva la conexión.
+¡Excelente decisión! Explorar nuevas alternativas te permite encontrar un proyecto con alta demanda laboral y 0% de coincidencia en el repositorio:
 
-¿Qué hardware o lenguaje tienes en mente usar (por ejemplo, Python con OpenCV/DeepFace o una app móvil)?"""
+### 1. 🛡️ Sistema de Telemetría y Ciberseguridad OT para Redes Industriales
+* **Problema:** Vulnerabilidad en controladores PLC y sensores de plantas industriales en Maipú ante ciberataques.
+* **Stack:** Python, Scapy/Suricata (IDS), InfluxDB, Grafana, Raspberry Pi 4 con protocolo Modbus TCP.
+* **Factor Innovador:** Cumplimiento con la **Ley Marco de Ciberseguridad en Chile (Ley 21.663)** con detección de anomalías en tiempo real.
+
+### 2. 🏥 Asistente Inteligente de Triage Clínico y Monitoreo con Privacidad Diferencial
+* **Problema:** Congestión en salas de espera de centros de salud y riesgo de filtración de datos médicos sensibles.
+* **Stack:** FastAPI, React Native, Supabase, TensorFlow Lite con anonimización automática de datos (Ley 19.628).
+* **Factor Innovador:** Clasificación predictiva de urgencia sin almacenar imágenes ni datos biométricos en servidores externos.
+
+### 3. 📦 Plataforma de Ruteo Dinámico y Control de Huella de Carbono para Logística Local
+* **Problema:** Ineficiencia en rutas de despacho de última milla para pymes comerciales de la comuna de Maipú.
+* **Stack:** Node.js/FastAPI, algoritmos genéticos de optimización de rutas (OR-Tools), OpenStreetMap y Leaflet.
+* **Factor Innovador:** Cálculo en tiempo real de emisiones de CO2 ahorradas y costo operativo por kilómetro.
+
+¿Cuál de estas 3 áreas te entusiasma más para profundizar en su arquitectura y objetivos?"""
+
+            # INTENCIÓN 2: PEDIR OTRA SUGERENCIA DE INNOVACIÓN (SIN REPETIR)
+            elif any(w in q_lower for w in ["innovar", "sugerencia", "innovacion", "otra cosa", "que mas", "qué más", "avanzado", "diferenciar"]):
+                if "ciberseguridad" not in history_str and "normativa" not in history_str:
+                    analisis_texto = """## 🔐 Nueva Dimensión de Innovación: Ciberseguridad y Cumplimiento Normativo
+
+Para elevar el nivel de tu proyecto y blindarlo ante la comisión evaluadora, incorporemos una capa de **seguridad y normativa legal**:
+
+1. **Cumplimiento de la Ley 21.663 (Ciberseguridad en Chile)**:
+   - Implementa un registro de auditoría inmutable (*audit logs*) con hashes SHA-256 para que ningún registro pueda ser alterado.
+2. **Cifrado de Extremo a Extremo (E2EE)**:
+   - Cifra toda la telemetría y credenciales en tránsito usando TLS 1.3 y en reposo con AES-GCM de 256 bits.
+3. **Autenticación Biométrica Multifactor con FIDO2/WebAuthn**:
+   - En lugar de contraseñas simples, implementa verificación criptográfica de llave física o token biométrico local.
+4. **Métricas de Resiliencia**:
+   - Mide el tiempo medio de recuperación (*MTTR*) y tiempo de respuesta ante fallos de conexión (modo offline tolerante a particiones de red).
+
+¿Te gustaría que diseñemos el diagrama de flujo de seguridad o la estructura de la base de datos?"""
                 else:
-                    analisis_texto = """¡Excelente pregunta! Para diferenciar tu anteproyecto y maximizar la nota de titulación, te sugiero considerar:
+                    analisis_texto = """## ⚡ Nueva Dimensión de Innovación: Procesamiento Edge AI y Baja Latencia
 
-1. **Automatización en Tiempo Real**: Agrega alertas proactivas a canales móviles (WhatsApp/Telegram/Push) ante eventos críticos.
-2. **Predicción con Modelos Ligeros**: En lugar de solo reportar datos actuales, incorpora una estimación predictiva a corto plazo.
-3. **Validación en un Caso Real de Maipú**: Enfoca las pruebas directamente en un comercio, taller o empresa real de la comuna para darle respaldo práctico a tu tesis.
+Exploremos un enfoque de **computación en el borde (*Edge Computing*) y optimización de recursos**:
 
-¿Te gustaría que diseñemos juntos la arquitectura técnica o el alcance de tu anteproyecto?"""
+1. **Inferencia Local con Modelos Cuantizados (TinyML)**:
+   - Convierte y cuantiza el modelo a formato **INT8** usando TensorFlow Lite o ONNX Runtime para ejecutarlo en microcomputadores con consumo menor a 5W.
+2. **Arquitectura Offline-First con Sincronización Delta**:
+   - Permite que el sistema funcione de forma 100% autónoma sin internet en SQLite local, enviando solo las diferencias (*deltas*) a Supabase cuando se restablezca la conectividad.
+3. **Protocolo Ligero MQTT / WebSockets**:
+   - Sustituye peticiones HTTP redundantes por un canal MQTT/WebSockets de ultra-baja latencia (<50 ms) para telemetría continua.
+4. **Validación de Rendimiento en Terreno**:
+   - Registra consumo de memoria RAM, CPU y temperatura del dispositivo bajo carga de trabajo intensiva.
+
+¿Quieres que veamos cómo redactar los objetivos específicos para este enfoque?"""
+
+            # INTENCIÓN 3: ARQUITECTURA Y STACK TECNOLÓGICO
+            elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura", "fastapi", "lenguaje", "hardware", "base de datos", "libreria"]):
+                analisis_texto = """## 🏗️ Propuesta de Arquitectura Técnica Multicapa para Titulación
+
+Para garantizar alta escalabilidad y fácil defensa ante tu docente guía, esta es la arquitectura recomendada:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. CAPA DE PRESENTACIÓN & INTERFAZ                         │
+│    • Web Dashboard: Vanilla JS / React + Tailwind CSS       │
+│    • App Móvil: React Native / PWA (Offline-First)          │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ REST API / WebSockets
+┌──────────────────────────────▼──────────────────────────────┐
+│ 2. CAPA DE LÓGICA & INFERENCIA (BACKEND)                    │
+│    • Motor API: FastAPI (Python 3.11) con Uvicorn asíncrono │
+│    • Modelos IA/ML: OpenCV / MediaPipe / Scikit-Learn       │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Supabase SDK / SQL
+┌──────────────────────────────▼──────────────────────────────┐
+│ 3. CAPA DE PERSISTENCIA & TIEMPO REAL                       │
+│    • Base de Datos: PostgreSQL (Supabase) con RLS           │
+│    • Almacenamiento: Supabase Storage para evidencias       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Protocolos y Rendimiento
+* **Autenticación**: JWT con Roles (Estudiante / Docente / Admin)
+* **Latencia objetivo**: Inferencia < 300 ms en local
+* **Persistencia**: Caché en memoria para consultas recurrentes
+
+¿Quieres que profundicemos en la estructura de tablas de la base de datos o en los endpoints de la API?"""
+
+            # INTENCIÓN 4: METODOLOGÍA Y FORMULACIÓN DE OBJETIVOS
+            elif any(w in q_lower for w in ["objetivo", "metodologia", "anteproyecto", "problema", "bloom", "redactar"]):
+                analisis_texto = """## 🎓 Formulación de Objetivos Académicos (Taxonomía de Bloom)
+
+Para tu anteproyecto de título en INACAP Sede Maipú, esta estructura de objetivos cumple con el estándar de titulación:
+
+### 🎯 Objetivo General
+> **Desarrollar e implementar** un sistema tecnológico e innovador que resuelva la problemática identificada, garantizando alta disponibilidad, seguridad y validación en un entorno operativo real de la Sede Maipú o sector productivo asociado.
+
+### 📌 Objetivos Específicos
+1. **Diagnosticar y recopilar** los requerimientos funcionales, técnicos y de seguridad mediante levantamiento de información con usuarios y revisión del estado del arte.
+2. **Diseñar** la arquitectura de software, modelo de datos y esquemas de comunicación bajo estándares de alta disponibilidad y bajo consumo de recursos.
+3. **Implementar y programar** los módulos funcionales del sistema integrando procesamiento de datos, algoritmos de inferencia y panel de administración interactivo.
+4. **Validar y evaluar** el rendimiento del prototipo mediante pruebas de carga, latencia y usabilidad en un escenario práctico real.
+
+¿Quieres que ajustemos los verbos específicos según el área exacta de tu carrera?"""
+
+            # INTENCIÓN 5: COMPARACIÓN O DEFENSA ANTE COMISIÓN
+            elif is_followup:
+                analisis_texto = """## ⚖️ Análisis Crítico y Estrategia de Defensa Académica
+
+Al plantear tu proyecto ante la comisión evaluadora de INACAP Sede Maipú, estos son los 3 argumentos clave que demostrarán la originalidad y valor de tu trabajo:
+
+1. **Superación de Limitaciones de Proyectos Previos**:
+   - Los proyectos históricos solían ser monolíticos o dependientes de conexión constante. Tu propuesta introduce **procesamiento local (Edge), alertas en tiempo real y alta seguridad**.
+2. **Impacto Cuantitativo Medible**:
+   - Tu proyecto no solo crea software, sino que mide métricas reales: reducción de tiempos de respuesta, precisión algorítmica y eficiencia de costos.
+3. **Viabilidad Técnica y Factibilidad**:
+   - Demuestra que el prototipo está acotado al tiempo de titulación (1 semestre), utilizando librerías probadas y metodologías ágiles (Scrum/Kanban).
+
+¿Deseas que redactemos la justificación del proyecto para tu informe escrito?"""
+
+            # INTENCIÓN 6: DIAGNÓSTICO INICIAL CON PROYECTOS SIMILARES
             elif similares:
                 top = similares[0]
                 proyectos_lista = "\n".join([
