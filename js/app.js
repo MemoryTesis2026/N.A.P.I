@@ -1933,27 +1933,20 @@ Llevemos tu proyecto al plano del **impacto medible en el sector productivo de M
 
 Para asegurar que tu proyecto sea modular, escalable y defendible con solidez:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. CAPA DE PRESENTACIÓN & EXPERIENCIA DE USUARIO           │
-│    • Web Dashboard: Vanilla JS / React + Tailwind CSS       │
-│    • App Móvil: PWA / React Native con persistencia local   │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ REST API / WebSockets
-┌──────────────────────────────▼──────────────────────────────┐
-│ 2. CAPA DE LÓGICA & INFERENCIA (BACKEND)                    │
-│    • Framework: FastAPI (Python 3.11) con Uvicorn asíncrono │
-│    • Procesamiento IA/ML: OpenCV / MediaPipe / Scikit-Learn │
-│    • Validación: Pydantic con tipos estrictos               │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Supabase Client / SQL Seguro
-┌──────────────────────────────▼──────────────────────────────┐
-│ 3. CAPA DE PERSISTENCIA & TIEMPO REAL                       │
-│    • Base de Datos: PostgreSQL (Supabase) con RLS           │
-│    • Seguridad: Políticas Row Level Security por rol        │
-│    • Storage: Bucket para evidencias y reportes PDF         │
-└─────────────────────────────────────────────────────────────┘
-```
+* **1. CAPA DE PRESENTACIÓN & EXPERIENCIA DE USUARIO**
+  • Web Dashboard: Vanilla JS / React + Tailwind CSS
+  • App Móvil: PWA / React Native con persistencia local
+  • Protocolos: REST API y WebSockets para eventos en vivo
+
+* **2. CAPA DE LÓGICA & INFERENCIA (BACKEND)**
+  • Framework API: FastAPI (Python 3.11) con Uvicorn asíncrono
+  • Procesamiento IA/ML: OpenCV / MediaPipe / Scikit-Learn / TinyML
+  • Validación de Datos: Pydantic con tipos estrictos
+
+* **3. CAPA DE PERSISTENCIA & TIEMPO REAL**
+  • Base de Datos: PostgreSQL (Supabase) con RLS por rol
+  • Seguridad: Políticas Row Level Security y tokens JWT
+  • Storage: Bucket cifrado para evidencias y reportes PDF
 
 ### Métricas de Rendimiento Clave
 * **Tiempo de Inferencia Local**: < 300 ms en hardware estándar
