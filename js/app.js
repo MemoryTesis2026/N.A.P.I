@@ -321,7 +321,6 @@ function updateUserDisplay(user) {
   const adName = document.getElementById('adminUserName');
   const adRole = document.getElementById('adminUserRole');
   const adAvatar = document.getElementById('adminUserAvatar');
-  const adHeaderBadge = document.getElementById('adminHeaderBadge');
   const navUsers = document.getElementById('nav-users');
   const navUpload = document.getElementById('nav-upload');
 
@@ -335,9 +334,6 @@ function updateUserDisplay(user) {
   }
   if (adRole) {
     adRole.textContent = isAdmin ? 'Administrador' : 'Docente / Evaluador';
-  }
-  if (adHeaderBadge) {
-    adHeaderBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#ED1C24] animate-pulse"></span> Rol: ${isAdmin ? 'Administrador' : 'Docente'}`;
   }
   if (adAvatar) {
     const initials = isAdmin ? 'AD' : (user.nombre || 'Prof. Marcela Rojas').replace('Prof. ', '').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
@@ -796,11 +792,11 @@ function renderAdminUsersTable(list) {
   empty?.classList.add('hidden');
 
   tbody.innerHTML = list.map(u => {
-    let roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">📚 Alumno</span>';
+    let roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#8BA3C5]/20 text-[#223355] dark:text-[#8BA3C5] border border-[rgba(139,163,197,0.3)]">Alumno</span>';
     if (u.rol === 'docente') {
-      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-red-50 text-[#ED1C24] border border-red-200">🎓 Docente</span>';
+      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#495B7D]/20 text-[#495B7D] dark:text-[#8BA3C5] border border-[rgba(139,163,197,0.3)]">Docente</span>';
     } else if (u.rol === 'administrador') {
-      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-white border border-slate-700">⚙️ Administrador</span>';
+      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#132644] text-white border border-[#495B7D]">Administrador</span>';
     }
 
     const initials = (u.nombre || u.email).split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
@@ -809,22 +805,26 @@ function renderAdminUsersTable(list) {
     <tr>
       <td class="px-4 py-3">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-black flex items-center justify-center shrink-0">
+          <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center justify-center shrink-0">
             ${initials || 'U'}
           </div>
           <div>
-            <p class="font-bold text-slate-800 text-xs">${u.nombre || 'Sin nombre'}</p>
-            <p class="text-[11px] text-slate-500">${u.email}</p>
+            <p class="font-bold text-slate-800 dark:text-white text-xs">${u.nombre || 'Sin nombre'}</p>
+            <p class="text-[11px] text-slate-500 dark:text-[#B0ADA4]">${u.email}</p>
           </div>
         </div>
       </td>
       <td class="px-4 py-3">${roleBadge}</td>
-      <td class="px-4 py-3 text-xs font-semibold text-slate-700">${u.area || 'Tecnología Aplicada'}</td>
-      <td class="px-4 py-3 text-xs text-slate-600">${u.carrera || '-'}</td>
+      <td class="px-4 py-3 text-xs font-semibold text-slate-700 dark:text-slate-300">${u.area || 'Tecnología Aplicada'}</td>
+      <td class="px-4 py-3 text-xs text-slate-600 dark:text-[#B0ADA4]">${u.carrera || '-'}</td>
       <td class="px-4 py-3">
         <div class="flex items-center gap-2">
-          <button onclick="openEditUserModal('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 transition-colors" title="Editar Usuario">✏️</button>
-          <button onclick="deleteUserCrud('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors" title="Eliminar Usuario">🗑️</button>
+          <button onclick="openEditUserModal('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Usuario">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+          <button onclick="deleteUserCrud('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 transition-colors" title="Eliminar Usuario">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
         </div>
       </td>
     </tr>`;
@@ -977,10 +977,28 @@ async function deleteUserCrud(userId) {
 
   filterAdminUsersTable();
   updateUserKpis();
-  toast(`🗑️ Usuario ${name} eliminado`);
 }
 
-function logActivity(icon, text, time = 'Justo ahora') {
+function getActivityIconSvg(icon) {
+  if (icon === '🚀' || icon === 'rocket') {
+    return `<div class="w-8 h-8 rounded-xl bg-[#223355]/15 dark:bg-[#495B7D]/30 text-[#223355] dark:text-[#8BA3C5] flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg></div>`;
+  }
+  if (icon === '📤' || icon === 'upload') {
+    return `<div class="w-8 h-8 rounded-xl bg-[#495B7D]/15 dark:bg-[#495B7D]/30 text-[#495B7D] dark:text-[#8BA3C5] flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>`;
+  }
+  if (icon === '👥' || icon === 'users') {
+    return `<div class="w-8 h-8 rounded-xl bg-[#23354D]/15 dark:bg-[#23354D]/40 text-[#223355] dark:text-[#8BA3C5] flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>`;
+  }
+  if (icon === '🔍' || icon === 'audit') {
+    return `<div class="w-8 h-8 rounded-xl bg-[#495B7D]/15 dark:bg-[#495B7D]/30 text-[#495B7D] dark:text-[#8BA3C5] flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>`;
+  }
+  if (icon === '✅' || icon === 'check') {
+    return `<div class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+  }
+  return `<div class="w-8 h-8 rounded-xl bg-[#223355]/15 dark:bg-[#8BA3C5]/20 text-[#223355] dark:text-[#8BA3C5] flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>`;
+}
+
+function logActivity(icon, text, time='Justo ahora') {
   try {
     let logs = JSON.parse(localStorage.getItem('napi_activity_logs') || '[]');
     logs.unshift({ i: icon, t: text, h: time, ts: Date.now() });
@@ -999,21 +1017,21 @@ function renderActivity() {
 
   if (!acts || acts.length === 0) {
     acts = [
-      {i:'🚀', t:'Sistema N.A.P.I v2.0 operativo en INACAP Sede Maipú', h:'Reciente'},
-      {i:'📤', t:'Proyecto indexado: <strong class="text-cyan-700">IoT Telemetría Industrial</strong> (Nota: 6.8)', h:'Hace 1h'},
-      {i:'👥', t:'Usuario registrado: <strong class="text-slate-800">Flavio Escobar Mendoza</strong>', h:'Hace 2h'},
-      {i:'🔍', t:'Auditoría: <strong class="text-cyan-700">Validaciones RAG y Supabase activas</strong>', h:'Hace 3h'},
-      {i:'✅', t:'Proyecto aprobado: <strong class="text-slate-800">App Móvil Stock QR</strong> (Nota: 6.5)', h:'Hace 5h'}
+      {i:'rocket', t:'Sistema N.A.P.I v2.0 operativo en INACAP Sede Maipú', h:'Reciente'},
+      {i:'upload', t:'Proyecto indexado: <strong class="text-[#495B7D] dark:text-[#8BA3C5]">IoT Telemetría Industrial</strong> (Nota: 6.8)', h:'Hace 1h'},
+      {i:'users',  t:'Usuario registrado: <strong class="text-slate-800 dark:text-white">Flavio Escobar Mendoza</strong>', h:'Hace 2h'},
+      {i:'audit',  t:'Auditoría: <strong class="text-[#495B7D] dark:text-[#8BA3C5]">Validaciones RAG y Supabase activas</strong>', h:'Hace 3h'},
+      {i:'check',  t:'Proyecto aprobado: <strong class="text-slate-800 dark:text-white">App Móvil Stock QR</strong> (Nota: 6.5)', h:'Hace 5h'}
     ];
   }
 
   const el = document.getElementById('recentActivity');
   if (el) el.innerHTML = acts.slice(0, 6).map(a=>`
-    <div class="flex gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200 anim-fade">
-      <span class="shrink-0 text-base">${a.i}</span>
+    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#23354D] border border-slate-200 dark:border-[rgba(139,163,197,0.2)] anim-fade">
+      ${getActivityIconSvg(a.i)}
       <div class="min-w-0 flex-1">
-        <p class="text-xs text-slate-700 leading-snug truncate">${a.t}</p>
-        <p class="text-[10px] text-slate-400 mt-0.5 font-medium">${a.h}</p>
+        <p class="text-xs text-slate-700 dark:text-slate-200 leading-snug truncate">${a.t}</p>
+        <p class="text-[10px] text-slate-400 dark:text-[#B0ADA4] mt-0.5 font-medium">${a.h}</p>
       </div>
     </div>`).join('');
 }
@@ -1033,8 +1051,8 @@ function renderCarreraChart() {
   el.innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([c,n]) => `
     <div>
       <div class="flex justify-between mb-1">
-        <span class="text-xs font-semibold text-slate-700">${c}</span>
-        <span class="text-xs font-bold text-cyan-700">${n}</span>
+        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">${c}</span>
+        <span class="text-xs font-bold text-[#495B7D] dark:text-[#8BA3C5]">${n}</span>
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:${Math.round(n/max*100)}%"></div></div>
     </div>`).join('');
@@ -1048,15 +1066,15 @@ function renderReviews() {
   ];
   const el = document.getElementById('reviewList');
   if (el) el.innerHTML = reqs.map(r=>`
-    <div class="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-cyan-400 transition-all">
-      <div class="w-8 h-8 rounded-full bg-cyan-100 border border-cyan-300 text-cyan-800 text-xs font-bold flex items-center justify-center shrink-0">${r.n.split(' ').map(x=>x[0]).join('')}</div>
+    <div class="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-[#23354D] border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-[#495B7D] transition-all">
+      <div class="w-8 h-8 rounded-full bg-[#8BA3C5]/20 border border-[#8BA3C5]/40 text-[#223355] dark:text-[#8BA3C5] text-xs font-bold flex items-center justify-center shrink-0">${r.n.split(' ').map(x=>x[0]).join('')}</div>
       <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold text-slate-800 truncate">${r.p}</p>
-        <p class="text-[11px] text-slate-500">${r.n} · <span class="text-cyan-700">${r.c}</span></p>
+        <p class="text-xs font-bold text-slate-800 dark:text-white truncate">${r.p}</p>
+        <p class="text-[11px] text-slate-500 dark:text-[#B0ADA4]">${r.n} · <span class="text-[#495B7D] dark:text-[#8BA3C5]">${r.c}</span></p>
       </div>
       <div class="flex gap-1.5 shrink-0">
-        <button onclick="logActivity('✅', 'Solicitud aprobada: ${r.p}'); toast('✅ Solicitud de ${r.n} aprobada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors">Aprobar</button>
-        <button onclick="logActivity('❌', 'Solicitud rechazada: ${r.p}'); toast('❌ Solicitud de ${r.n} rechazada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors">Rechazar</button>
+        <button onclick="logActivity('check', 'Solicitud aprobada: ${r.p}'); toast('Solicitud de ${r.n} aprobada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#223355]/10 hover:bg-[#223355]/20 dark:bg-[#8BA3C5]/20 text-[#223355] dark:text-[#8BA3C5] transition-colors">Aprobar</button>
+        <button onclick="logActivity('alert', 'Solicitud rechazada: ${r.p}'); toast('Solicitud de ${r.n} rechazada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors">Rechazar</button>
       </div>
     </div>`).join('');
 }
@@ -1084,9 +1102,15 @@ function renderTable(list) {
       </td>
       <td class="px-4 py-3">
         <div class="flex gap-1.5">
-          <button onclick="openEdit(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 transition-colors" title="Editar Metadatos">✏️</button>
-          <button onclick="toggleStatus(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-600 transition-colors" title="Visibilidad">${p.estado==='Público'?'👁️':'🙈'}</button>
-          <button onclick="deleteP(${p.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors" title="Eliminar">🗑️</button>
+          <button onclick="openEdit(${p.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Metadatos">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+          <button onclick="toggleStatus(${p.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Visibilidad">
+            ${p.estado==='Público'?'<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>':'<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>'}
+          </button>
+          <button onclick="deleteP(${p.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 transition-colors" title="Eliminar">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
         </div>
       </td>
     </tr>`).join('');
@@ -1203,18 +1227,18 @@ function renderMetrics() {
     </div>`).join('');
 
   const sum = [
-    {l:'Proyectos Registrados',v:PROJECTS.length,i:'📁'},
-    {l:'Áreas Académicas INACAP',v:Object.keys(AREAS_CARRERAS).length,i:'🏛️'},
-    {l:'Nota Promedio',v:(PROJECTS.reduce((a,p)=>a+(p.nota||6.0),0)/PROJECTS.length).toFixed(1),i:'⭐'},
-    {l:'Consultas NAPI IA',v:184,i:'🤖'},
-    {l:'Tasa de Aprobación',v:'100%',i:'📈'},
-    {l:'Estado Supabase',v:'En Línea',i:'🟢'}
+    {l:'Proyectos Registrados',v:PROJECTS.length,i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>'},
+    {l:'Áreas Académicas INACAP',v:Object.keys(AREAS_CARRERAS).length,i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>'},
+    {l:'Nota Promedio',v:(PROJECTS.reduce((a,p)=>a+(p.nota||6.0),0)/PROJECTS.length).toFixed(1),i:'<svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'},
+    {l:'Consultas NAPI IA',v:184,i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>'},
+    {l:'Tasa de Aprobación',v:'100%',i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>'},
+    {l:'Estado Supabase',v:'En Línea',i:'<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>'}
   ];
   const ms = document.getElementById('sysSummary');
   if (ms) ms.innerHTML = sum.map(s=>`
-    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
-      <span class="text-xs text-slate-600 flex items-center gap-2">${s.i} ${s.l}</span>
-      <span class="text-xs font-bold text-slate-800">${s.v}</span>
+    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#1E2E44] border border-slate-200 dark:border-[rgba(139,163,197,0.2)]">
+      <span class="text-xs text-slate-600 dark:text-[#B0ADA4] flex items-center gap-2">${s.i} <span>${s.l}</span></span>
+      <span class="text-xs font-bold text-slate-800 dark:text-white">${s.v}</span>
     </div>`).join('');
 }
 
@@ -1280,7 +1304,7 @@ function initDragAndDrop() {
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.add('border-[#ED1C24]', 'bg-red-50/50');
+      dropZone.classList.add('border-[#4A7FA7]', 'bg-sky-50/50');
     });
   });
 
@@ -1288,7 +1312,7 @@ function initDragAndDrop() {
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove('border-[#ED1C24]', 'bg-red-50/50');
+      dropZone.classList.remove('border-[#4A7FA7]', 'bg-sky-50/50');
     });
   });
 
@@ -1409,12 +1433,42 @@ function renderCards(list) {
   if (!grid) return;
 
   const pastelThemes = [
-    { cardClass: 'card-pastel-rose', badgeColor: 'bg-rose-500', arrowColor: 'text-rose-600', icon: '📕' },
-    { cardClass: 'card-pastel-peach', badgeColor: 'bg-amber-500', arrowColor: 'text-amber-600', icon: '🏛️' },
-    { cardClass: 'card-pastel-mint', badgeColor: 'bg-emerald-500', arrowColor: 'text-emerald-600', icon: '💻' },
-    { cardClass: 'card-pastel-sky', badgeColor: 'bg-sky-500', arrowColor: 'text-sky-600', icon: '🔬' },
-    { cardClass: 'card-pastel-lavender', badgeColor: 'bg-purple-500', arrowColor: 'text-purple-600', icon: '📊' },
-    { cardClass: 'card-pastel-butter', badgeColor: 'bg-yellow-500', arrowColor: 'text-yellow-700', icon: '⚡' }
+    { 
+      cardClass: 'card-pastel-sky', 
+      badgeColor: 'bg-[#23354D]', 
+      arrowColor: 'text-[#495B7D]', 
+      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>` 
+    },
+    { 
+      cardClass: 'card-pastel-mint', 
+      badgeColor: 'bg-[#495B7D]', 
+      arrowColor: 'text-[#223355]', 
+      icon: `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>` 
+    },
+    { 
+      cardClass: 'card-pastel-rose', 
+      badgeColor: 'bg-[#223355]', 
+      arrowColor: 'text-[#8BA3C5]', 
+      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>` 
+    },
+    { 
+      cardClass: 'card-pastel-lavender', 
+      badgeColor: 'bg-[#23354D]', 
+      arrowColor: 'text-[#8BA3C5]', 
+      icon: `<svg class="w-5 h-5 text-[#B0ADA4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.36 19.46A2 2 0 0 0 6.09 22h11.82a2 2 0 0 0 1.73-2.54L14 9.31V2"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line><line x1="14" y1="9.3" x2="10" y2="9.3"></line></svg>` 
+    },
+    { 
+      cardClass: 'card-pastel-butter', 
+      badgeColor: 'bg-[#495B7D]', 
+      arrowColor: 'text-[#223355]', 
+      icon: `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>` 
+    },
+    { 
+      cardClass: 'card-pastel-peach', 
+      badgeColor: 'bg-[#223355]', 
+      arrowColor: 'text-[#8BA3C5]', 
+      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>` 
+    }
   ];
 
   grid.innerHTML = list.map((p, idx) => {
@@ -1423,30 +1477,36 @@ function renderCards(list) {
     <div class="${theme.cardClass} p-6 flex flex-col justify-between cursor-pointer anim-fade shadow-sm relative group" onclick="openProjModal(${p.id})">
       <div>
         <div class="flex items-center justify-between mb-4">
-          <div class="w-10 h-10 rounded-xl ${theme.badgeColor} text-white flex items-center justify-center text-lg shadow-sm">
+          <div class="w-10 h-10 rounded-xl ${theme.badgeColor} flex items-center justify-center text-lg shadow-sm border border-white/10">
             ${theme.icon}
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-slate-500 bg-white/80 px-2.5 py-1 rounded-full border border-slate-200/60">${p.anio}</span>
-            <span class="${theme.arrowColor} group-hover:scale-125 transition-transform text-lg font-bold">↗</span>
+            <span class="text-xs font-bold text-[#495B7D] dark:text-[#8BA3C5] bg-slate-100 dark:bg-[#132644] px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#8BA3C5]/35">${p.anio}</span>
+            <span class="${theme.arrowColor} dark:text-[#8BA3C5] group-hover:scale-125 transition-transform flex items-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+            </span>
           </div>
         </div>
         <div class="mb-2">
-          <span class="text-[10px] font-bold text-[#ED1C24] uppercase tracking-wider">${shortC(p.carrera)}</span>
-          <span class="text-[10px] text-slate-400 block">${p.area || ''}</span>
+          <span class="text-[10px] font-bold text-[#495B7D] dark:text-[#8BA3C5] uppercase tracking-wider">${shortC(p.carrera)}</span>
+          <span class="text-[10px] text-slate-500 dark:text-[#B0ADA4] block mt-0.5">${p.area || ''}</span>
         </div>
-        <h3 class="font-black text-slate-800 text-sm leading-snug mb-2 clamp2 group-hover:text-[#ED1C24] transition-colors">${p.nombre}</h3>
-        <p class="text-xs text-slate-600 leading-relaxed clamp3 mb-4">${p.desc}</p>
+        <h3 class="proj-card-title font-black text-slate-900 dark:text-white text-sm leading-snug mb-2 clamp2 group-hover:text-[#495B7D] dark:group-hover:text-[#8BA3C5] transition-colors">${p.nombre}</h3>
+        <p class="text-xs text-slate-600 dark:text-[#B0ADA4] leading-relaxed clamp3 mb-4">${p.desc}</p>
       </div>
       <div>
         <div class="flex flex-wrap gap-1.5 mb-4">
-          ${p.stack.slice(0,4).map(t=>`<span class="badge-tech bg-white/90 border-slate-200">${t}</span>`).join('')}
-          ${p.stack.length>4?`<span class="text-[10px] text-slate-500 font-semibold">+${p.stack.length-4}</span>`:''}
+          ${p.stack.slice(0,4).map(t=>`<span class="badge-tech">${t}</span>`).join('')}
+          ${p.stack.length>4?`<span class="text-[10px] text-slate-500 dark:text-[#8BA3C5] font-semibold">+${p.stack.length-4}</span>`:''}
         </div>
-        <div class="flex items-center justify-between pt-3 border-t border-slate-200/70">
-          <span class="badge-restricted">🔒 Acceso Académico</span>
-          <span class="text-xs font-bold text-[#ED1C24] hover:text-[#C41219] flex items-center gap-1 transition-colors">
-            Ver Ficha <span>→</span>
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-slate-700/60">
+          <span class="badge-restricted">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Acceso Académico</span>
+          </span>
+          <span class="text-xs font-bold text-[#223355] dark:text-[#8BA3C5] group-hover:text-[#495B7D] flex items-center gap-1.5 transition-colors">
+            <span>Ver Ficha</span>
+            <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </span>
         </div>
       </div>
@@ -1617,11 +1677,11 @@ async function initNapi(forceGreeting = false) {
 
 function renderDefaultGreeting() {
   if (currentUser && currentUser.rol === 'estudiante') {
-    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI**, tu Asistente Inteligente para **${currentUser.carrera}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te diré qué porcentaje de coincidencia tiene con proyectos anteriores y cómo innovar para que sea único. 🚀`, false);
+    addNapi(`¡Hola **${currentUser.nombre}**! Soy **NAPI**, tu Asistente de Proyectos de Título para **${currentUser.carrera}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te indicaré el porcentaje de coincidencia con proyectos previos y recomendaciones técnicas para diferenciarlo e innovar.`, false);
   } else if (currentUser && (currentUser.rol === 'docente' || currentUser.rol === 'administrador')) {
-    addNapi(`¡Hola **${currentUser.nombre}**! 👋 Soy **NAPI** en **Modo ${currentUser.rol === 'administrador' ? 'Administrador' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional. 🎓`, false);
+    addNapi(`¡Hola **${currentUser.nombre}**! Soy **NAPI** en **Modo ${currentUser.rol === 'administrador' ? 'Administrador' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
   } else {
-    addNapi(`¡Hola! 👋 Soy **NAPI**, el Asistente Inteligente de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te diré qué porcentaje de coincidencia tiene con otros proyectos y cómo diferenciarte. 🚀`, false);
+    addNapi(`¡Hola! Soy **NAPI**, el Asistente Institucional de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te indicaré qué porcentaje de coincidencia tiene con el repositorio y cómo potenciar su propuesta técnica.`, false);
   }
 }
 
@@ -1768,7 +1828,9 @@ function addNapi(txt, save = true) {
   const d = document.createElement('div');
   d.className = 'flex gap-2.5 items-start anim-fade mb-3.5';
   d.innerHTML = `
-    <div class="w-8 h-8 rounded-full bg-cyan-500 border border-cyan-300 text-white text-sm font-bold flex items-center justify-center shrink-0 shadow">🤖</div>
+    <div class="w-8 h-8 rounded-xl bg-[#223355] border border-[rgba(139,163,197,0.3)] text-[#8BA3C5] flex items-center justify-center shrink-0 shadow">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+    </div>
     <div class="bubble-napi px-4 py-3 text-xs leading-relaxed max-w-[88%] shadow-sm">${fmt(txt)}</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
@@ -1786,7 +1848,9 @@ function addUser(txt, save = true) {
   d.className = 'flex gap-2.5 items-start justify-end anim-fade mb-3.5';
   d.innerHTML = `
     <div class="bubble-user px-4 py-3 text-xs leading-relaxed max-w-[80%] shadow-sm">${txt}</div>
-    <div class="w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-bold flex items-center justify-center shrink-0">👤</div>`;
+    <div class="w-8 h-8 rounded-xl bg-[#495B7D] text-white flex items-center justify-center shrink-0">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+    </div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
   setTimeout(() => { box.scrollTop = box.scrollHeight; }, 80);
@@ -1801,7 +1865,9 @@ function addTyping() {
   const d = document.createElement('div');
   d.id = 'typing';
   d.className = 'flex gap-2.5 items-start anim-fade mb-3';
-  d.innerHTML = `<div class="w-8 h-8 rounded-full bg-cyan-500 border border-cyan-300 text-white text-sm font-bold flex items-center justify-center shrink-0">🤖</div>
+  d.innerHTML = `<div class="w-8 h-8 rounded-xl bg-[#223355] border border-[rgba(139,163,197,0.3)] text-[#8BA3C5] flex items-center justify-center shrink-0">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+    </div>
     <div class="bubble-napi px-4 py-3"><div class="flex gap-1.5"><div class="dot-typing"></div><div class="dot-typing"></div><div class="dot-typing"></div></div></div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
@@ -1818,7 +1884,7 @@ function fmt(t) {
     .replace(/\*(.*?)\*/g, '<em class="text-slate-600">$1</em>')
     .replace(/^\d+\.\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 text-slate-700"><span class="text-cyan-600 font-bold">•</span><span>$1</span></div>')
     .replace(/^[-\*•]\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 text-slate-700"><span class="text-cyan-500 font-bold">•</span><span>$1</span></div>')
-    .replace(/^>\s+(.*$)/gim, '<div class="p-2.5 my-2 rounded-xl bg-slate-100 border-l-4 border-[#ED1C24] text-[11px] text-slate-600 italic leading-relaxed">$1</div>')
+    .replace(/^>\s+(.*$)/gim, '<div class="p-2.5 my-2 rounded-xl bg-slate-100 border-l-4 border-[#4A7FA7] text-[11px] text-slate-600 italic leading-relaxed">$1</div>')
     .replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-cyan-700 px-1 py-0.5 rounded text-[10px] font-mono">$1</code>')
     .replace(/\n\n/g, '<div class="my-2"></div>')
     .replace(/\n/g, '<br/>');
@@ -2155,7 +2221,7 @@ async function sendMsg() {
 // ══════════════════════════════════════════
 function toast(msg) {
   const el = document.createElement('div');
-  el.style.cssText='position:fixed;bottom:5.5rem;right:1.5rem;z-index:9999;background:#121826;color:#ffffff;border:1px solid #ED1C24;font-size:.8rem;font-weight:600;padding:.75rem 1.25rem;border-radius:.75rem;box-shadow:0 10px 25px rgba(0,0,0,.25);animation:fadeUp .3s ease';
+  el.style.cssText='position:fixed;bottom:5.5rem;right:1.5rem;z-index:9999;background:#23354D;color:#ffffff;border:1px solid #495B7D;font-size:.8rem;font-weight:600;padding:.75rem 1.25rem;border-radius:.75rem;box-shadow:0 10px 25px rgba(2,18,47,.45);animation:fadeUp .3s ease;display:flex;align-items:center;gap:8px;';
   el.textContent=msg; document.body.appendChild(el);
   setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); },3200);
 }
@@ -2164,4 +2230,192 @@ document.addEventListener('DOMContentLoaded',()=>{
   ['projModal','editModal','userCrudModal'].forEach(id=>{
     document.getElementById(id)?.addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
   });
+  initThemeSystem();
+});
+
+// ═══════════════════════════════════════════════════════════
+// SISTEMA DE TEMAS (MODO CLARO / OSCURO) Y ACCESIBILIDAD DALTONISMO
+// ═══════════════════════════════════════════════════════════
+let currentThemeMode = localStorage.getItem('napi_theme_mode') || 'light';
+let currentColorblindFilter = localStorage.getItem('napi_cvd_filter') || 'none';
+let currentActiveTrigger = null;
+
+function initThemeSystem() {
+  applyThemeMode(currentThemeMode, false);
+  applyColorblindFilter(currentColorblindFilter, false);
+  updateThemeDropdownUI();
+}
+
+// Ejecutar inmediatamente para evitar parpadeos
+initThemeSystem();
+
+function applyThemeMode(mode, save = true) {
+  currentThemeMode = mode;
+  if (save) localStorage.setItem('napi_theme_mode', mode);
+  const html = document.documentElement;
+  if (mode === 'dark') {
+    html.classList.add('theme-dark', 'dark');
+  } else {
+    html.classList.remove('theme-dark', 'dark');
+  }
+  updateThemeDropdownUI();
+}
+
+function setThemeMode(mode) {
+  applyThemeMode(mode, true);
+  toast(mode === 'dark' ? 'Modo Oscuro activado' : 'Modo Claro activado');
+}
+
+function applyColorblindFilter(filter, save = true) {
+  currentColorblindFilter = filter;
+  if (save) localStorage.setItem('napi_cvd_filter', filter);
+  const html = document.documentElement;
+  html.classList.remove('filter-protanopia', 'filter-deuteranopia', 'filter-tritanopia');
+  if (filter === 'protanopia') {
+    html.classList.add('filter-protanopia');
+  } else if (filter === 'deuteranopia') {
+    html.classList.add('filter-deuteranopia');
+  } else if (filter === 'tritanopia') {
+    html.classList.add('filter-tritanopia');
+  }
+  updateThemeDropdownUI();
+}
+
+function setColorblindFilter(filter) {
+  applyColorblindFilter(filter, true);
+  if (filter === 'none') {
+    toast('Filtro de daltonismo desactivado (Normal)');
+  } else {
+    const names = {
+      protanopia: 'Protanopia (Sin rojo)',
+      deuteranopia: 'Deuteranopia (Sin verde)',
+      tritanopia: 'Tritanopia (Sin azul)'
+    };
+    toast(`Filtro activo: ${names[filter] || filter}`);
+  }
+}
+
+function updateThemeDropdownUI() {
+  const btnLight = document.getElementById('btnModeLight');
+  const btnDark = document.getElementById('btnModeDark');
+  const badgeTheme = document.getElementById('badgeCurrentTheme');
+
+  if (btnLight && btnDark) {
+    if (currentThemeMode === 'dark') {
+      btnDark.classList.add('ring-2', 'ring-[#8BA3C5]', 'bg-[#223355]');
+      btnLight.classList.remove('ring-2', 'ring-[#8BA3C5]', 'bg-[#223355]');
+      if (badgeTheme) {
+        badgeTheme.textContent = 'Oscuro';
+        badgeTheme.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#23354D] text-[#8BA3C5] border border-[#495B7D]';
+      }
+    } else {
+      btnLight.classList.add('ring-2', 'ring-[#495B7D]', 'bg-slate-100');
+      btnDark.classList.remove('ring-2', 'ring-[#495B7D]', 'bg-slate-100');
+      if (badgeTheme) {
+        badgeTheme.textContent = 'Claro';
+        badgeTheme.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-[#223355] border border-slate-200';
+      }
+    }
+  }
+
+  // Daltonismo UI
+  const badgeCvd = document.getElementById('badgeCurrentCVD');
+  const cvdCards = {
+    protanopia: document.getElementById('btnCvdProtanopia'),
+    deuteranopia: document.getElementById('btnCvdDeuteranopia'),
+    tritanopia: document.getElementById('btnCvdTritanopia')
+  };
+
+  Object.entries(cvdCards).forEach(([key, el]) => {
+    if (!el) return;
+    const check = el.querySelector('.cvd-check');
+    if (currentColorblindFilter === key) {
+      el.classList.add('ring-2', 'ring-offset-1');
+      if (key === 'protanopia') el.classList.add('ring-red-500', 'bg-red-50/60');
+      if (key === 'deuteranopia') el.classList.add('ring-emerald-500', 'bg-emerald-50/60');
+      if (key === 'tritanopia') el.classList.add('ring-blue-500', 'bg-blue-50/60');
+      if (check) check.classList.remove('hidden');
+    } else {
+      el.classList.remove('ring-2', 'ring-offset-1', 'ring-red-500', 'ring-emerald-500', 'ring-blue-500', 'bg-red-50/60', 'bg-emerald-50/60', 'bg-blue-50/60');
+      if (check) check.classList.add('hidden');
+    }
+  });
+
+  if (badgeCvd) {
+    if (currentColorblindFilter === 'none') {
+      badgeCvd.textContent = 'Desactivado';
+      badgeCvd.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500';
+    } else {
+      const labels = { protanopia: 'Protanopia', deuteranopia: 'Deuteranopia', tritanopia: 'Tritanopia' };
+      badgeCvd.textContent = labels[currentColorblindFilter] || currentColorblindFilter;
+      badgeCvd.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#223355] text-white';
+    }
+  }
+}
+
+function toggleThemeDropdown(triggerEl, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const menu = document.getElementById('themeDropdownMenu');
+  if (!menu) return;
+
+  if (!menu.classList.contains('hidden') && currentActiveTrigger === triggerEl) {
+    closeThemeDropdown();
+    return;
+  }
+
+  currentActiveTrigger = triggerEl;
+  updateThemeDropdownUI();
+
+  // Posicionamiento inteligente
+  const rect = triggerEl.getBoundingClientRect();
+  const menuWidth = 320;
+  
+  let left = rect.left;
+  if (left + menuWidth > window.innerWidth - 12) {
+    left = window.innerWidth - menuWidth - 12;
+  }
+  if (left < 12) left = 12;
+
+  let top = rect.bottom + 8;
+  const menuEstHeight = 440;
+  if (top + menuEstHeight > window.innerHeight && rect.top > menuEstHeight) {
+    top = Math.max(12, rect.top - menuEstHeight - 8);
+  }
+
+  menu.style.top = `${top}px`;
+  menu.style.left = `${left}px`;
+  menu.classList.remove('hidden');
+}
+
+function closeThemeDropdown() {
+  const menu = document.getElementById('themeDropdownMenu');
+  if (menu) menu.classList.add('hidden');
+  currentActiveTrigger = null;
+}
+
+function toggleDaltonismoAccordion() {
+  const sub = document.getElementById('daltonismoSubmenu');
+  const chev = document.getElementById('chevronDaltonismo');
+  if (!sub) return;
+  sub.classList.toggle('hidden');
+  if (chev) {
+    chev.classList.toggle('rotate-180', !sub.classList.contains('hidden'));
+  }
+}
+
+// Cerrar dropdown al hacer click fuera
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('themeDropdownMenu');
+  if (!menu || menu.classList.contains('hidden')) return;
+  if (!menu.contains(e.target) && (!currentActiveTrigger || !currentActiveTrigger.contains(e.target))) {
+    closeThemeDropdown();
+  }
+});
+
+// Cerrar con Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeThemeDropdown();
 });
