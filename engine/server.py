@@ -691,7 +691,7 @@ Tu objetivo es entregar respuestas SINTÉTICAS, DIRECTAS Y BREVES (máximo 2 a 3
 
 ESTRUCTURA SI EL ESTUDIANTE PLANTEA UNA IDEA DE PROYECTO:
 1. Similitud: Indica en 1 o 2 líneas el % de coincidencia y nombra los 1 o 2 proyectos más parecidos del repositorio (Título, Carrera, Año y % de similitud). Si no hay coincidencia, dilo directamente en 1 línea (0% - Idea Original).
-2. Qué deberías cambiar o enfocar para diferenciarte: 2 puntos concretos y técnicos sobre qué agregar o cambiar para innovar.
+2. Qué deberías cambiar o enfocar para diferenciarte: 2 puntos concretos y técnicos sobre qué agregar o cambiar para innovar, adaptados específicamente a la idea del estudiante (no genéricos) y, si se indica su área/carrera, orientados a las herramientas y enfoques típicos de esa área.
 3. Siguiente paso: Una frase corta sugiriendo validar el enfoque con su docente guía.
 
 ESTRUCTURA EN PREGUNTAS DE SEGUIMIENTO (ej: "¿cómo innovar?", "¿sensores?", "¿otra opción?", "¿qué cambiar?"):
@@ -718,10 +718,12 @@ REGLAS ESTRICTAS:
         if req.file_name:
             file_info = f"\n\n[DOCUMENTO ADJUNTO: {req.file_name}]\nContenido:\n{req.file_content or '(Documento cargado)'}\n"
 
+        carrera_info = f"\n[Área/Carrera del estudiante: {req.carrera}]" if req.carrera else ""
+
         if is_followup:
-            user_prompt_content = f"{req.query}{file_info}\n\n[Contexto del repositorio INACAP: {contexto}]"
+            user_prompt_content = f"{req.query}{file_info}{carrera_info}\n\n[Contexto del repositorio INACAP: {contexto}]"
         else:
-            user_prompt_content = f"{req.query}{file_info}\n\n[Repositorio INACAP Maipú - Proyectos detectados]:\n{contexto}"
+            user_prompt_content = f"{req.query}{file_info}{carrera_info}\n\n[Repositorio INACAP Maipú - Proyectos detectados]:\n{contexto}"
 
         contents_list.append(genai_types.Content(
             role="user",
@@ -747,10 +749,10 @@ REGLAS ESTRICTAS:
                     log.warning(f"Error llamando {mod_name}: {e}")
                     return ""
 
-            for mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            for mod in ["gemini-2.0-flash", "gemini-1.5-flash"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=4.0)
+                    analisis_texto = fut.result(timeout=15.0)
                     if analisis_texto:
                         log.info(f"Respuesta generada exitosamente con {mod}")
                         break

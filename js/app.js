@@ -2147,7 +2147,7 @@ async function sendMsg() {
   let responded = false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // RNF-02: Máximo 5s
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // Margen para cold start de Render + llamada a Gemini
 
     const payload = {
       query: txt || `Analizar archivo: ${attached?.name}`,
