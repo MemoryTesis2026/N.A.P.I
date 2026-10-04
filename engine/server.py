@@ -749,7 +749,7 @@ REGLAS ESTRICTAS:
                     log.warning(f"Error llamando {mod_name}: {e}")
                     return ""
 
-            for mod in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+            for mod in ["gemini-3.8-flash"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
                     analisis_texto = fut.result(timeout=15.0)
