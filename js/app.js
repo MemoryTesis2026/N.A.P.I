@@ -963,23 +963,65 @@ async function submitUserCrud() {
   updateUserKpis();
 }
 
-async function deleteUserCrud(userId) {
-  const u = ADMIN_USERS.find(x => x.id === userId);
-  const name = u ? u.nombre : 'este usuario';
-  if (!confirm(`¿Estás seguro de eliminar a ${name} del sistema?`)) return;
+let pendingDeleteUserId = null;
 
-  const idx = ADMIN_USERS.findIndex(x => x.id === userId);
+function deleteUserCrud(userId) {
+  const u = ADMIN_USERS.find(x => String(x.id) === String(userId));
+  if (!u) return;
+
+  pendingDeleteUserId = userId;
+
+  const modal = document.getElementById('deleteUserConfirmModal');
+  const nombreEl = document.getElementById('deleteUserTargetNombre');
+  const metaEl = document.getElementById('deleteUserTargetMeta');
+  const btnText = document.getElementById('confirmDeleteUserBtnText');
+  const btn = document.getElementById('confirmDeleteUserBtn');
+
+  if (nombreEl) nombreEl.textContent = u.nombre || 'Usuario';
+  if (metaEl) metaEl.textContent = `${u.email || 'Sin correo'} · ${u.rol ? u.rol.charAt(0).toUpperCase() + u.rol.slice(1) : 'Usuario'}`;
+  if (btnText) btnText.textContent = 'Sí, Eliminar';
+  if (btn) btn.disabled = false;
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+function closeDeleteUserModal() {
+  const modal = document.getElementById('deleteUserConfirmModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  pendingDeleteUserId = null;
+}
+
+async function confirmDeleteUser() {
+  if (!pendingDeleteUserId) return;
+  const userId = pendingDeleteUserId;
+
+  const btn = document.getElementById('confirmDeleteUserBtn');
+  const btnText = document.getElementById('confirmDeleteUserBtnText');
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Eliminando...';
+
+  const idx = ADMIN_USERS.findIndex(x => String(x.id) === String(userId));
   if (idx >= 0) {
+    const deletedUser = ADMIN_USERS[idx];
     ADMIN_USERS.splice(idx, 1);
     saveAdminUsersToStorage();
+    logActivity('🗑️', `Usuario eliminado: ${deletedUser.nombre}`);
   }
 
   try {
-    fetch(`${API_BASE_URL}/admin/users/${userId}`, { method: 'DELETE' }).catch(() => {});
+    await fetch(`${API_BASE_URL}/admin/users/${userId}`, { method: 'DELETE' }).catch(() => {});
   } catch(e) {}
 
   filterAdminUsersTable();
   updateUserKpis();
+  toast('🗑️ Usuario eliminado del sistema.');
+  closeDeleteUserModal();
 }
 
 function getActivityIconSvg(icon) {
@@ -1232,12 +1274,48 @@ function toggleStatus(id) {
   } catch(e) {}
 }
 
+let pendingDeleteProjectId = null;
+
 function deleteP(id) {
   const p = PROJECTS.find(x => String(x.id) === String(id));
-  const titulo = p ? `"${p.nombre}"` : 'este proyecto';
-  
-  const confirmado = confirm(`⚠️ ADVERTENCIA DE ELIMINACIÓN:\n\n¿Estás seguro de que deseas eliminar permanentemente el proyecto ${titulo} del repositorio institucional?\n\nEsta acción borrará el proyecto de la base de datos Supabase y del catálogo.`);
-  if (!confirmado) return;
+  if (!p) return;
+
+  pendingDeleteProjectId = id;
+
+  const modal = document.getElementById('deleteConfirmModal');
+  const nombreEl = document.getElementById('deleteTargetNombre');
+  const metaEl = document.getElementById('deleteTargetMeta');
+  const btnText = document.getElementById('confirmDeleteBtnText');
+  const btn = document.getElementById('confirmDeleteBtn');
+
+  if (nombreEl) nombreEl.textContent = p.nombre || 'Proyecto sin título';
+  if (metaEl) metaEl.textContent = `${p.carrera || p.area || 'Carrera institucional'} · ${p.anio || '2026'}`;
+  if (btnText) btnText.textContent = 'Sí, Eliminar';
+  if (btn) btn.disabled = false;
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+function closeDeleteModal() {
+  const modal = document.getElementById('deleteConfirmModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  pendingDeleteProjectId = null;
+}
+
+async function confirmDeleteProject() {
+  if (!pendingDeleteProjectId) return;
+  const id = pendingDeleteProjectId;
+
+  const btn = document.getElementById('confirmDeleteBtn');
+  const btnText = document.getElementById('confirmDeleteBtnText');
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Eliminando...';
 
   const i = PROJECTS.findIndex(x => String(x.id) === String(id));
   if (i >= 0) {
@@ -1257,6 +1335,8 @@ function deleteP(id) {
       }).catch(() => {});
     } catch(e) {}
   }
+
+  closeDeleteModal();
 }
 
 function renderMetrics() {
