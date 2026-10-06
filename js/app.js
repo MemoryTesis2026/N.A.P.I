@@ -1367,7 +1367,8 @@ async function submitProject() {
 
   await new Promise(r => setTimeout(r, 600));
 
-  PROJECTS.unshift({ 
+  const fileToUpload = currentUploadedFile;
+  const newProjectItem = { 
     id: PROJECTS.length + 1, 
     nombre, 
     area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
@@ -1378,8 +1379,10 @@ async function submitProject() {
     stack, 
     estado: visPublic ? 'Público' : 'Oculto', 
     nota: nota,
-    archivo: currentUploadedFile ? currentUploadedFile.name : null
-  });
+    archivo: fileToUpload ? fileToUpload.name : null,
+    archivo_url: null
+  };
+  PROJECTS.unshift(newProjectItem);
 
   const sb = document.getElementById('uploadSuccess');
   if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'), 4000); }
@@ -1395,32 +1398,81 @@ async function submitProject() {
     btnSubmit.innerHTML = 'Guardar e Indexar Proyecto';
   }
 
-  // Sincronizar en Supabase
+  // Sincronizar en Supabase con soporte de subida a Storage
   try {
+    const formData = new FormData();
+    formData.append('titulo', nombre);
+    formData.append('carrera', carrera);
+    formData.append('anio', anio);
+    formData.append('autores', autores);
+    formData.append('resumen', desc);
+    formData.append('nota', nota);
+    formData.append('area', area);
+    formData.append('stack', stack.join(', '));
+    if (fileToUpload) {
+      formData.append('archivo', fileToUpload);
+    }
+
     fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        titulo: nombre,
-        carrera: carrera,
-        anio: anio,
-        autores: autores,
-        resumen: desc,
-        nota: nota,
-        area: area,
-        stack: stack.join(', ')
-      })
-    }).catch(() => {});
+      body: formData
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.project && data.project.archivo_url) {
+        newProjectItem.archivo_url = data.project.archivo_url;
+        renderCards(PROJECTS.filter(p => p.estado === 'Público'));
+        toast('☁️ Documento guardado y disponible para descarga comunitaria.');
+      }
+    })
+    .catch((err) => {
+      console.warn('Aviso de sincronización Supabase:', err);
+    });
   } catch(e) {}
 }
 
 // ══════════════════════════════════════════
 //  MÓDULO 3: PANEL ESTUDIANTE & CATÁLOGO
 // ══════════════════════════════════════════
+async function syncProjectsFromSupabase() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/projects`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.projects && Array.isArray(data.projects)) {
+        data.projects.forEach(sp => {
+          const exists = PROJECTS.find(p => p.id === sp.id || (p.nombre.toLowerCase() === (sp.titulo || '').toLowerCase()));
+          if (exists) {
+            if (sp.archivo_url) exists.archivo_url = sp.archivo_url;
+          } else {
+            PROJECTS.unshift({
+              id: sp.id || (PROJECTS.length + 1),
+              nombre: sp.titulo,
+              area: sp.area || 'Informática, Ciberseguridad y Telecomunicaciones',
+              carrera: sp.carrera || 'Ingeniería en Informática',
+              anio: sp.anio || 2025,
+              autores: sp.autores || 'Autor Desconocido',
+              desc: sp.resumen || '',
+              stack: sp.stack ? (Array.isArray(sp.stack) ? sp.stack : sp.stack.split(',').map(s=>s.trim())) : ['General'],
+              estado: 'Público',
+              nota: sp.nota || 6.5,
+              archivo_url: sp.archivo_url || null
+            });
+          }
+        });
+        renderCards(PROJECTS.filter(p => p.estado === 'Público'));
+      }
+    }
+  } catch(e) {
+    console.warn('Sincronización de proyectos desde Supabase:', e);
+  }
+}
+
 function initStudent() { 
   if (currentUser) updateUserDisplay(currentUser);
   populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
   renderCards(PROJECTS.filter(p=>p.estado==='Público')); 
+  syncProjectsFromSupabase();
 }
 
 function renderCards(list) {
@@ -1500,10 +1552,17 @@ function renderCards(list) {
           ${p.stack.length>4?`<span class="text-[10px] text-slate-500 dark:text-[#8BA3C5] font-semibold">+${p.stack.length-4}</span>`:''}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-slate-700/60">
-          <span class="badge-restricted">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <span>Acceso Académico</span>
-          </span>
+          ${p.archivo_url ? `
+            <a href="${p.archivo_url}" target="_blank" download onclick="event.stopPropagation()" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Descargar PDF</span>
+            </a>
+          ` : `
+            <span class="badge-restricted">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <span>Acceso Académico</span>
+            </span>
+          `}
           <span class="text-xs font-bold text-[#223355] dark:text-[#8BA3C5] group-hover:text-[#495B7D] flex items-center gap-1.5 transition-colors">
             <span>Ver Ficha</span>
             <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -1545,6 +1604,24 @@ function openProjModal(id) {
   document.getElementById('mAutores').textContent = p.autores;
   document.getElementById('mDesc').textContent    = p.desc;
   document.getElementById('mTechs').innerHTML     = p.stack.map(t=>`<span class="badge-cyan px-2.5 py-1 text-xs">${t}</span>`).join('');
+
+  // Gestionar visibilidad de descarga y alertas
+  const dlContainer = document.getElementById('mDownloadContainer');
+  const dlBtn = document.getElementById('mDownloadDocBtn');
+  const alertRestricted = document.getElementById('mRestrictedAlert');
+  const reqBtn = document.getElementById('mRequestAccessBtn');
+
+  if (p.archivo_url) {
+    if (dlContainer) dlContainer.classList.remove('hidden');
+    if (dlBtn) dlBtn.href = p.archivo_url;
+    if (alertRestricted) alertRestricted.classList.add('hidden');
+    if (reqBtn) reqBtn.classList.add('hidden');
+  } else {
+    if (dlContainer) dlContainer.classList.add('hidden');
+    if (alertRestricted) alertRestricted.classList.remove('hidden');
+    if (reqBtn) reqBtn.classList.remove('hidden');
+  }
+
   document.getElementById('projModal').classList.remove('hidden');
 }
 

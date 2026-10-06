@@ -14,9 +14,10 @@ API Backend FastAPI – Motor RAG y Asistente NAPI
 """
 
 import os
+import uuid
 import logging
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -524,35 +525,115 @@ def clear_chat_history(email: str, role: Optional[str] = None):
 # ── Proyectos ──
 @app.get("/api/projects")
 def get_projects():
-    """Obtiene todos los proyectos registrados en Supabase."""
+    """Obtiene todos los proyectos registrados en Supabase, incluyendo archivo_url si existe."""
     try:
-        response = db_anon.table("proyectos_titulo").select("id, titulo, resumen, carrera, anio, autores, created_at").order("anio", desc=True).execute()
+        try:
+            response = db_anon.table("proyectos_titulo").select("id, titulo, resumen, carrera, anio, autores, created_at, archivo_url").order("anio", desc=True).execute()
+        except Exception:
+            response = db_anon.table("proyectos_titulo").select("id, titulo, resumen, carrera, anio, autores, created_at").order("anio", desc=True).execute()
         return {"projects": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/projects")
-def create_project(data: ProjectCreateRequest):
-    """Inserta un nuevo proyecto validando nota >= 6.0 y calculando su vector de embedding."""
+async def create_project(request: Request):
+    """Inserta un nuevo proyecto validando nota >= 6.0, calculando embeddings y subiendo archivo opcional a Supabase Storage."""
     try:
+        content_type = request.headers.get("content-type", "")
+        titulo = ""
+        resumen = ""
+        carrera = ""
+        anio = 2025
+        autores = ""
+        nota = 6.5
+        area = "Informática, Ciberseguridad y Telecomunicaciones"
+        stack = ""
+        archivo_url = None
+
+        if "multipart/form-data" in content_type:
+            form = await request.form()
+            titulo = str(form.get("titulo") or "").strip()
+            resumen = str(form.get("resumen") or "").strip()
+            carrera = str(form.get("carrera") or "").strip()
+            try:
+                anio = int(form.get("anio", 2025))
+            except (ValueError, TypeError):
+                anio = 2025
+            autores = str(form.get("autores") or "").strip()
+            try:
+                nota = float(form.get("nota", 6.5))
+            except (ValueError, TypeError):
+                nota = 6.5
+            area = str(form.get("area") or "Informática, Ciberseguridad y Telecomunicaciones").strip()
+            stack = str(form.get("stack") or "").strip()
+
+            file_item = form.get("archivo")
+            if file_item and hasattr(file_item, "filename") and file_item.filename:
+                if db_admin:
+                    try:
+                        # Asegurar existencia del bucket público 'proyectos-docs'
+                        try:
+                            db_admin.storage.create_bucket("proyectos-docs", options={"public": True})
+                        except Exception:
+                            pass
+
+                        file_bytes = await file_item.read()
+                        if file_bytes and len(file_bytes) > 0:
+                            clean_fn = file_item.filename.replace(" ", "_").replace("/", "_").replace("\\", "_")
+                            safe_name = f"{uuid.uuid4().hex[:8]}_{clean_fn}"
+                            content_type_file = getattr(file_item, "content_type", None) or "application/octet-stream"
+                            
+                            db_admin.storage.from_("proyectos-docs").upload(
+                                path=safe_name,
+                                file=file_bytes,
+                                file_options={"content-type": content_type_file}
+                            )
+
+                            try:
+                                url_res = db_admin.storage.from_("proyectos-docs").get_public_url(safe_name)
+                                if isinstance(url_res, dict):
+                                    archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
+                                elif hasattr(url_res, "public_url"):
+                                    archivo_url = url_res.public_url
+                                else:
+                                    archivo_url = str(url_res)
+                            except Exception:
+                                archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/proyectos-docs/{safe_name}"
+                            log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
+                    except Exception as upload_err:
+                        log.warning(f"Error subiendo archivo a Supabase Storage ({upload_err})")
+        else:
+            data = await request.json()
+            titulo = str(data.get("titulo") or "").strip()
+            resumen = str(data.get("resumen") or "").strip()
+            carrera = str(data.get("carrera") or "").strip()
+            anio = int(data.get("anio", 2025))
+            autores = str(data.get("autores") or "").strip()
+            nota = float(data.get("nota", 6.5)) if data.get("nota") is not None else 6.5
+            area = str(data.get("area") or "Informática, Ciberseguridad y Telecomunicaciones").strip()
+            stack = str(data.get("stack") or "").strip()
+            archivo_url = data.get("archivo_url")
+
         # Validación de nota según normativa INACAP
-        if data.nota is not None and (data.nota < 6.0 or data.nota > 7.0):
+        if nota is not None and (nota < 6.0 or nota > 7.0):
             raise HTTPException(
                 status_code=400, 
                 detail="Normativa INACAP: Solo se pueden registrar proyectos con nota final igual o superior a 6.0."
             )
 
-        texto_completo = f"{data.titulo}. {data.resumen}"
+        texto_completo = f"{titulo}. {resumen}"
         embedding = get_doc_embedding(texto_completo)
 
         payload = {
-            "titulo": data.titulo,
-            "resumen": data.resumen,
-            "carrera": data.carrera,
-            "anio": data.anio,
-            "autores": data.autores,
+            "titulo": titulo,
+            "resumen": resumen,
+            "carrera": carrera,
+            "anio": anio,
+            "autores": autores,
             "embedding": embedding
         }
+        if archivo_url:
+            payload["archivo_url"] = archivo_url
 
         if db_admin:
             try:
@@ -560,6 +641,15 @@ def create_project(data: ProjectCreateRequest):
                 return {"success": True, "project": res.data[0] if res.data else payload}
             except Exception as db_e:
                 log.warning(f"Aviso guardando en Supabase proyectos_titulo: {db_e}")
+                # Fallback si la columna 'archivo_url' aún no existe en Supabase
+                if "archivo_url" in str(db_e).lower() and "archivo_url" in payload:
+                    try:
+                        del payload["archivo_url"]
+                        res = db_admin.table("proyectos_titulo").insert(payload).execute()
+                        payload["archivo_url"] = archivo_url
+                        return {"success": True, "project": res.data[0] if res.data else payload}
+                    except Exception as fb_e:
+                        log.warning(f"Fallback sin archivo_url también falló: {fb_e}")
 
         return {"success": True, "project": payload}
     except HTTPException:

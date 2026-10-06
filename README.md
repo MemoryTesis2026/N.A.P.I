@@ -204,9 +204,13 @@ CREATE TABLE public.proyectos_titulo (
   anio        INT         NOT NULL CHECK (anio >= 2000 AND anio <= 2100),
   autores     TEXT        NOT NULL,
   embedding   VECTOR(1536), -- Generado con gemini-embedding-2
+  archivo_url TEXT,         -- URL pública del PDF/Word en Supabase Storage (bucket: proyectos-docs)
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Si la tabla ya existe, agregar la columna con:
+-- ALTER TABLE public.proyectos_titulo ADD COLUMN IF NOT EXISTS archivo_url TEXT;
 
 -- Índice vectorial de alta velocidad
 CREATE INDEX idx_proyectos_embedding_hnsw
