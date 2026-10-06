@@ -1105,13 +1105,13 @@ function renderTable(list) {
       </td>
       <td class="px-4 py-3">
         <div class="flex gap-1.5">
-          <button onclick="openEdit(${p.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Metadatos">
+          <button onclick="openEdit('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Metadatos">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
-          <button onclick="toggleStatus(${p.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Visibilidad">
+          <button onclick="toggleStatus('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Visibilidad">
             ${p.estado==='Público'?'<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>':'<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>'}
           </button>
-          <button onclick="deleteP(${p.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 transition-colors" title="Eliminar">
+          <button onclick="deleteP('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 transition-colors" title="Eliminar">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           </button>
         </div>
@@ -1134,7 +1134,8 @@ function filterTable() {
 
 function openEdit(id) {
   editingId = id;
-  const p = PROJECTS.find(x=>x.id===id); if(!p) return;
+  const p = PROJECTS.find(x => String(x.id) === String(id));
+  if (!p) return;
   document.getElementById('editNombre').value  = p.nombre || '';
   document.getElementById('editArea').value    = p.area || 'Informática, Ciberseguridad y Telecomunicaciones';
   onEditAreaChange();
@@ -1151,7 +1152,8 @@ function openEdit(id) {
 function closeEdit() { document.getElementById('editModal').classList.add('hidden'); }
 
 function saveEdit() {
-  const p = PROJECTS.find(x=>x.id===editingId); if(!p) return;
+  const p = PROJECTS.find(x => String(x.id) === String(editingId));
+  if (!p) return;
   const nombre  = document.getElementById('editNombre')?.value.trim();
   const area    = document.getElementById('editArea')?.value;
   const carrera = document.getElementById('editCarrera')?.value;
@@ -1184,16 +1186,42 @@ function saveEdit() {
   closeEdit(); 
   filterTable(); 
   renderKpis();
+  renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
   logActivity('✏️', `Metadatos editados: "${p.nombre}" (Nota: ${p.nota})`);
-  toast('✅ Metadatos del proyecto actualizados correctamente.');
+  toast('✅ Metadatos actualizados.');
+
+  // Sincronizar en Supabase
+  try {
+    fetch(`${API_BASE_URL}/projects/${p.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: nombre,
+        area: area,
+        carrera: carrera,
+        autores: autores,
+        anio: anio,
+        nota: nota,
+        stack: Array.isArray(p.stack) ? p.stack.join(', ') : p.stack,
+        resumen: p.desc,
+        estado: estado
+      })
+    })
+    .then(r => {
+      if (r.ok) toast('☁️ Cambios guardados en Supabase.');
+    })
+    .catch(() => {});
+  } catch(e) {}
 }
 
 function toggleStatus(id) {
-  const p = PROJECTS.find(x=>x.id===id); if(!p) return;
-  p.estado = p.estado==='Público'?'Oculto':'Público';
+  const p = PROJECTS.find(x => String(x.id) === String(id));
+  if (!p) return;
+  p.estado = p.estado === 'Público' ? 'Oculto' : 'Público';
   filterTable(); 
+  renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
   logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
-  toast(`${p.estado==='Público'?'👁️ Visible':'🙈 Oculto'} en el catálogo.`);
+  toast(`${p.estado === 'Público' ? '👁️ Proyecto Visible en catálogo' : '🙈 Proyecto Oculto en catálogo'}`);
 
   try {
     fetch(`${API_BASE_URL}/projects/${p.id}`, {
@@ -1205,17 +1233,27 @@ function toggleStatus(id) {
 }
 
 function deleteP(id) {
-  if (!confirm('¿Eliminar este proyecto del repositorio?')) return;
-  const i = PROJECTS.findIndex(x=>x.id===id);
-  if (i>=0) {
+  const p = PROJECTS.find(x => String(x.id) === String(id));
+  const titulo = p ? `"${p.nombre}"` : 'este proyecto';
+  
+  const confirmado = confirm(`⚠️ ADVERTENCIA DE ELIMINACIÓN:\n\n¿Estás seguro de que deseas eliminar permanentemente el proyecto ${titulo} del repositorio institucional?\n\nEsta acción borrará el proyecto de la base de datos Supabase y del catálogo.`);
+  if (!confirmado) return;
+
+  const i = PROJECTS.findIndex(x => String(x.id) === String(id));
+  if (i >= 0) {
     const deleted = PROJECTS[i];
-    PROJECTS.splice(i,1);
+    PROJECTS.splice(i, 1);
     logActivity('🗑️', `Proyecto eliminado: "${deleted.nombre}"`);
-    filterTable(); renderKpis(); toast('🗑️ Proyecto eliminado.');
+    filterTable(); 
+    renderKpis(); 
+    renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
+    toast('🗑️ Proyecto eliminado del catálogo.');
 
     try {
       fetch(`${API_BASE_URL}/projects/${deleted.id}`, {
         method: 'DELETE'
+      }).then(r => {
+        if (r.ok) toast('🗑️ Proyecto eliminado permanentemente de Supabase.');
       }).catch(() => {});
     } catch(e) {}
   }
@@ -1556,7 +1594,7 @@ function renderCards(list) {
   grid.innerHTML = list.map((p, idx) => {
     const theme = pastelThemes[idx % pastelThemes.length];
     return `
-    <div class="${theme.cardClass} p-6 flex flex-col justify-between cursor-pointer anim-fade shadow-sm relative group" onclick="openProjModal(${p.id})">
+    <div class="${theme.cardClass} p-6 flex flex-col justify-between cursor-pointer anim-fade shadow-sm relative group" onclick="openProjModal('${p.id}')">
       <div>
         <div class="flex items-center justify-between mb-4">
           <div class="w-10 h-10 rounded-xl ${theme.badgeColor} flex items-center justify-center text-lg shadow-sm border border-white/10">
@@ -1626,7 +1664,7 @@ function filterCards() {
 }
 
 function openProjModal(id) {
-  const p = PROJECTS.find(x=>x.id===id); if(!p) return;
+  const p = PROJECTS.find(x => String(x.id) === String(id)); if(!p) return;
   currentModal = p;
   document.getElementById('mBadge').textContent   = `${p.area ? p.area + ' · ' : ''}${shortC(p.carrera)}`;
   document.getElementById('mTitle').textContent   = p.nombre;
@@ -2191,7 +2229,7 @@ function addSimCard(p, pct, save = true) {
   d.className = 'anim-fade mb-3 ml-8 cursor-pointer';
   const col = pct >= 75 ? 'bg-red-500' : pct >= 55 ? 'bg-amber-500' : 'bg-cyan-500';
   d.innerHTML = `
-    <div onclick="openProjModal(${p.id})" class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
+    <div onclick="openProjModal('${p.id}')" class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
           ${pct}%
@@ -2214,7 +2252,7 @@ function addSimCardSupabase(sim, save = true) {
   const pct = Math.round(sim.porcentaje_similitud || 60);
   const col = pct >= 75 ? 'bg-red-500' : pct >= 55 ? 'bg-amber-500' : 'bg-cyan-500';
   d.innerHTML = `
-    <div class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
+    <div onclick="openProjModal('${sim.id}')" class="sim-card cursor-pointer p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
           ${pct}%
