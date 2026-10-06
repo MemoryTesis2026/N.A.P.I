@@ -653,6 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicializar Drag & Drop para documentos de tesis
   initDragAndDrop();
 
+  // Sincronizar catálogo inicial desde Supabase
+  syncProjectsFromSupabase();
+
   window.addEventListener('scroll', updateNavActive, { passive: true });
 });
 
@@ -1362,41 +1365,12 @@ async function submitProject() {
   // RF-11: Indicador de carga durante el procesamiento e indexación
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = `<span class="inline-flex items-center gap-2"><div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Indexando con IA...</span>`;
+    btnSubmit.innerHTML = `<span class="inline-flex items-center gap-2"><div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Guardando en Supabase...</span>`;
   }
-
-  await new Promise(r => setTimeout(r, 600));
 
   const fileToUpload = currentUploadedFile;
-  const newProjectItem = { 
-    id: PROJECTS.length + 1, 
-    nombre, 
-    area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
-    carrera, 
-    anio, 
-    autores, 
-    desc, 
-    stack, 
-    estado: visPublic ? 'Público' : 'Oculto', 
-    nota: nota,
-    archivo: fileToUpload ? fileToUpload.name : null,
-    archivo_url: null
-  };
-  PROJECTS.unshift(newProjectItem);
-
-  const sb = document.getElementById('uploadSuccess');
-  if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'), 4000); }
-  
-  clearForm(); 
-  filterTable(); 
-  renderKpis();
-  logActivity('🚀', `Nuevo proyecto indexado: "${nombre}" (Nota: ${nota})`);
-  toast(`🚀 Proyecto "${nombre}" (Nota ${nota}) indexado exitosamente en N.A.P.I.`);
-
-  if (btnSubmit) {
-    btnSubmit.disabled = false;
-    btnSubmit.innerHTML = 'Guardar e Indexar Proyecto';
-  }
+  let serverSuccess = false;
+  let serverProjectData = null;
 
   // Sincronizar en Supabase con soporte de subida a Storage
   try {
@@ -1413,22 +1387,55 @@ async function submitProject() {
       formData.append('archivo', fileToUpload);
     }
 
-    fetch(`${API_BASE_URL}/projects`, {
+    const resp = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       body: formData
-    })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && data.project && data.project.archivo_url) {
-        newProjectItem.archivo_url = data.project.archivo_url;
-        renderCards(PROJECTS.filter(p => p.estado === 'Público'));
-        toast('☁️ Documento guardado y disponible para descarga comunitaria.');
-      }
-    })
-    .catch((err) => {
-      console.warn('Aviso de sincronización Supabase:', err);
     });
-  } catch(e) {}
+
+    if (resp.ok) {
+      serverProjectData = await resp.json();
+      serverSuccess = true;
+    } else {
+      const errJson = await resp.json().catch(() => ({}));
+      toast(`⚠️ El servidor no pudo registrar el proyecto: ${errJson.detail || 'Error en Supabase'}`);
+    }
+  } catch (err) {
+    console.warn('Backend API no disponible al guardar:', err);
+    toast('⚠️ No se pudo conectar al servidor backend. Por favor inicia "iniciar_servidor.bat" en tu PC.');
+  }
+
+  const newProjectItem = { 
+    id: serverProjectData?.project?.id || (PROJECTS.length + 1), 
+    nombre, 
+    area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
+    carrera, 
+    anio, 
+    autores, 
+    desc, 
+    stack, 
+    estado: visPublic ? 'Público' : 'Oculto', 
+    nota: nota,
+    archivo: fileToUpload ? fileToUpload.name : null,
+    archivo_url: serverProjectData?.project?.archivo_url || null
+  };
+  PROJECTS.unshift(newProjectItem);
+
+  if (serverSuccess) {
+    const sb = document.getElementById('uploadSuccess');
+    if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'), 4000); }
+    clearForm(); 
+    logActivity('🚀', `Nuevo proyecto indexado en Supabase: "${nombre}" (Nota: ${nota})`);
+    toast(`🚀 Proyecto "${nombre}" guardado y disponible para todos en Supabase.`);
+  }
+
+  filterTable(); 
+  renderKpis();
+  renderCards(PROJECTS.filter(p => p.estado === 'Público'));
+
+  if (btnSubmit) {
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = 'Guardar e Indexar Proyecto';
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1461,6 +1468,8 @@ async function syncProjectsFromSupabase() {
           }
         });
         renderCards(PROJECTS.filter(p => p.estado === 'Público'));
+        filterTable();
+        renderKpis();
       }
     }
   } catch(e) {
