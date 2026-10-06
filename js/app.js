@@ -1103,25 +1103,131 @@ function renderCarreraChart() {
     </div>`).join('');
 }
 
+let ACCESS_REQUESTS = [
+  {
+    id: 'req-1',
+    n: 'Emilia Castro',
+    p: 'Chatbot Orientación Vocacional',
+    c: 'Ing. en Informática',
+    email: 'emilia.castro@inacapmail.cl',
+    proposito: 'Proyecto de Título / Memoria',
+    motivo: 'Estoy desarrollando mi memoria de título sobre un chatbot conversacional con IA y necesito estudiar la arquitectura de software y el entrenamiento de modelos usado en este trabajo anterior.',
+    fecha: '05/10/2026',
+    estado: 'Pendiente'
+  },
+  {
+    id: 'req-2',
+    n: 'Roberto Lima',
+    p: 'App Delivery con Drones',
+    c: 'Ing. en Mecatrónica',
+    email: 'roberto.lima@inacapmail.cl',
+    proposito: 'Investigación de Asignatura',
+    motivo: 'Requerimos revisar la integración de telemetría y sensores GPS para el laboratorio de robótica avanzada de 4to año.',
+    fecha: '04/10/2026',
+    estado: 'Pendiente'
+  },
+  {
+    id: 'req-3',
+    n: 'Valentina Ríos',
+    p: 'Contabilidad Cloud',
+    c: 'Contador Público',
+    email: 'valentina.rios@inacapmail.cl',
+    proposito: 'Consulta y Estado del Arte',
+    motivo: 'Consulta de normativa tributaria chilena y estándares IFRS aplicados a sistemas contables web.',
+    fecha: '02/10/2026',
+    estado: 'Pendiente'
+  }
+];
+
+try {
+  const savedReqs = localStorage.getItem('napi_access_requests');
+  if (savedReqs) ACCESS_REQUESTS = JSON.parse(savedReqs);
+} catch(e) {}
+
+function saveAccessRequestsToStorage() {
+  try {
+    localStorage.setItem('napi_access_requests', JSON.stringify(ACCESS_REQUESTS));
+  } catch(e) {}
+}
+
 function renderReviews() {
-  const reqs = [
-    {n:'Emilia Castro', p:'Chatbot Orientación Vocacional', c:'Ing. en Informática'},
-    {n:'Roberto Lima',  p:'App Delivery con Drones',        c:'Ing. en Mecatrónica'},
-    {n:'Valentina Ríos',p:'Contabilidad Cloud',             c:'Contador Público'}
-  ];
   const el = document.getElementById('reviewList');
-  if (el) el.innerHTML = reqs.map(r=>`
-    <div class="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-[#23354D] border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-[#495B7D] transition-all">
-      <div class="w-8 h-8 rounded-full bg-[#8BA3C5]/20 border border-[#8BA3C5]/40 text-[#223355] dark:text-[#8BA3C5] text-xs font-bold flex items-center justify-center shrink-0">${r.n.split(' ').map(x=>x[0]).join('')}</div>
-      <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold text-slate-800 dark:text-white truncate">${r.p}</p>
-        <p class="text-[11px] text-slate-500 dark:text-[#B0ADA4]">${r.n} · <span class="text-[#495B7D] dark:text-[#8BA3C5]">${r.c}</span></p>
+  if (!el) return;
+
+  if (ACCESS_REQUESTS.length === 0) {
+    el.innerHTML = `
+      <div class="p-6 text-center text-xs text-slate-400 dark:text-[#8BA3C5]/70 bg-slate-50/50 dark:bg-[#132238]/50 rounded-xl border border-dashed border-slate-200 dark:border-[rgba(139,163,197,0.2)]">
+        No hay solicitudes de acceso pendientes en este momento.
       </div>
-      <div class="flex gap-1.5 shrink-0">
-        <button onclick="logActivity('check', 'Solicitud aprobada: ${r.p}'); toast('Solicitud de ${r.n} aprobada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#223355]/10 hover:bg-[#223355]/20 dark:bg-[#8BA3C5]/20 text-[#223355] dark:text-[#8BA3C5] transition-colors">Aprobar</button>
-        <button onclick="logActivity('alert', 'Solicitud rechazada: ${r.p}'); toast('Solicitud de ${r.n} rechazada');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors">Rechazar</button>
+    `;
+    return;
+  }
+
+  el.innerHTML = ACCESS_REQUESTS.map(r => `
+    <div class="p-3.5 rounded-xl bg-white dark:bg-[#23354D] border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-[#495B7D] transition-all space-y-2">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-[#8BA3C5]/20 border border-[#8BA3C5]/40 text-[#223355] dark:text-[#8BA3C5] text-xs font-bold flex items-center justify-center shrink-0">
+            ${(r.n || 'Alumno').split(' ').map(x=>x[0]).join('').substring(0,2)}
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-slate-800 dark:text-white truncate">${r.p}</p>
+            <p class="text-[11px] text-slate-500 dark:text-[#B0ADA4] truncate">
+              <span class="font-semibold text-slate-700 dark:text-slate-200">${r.n}</span> · <span class="text-[#495B7D] dark:text-[#8BA3C5]">${r.c}</span>
+            </p>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estado==='Aprobada' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : r.estado==='Rechazada' ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">
+          ${r.estado || 'Pendiente'}
+        </span>
+      </div>
+
+      <!-- Motivo Académico Solicitado -->
+      <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-[#132238] border border-slate-200/80 dark:border-[rgba(139,163,197,0.15)] text-left">
+        <p class="text-[10px] font-bold text-[#495B7D] dark:text-[#8BA3C5] uppercase tracking-wider mb-0.5">
+          Motivo · ${r.proposito || 'Consulta Académica'}:
+        </p>
+        <p class="text-[11px] text-slate-600 dark:text-[#CBD5E1] italic leading-relaxed">
+          "${r.motivo || 'Sin justificación detallada.'}"
+        </p>
+        ${r.email ? `<p class="text-[10px] text-slate-400 dark:text-[#8BA3C5]/70 mt-1">Contacto estudiante: <span class="font-medium text-slate-600 dark:text-slate-300">${r.email}</span></p>` : ''}
+      </div>
+
+      <!-- Acciones de Docente -->
+      <div class="flex items-center justify-between pt-1">
+        <span class="text-[10px] text-slate-400 font-medium">${r.fecha || 'Reciente'}</span>
+        <div class="flex gap-1.5 shrink-0">
+          <button onclick="approveAccessRequest('${r.id}')" class="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 transition-colors flex items-center gap-1">
+            <span>✓ Aprobar Acceso</span>
+          </button>
+          <button onclick="rejectAccessRequest('${r.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors">
+            Rechazar
+          </button>
+        </div>
       </div>
     </div>`).join('');
+}
+
+function approveAccessRequest(reqId) {
+  const req = ACCESS_REQUESTS.find(r => r.id === reqId);
+  if (req) {
+    req.estado = 'Aprobada';
+    saveAccessRequestsToStorage();
+    logActivity('check', `Solicitud de acceso aprobada: "${req.p}" para ${req.n}`);
+    toast(`✅ Solicitud de ${req.n} aprobada con éxito`);
+    renderReviews();
+  }
+}
+
+function rejectAccessRequest(reqId) {
+  const req = ACCESS_REQUESTS.find(r => r.id === reqId);
+  if (req) {
+    req.estado = 'Rechazada';
+    saveAccessRequestsToStorage();
+    logActivity('alert', `Solicitud rechazada: "${req.p}" para ${req.n}`);
+    toast(`Solicitud de ${req.n} rechazada`);
+    renderReviews();
+  }
 }
 
 function renderTable(list) {
@@ -1146,7 +1252,15 @@ function renderTable(list) {
         <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${p.estado==='Público'?'bg-cyan-50 text-cyan-700 border border-cyan-200':p.estado==='En Revisión'?'bg-amber-50 text-amber-700 border border-amber-200':'bg-slate-100 text-slate-500 border border-slate-200'}">${p.estado}</span>
       </td>
       <td class="px-4 py-3">
-        <div class="flex gap-1.5">
+        <div class="flex gap-1.5 items-center">
+          ${p.archivo_url ? `
+            <a href="${p.archivo_url}" target="_blank" download class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 transition-colors" title="Descargar Documento Oficial (PDF)">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </a>` : `
+            <button onclick="toast('⚠️ Este proyecto no tiene documento PDF adjunto')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed" title="Sin archivo PDF adjunto">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </button>`
+          }
           <button onclick="openEdit('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Metadatos">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
@@ -1753,28 +1867,127 @@ function openProjModal(id) {
   document.getElementById('mDesc').textContent    = p.desc;
   document.getElementById('mTechs').innerHTML     = p.stack.map(t=>`<span class="badge-cyan px-2.5 py-1 text-xs">${t}</span>`).join('');
 
-  // Gestionar visibilidad de descarga y alertas
+  // Gestionar visibilidad de descarga y alertas según rol
   const dlContainer = document.getElementById('mDownloadContainer');
   const dlBtn = document.getElementById('mDownloadDocBtn');
   const alertRestricted = document.getElementById('mRestrictedAlert');
   const reqBtn = document.getElementById('mRequestAccessBtn');
+  const isDocenteOrAdmin = (currentUser?.rol === 'docente' || currentUser?.rol === 'administrador' || currentRole === 'docente' || currentRole === 'administrador');
 
   if (p.archivo_url) {
-    if (dlContainer) dlContainer.classList.remove('hidden');
+    if (dlContainer) {
+      dlContainer.classList.remove('hidden');
+      const dlBtnSpan = dlBtn?.querySelector('span');
+      if (dlBtnSpan) {
+        dlBtnSpan.textContent = isDocenteOrAdmin ? '📥 Descargar Documento Oficial (PDF)' : '📥 Descargar Documento (PDF)';
+      }
+    }
     if (dlBtn) dlBtn.href = p.archivo_url;
     if (alertRestricted) alertRestricted.classList.add('hidden');
     if (reqBtn) reqBtn.classList.add('hidden');
   } else {
     if (dlContainer) dlContainer.classList.add('hidden');
-    if (alertRestricted) alertRestricted.classList.remove('hidden');
-    if (reqBtn) reqBtn.classList.remove('hidden');
+    if (alertRestricted) {
+      alertRestricted.classList.remove('hidden');
+      const alertTitle = alertRestricted.querySelector('p.font-bold');
+      const alertSubtitle = alertRestricted.querySelector('p.text-\\[11px\\]');
+      if (isDocenteOrAdmin) {
+        if (alertTitle) alertTitle.textContent = 'Sin documento PDF adjunto';
+        if (alertSubtitle) alertSubtitle.textContent = 'Este proyecto fue registrado en la base de datos sin archivo adjunto cargado.';
+      } else {
+        if (alertTitle) alertTitle.textContent = 'Descarga restringida por normativa institucional';
+        if (alertSubtitle) alertSubtitle.textContent = 'El proyecto requiere autorización docente para consulta o descarga del archivo completo.';
+      }
+    }
+    // Docentes y administradores nunca necesitan pedir permiso
+    if (reqBtn) reqBtn.classList.toggle('hidden', isDocenteOrAdmin);
   }
 
   document.getElementById('projModal').classList.remove('hidden');
 }
 
-function closeProjModal() { document.getElementById('projModal').classList.add('hidden'); }
-function requestAccess() { closeProjModal(); toast(`🔒 Solicitud enviada al docente para: "${currentModal?.nombre?.substring(0,35)}..."`); }
+function closeProjModal() { 
+  document.getElementById('projModal').classList.add('hidden'); 
+}
+
+function requestAccess() { 
+  openRequestAccessModal(); 
+}
+
+function openRequestAccessModal() {
+  if (!currentModal) return;
+  const modal = document.getElementById('requestAccessModal');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('reqModalProjectName');
+  const metaEl = document.getElementById('reqModalProjectMeta');
+  const nombreInput = document.getElementById('reqModalNombre');
+  const emailInput = document.getElementById('reqModalEmail');
+  const motivoInput = document.getElementById('reqModalMotivo');
+  const errorEl = document.getElementById('reqModalError');
+
+  if (titleEl) titleEl.textContent = currentModal.nombre || 'Proyecto';
+  if (metaEl) metaEl.textContent = `${currentModal.carrera || currentModal.area || 'Carrera'} · Autores: ${currentModal.autores || 'Alumnos'}`;
+
+  // Autocompletar datos del estudiante si está logueado
+  if (nombreInput) nombreInput.value = currentUser?.nombre || '';
+  if (emailInput) emailInput.value = currentUser?.email || '';
+  if (motivoInput) motivoInput.value = '';
+  if (errorEl) errorEl.classList.add('hidden');
+
+  closeProjModal();
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeRequestAccessModal() {
+  const modal = document.getElementById('requestAccessModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function submitAccessRequest() {
+  const nombre = document.getElementById('reqModalNombre')?.value.trim();
+  const email = document.getElementById('reqModalEmail')?.value.trim();
+  const proposito = document.getElementById('reqModalProposito')?.value;
+  const motivo = document.getElementById('reqModalMotivo')?.value.trim();
+  const errorEl = document.getElementById('reqModalError');
+  const errorMsg = document.getElementById('reqModalErrMsg');
+
+  if (!nombre || !email) {
+    if (errorEl) errorEl.classList.remove('hidden');
+    if (errorMsg) errorMsg.textContent = 'Por favor ingresa tu nombre y correo institucional.';
+    return;
+  }
+  if (!motivo || motivo.length < 8) {
+    if (errorEl) errorEl.classList.remove('hidden');
+    if (errorMsg) errorMsg.textContent = 'Por favor escribe el motivo específico por el cual solicitas el acceso (mínimo 8 caracteres).';
+    return;
+  }
+
+  const nuevaReq = {
+    id: 'req-' + Date.now(),
+    p: currentModal?.nombre || 'Proyecto de Título',
+    c: shortC(currentModal?.carrera || 'Carrera'),
+    n: nombre,
+    email: email,
+    proposito: proposito || 'Consulta Académica',
+    motivo: motivo,
+    fecha: new Date().toLocaleDateString('es-CL'),
+    estado: 'Pendiente'
+  };
+
+  ACCESS_REQUESTS.unshift(nuevaReq);
+  saveAccessRequestsToStorage();
+  logActivity('🔒', `Solicitud de acceso enviada: "${nuevaReq.p}" por ${nuevaReq.n}`);
+  renderReviews();
+
+  closeRequestAccessModal();
+  toast(`📩 Solicitud de acceso enviada al cuerpo docente con el motivo indicado.`);
+}
+
 function sendToNapi() {
   closeProjModal(); if(!napiOpen) toggleChat();
   if(currentModal) setTimeout(()=>{ document.getElementById('napiInput').value=`Quiero hacer un proyecto similar a: "${currentModal.nombre}"`; sendMsg(); },300);
