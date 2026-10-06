@@ -1194,6 +1194,14 @@ function toggleStatus(id) {
   filterTable(); 
   logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
   toast(`${p.estado==='Público'?'👁️ Visible':'🙈 Oculto'} en el catálogo.`);
+
+  try {
+    fetch(`${API_BASE_URL}/projects/${p.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: p.estado })
+    }).catch(() => {});
+  } catch(e) {}
 }
 
 function deleteP(id) {
@@ -1203,8 +1211,14 @@ function deleteP(id) {
     const deleted = PROJECTS[i];
     PROJECTS.splice(i,1);
     logActivity('🗑️', `Proyecto eliminado: "${deleted.nombre}"`);
+    filterTable(); renderKpis(); toast('🗑️ Proyecto eliminado.');
+
+    try {
+      fetch(`${API_BASE_URL}/projects/${deleted.id}`, {
+        method: 'DELETE'
+      }).catch(() => {});
+    } catch(e) {}
   }
-  filterTable(); renderKpis(); toast('🗑️ Proyecto eliminado.');
 }
 
 function renderMetrics() {
@@ -1383,6 +1397,7 @@ async function submitProject() {
     formData.append('nota', nota);
     formData.append('area', area);
     formData.append('stack', stack.join(', '));
+    formData.append('estado', visPublic ? 'Público' : 'Oculto');
     if (fileToUpload) {
       formData.append('archivo', fileToUpload);
     }
@@ -1430,7 +1445,7 @@ async function submitProject() {
 
   filterTable(); 
   renderKpis();
-  renderCards(PROJECTS.filter(p => p.estado === 'Público'));
+  renderCards(PROJECTS.filter(p => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? p.estado === 'Público' : true));
 
   if (btnSubmit) {
     btnSubmit.disabled = false;
@@ -1443,7 +1458,9 @@ async function submitProject() {
 // ══════════════════════════════════════════
 async function syncProjectsFromSupabase() {
   try {
-    const res = await fetch(`${API_BASE_URL}/projects`);
+    const isStudent = (currentUser?.rol === 'estudiante' || currentRole === 'estudiante');
+    const roleParam = isStudent ? '?role=estudiante' : '';
+    const res = await fetch(`${API_BASE_URL}/projects${roleParam}`);
     if (res.ok) {
       const data = await res.json();
       if (data.projects && Array.isArray(data.projects)) {
@@ -1451,6 +1468,10 @@ async function syncProjectsFromSupabase() {
           const exists = PROJECTS.find(p => p.id === sp.id || (p.nombre.toLowerCase() === (sp.titulo || '').toLowerCase()));
           if (exists) {
             if (sp.archivo_url) exists.archivo_url = sp.archivo_url;
+            if (sp.estado) exists.estado = sp.estado;
+            if (sp.area) exists.area = sp.area;
+            if (sp.stack) exists.stack = Array.isArray(sp.stack) ? sp.stack : sp.stack.split(',').map(s=>s.trim());
+            if (sp.nota) exists.nota = sp.nota;
           } else {
             PROJECTS.unshift({
               id: sp.id || (PROJECTS.length + 1),
@@ -1461,13 +1482,13 @@ async function syncProjectsFromSupabase() {
               autores: sp.autores || 'Autor Desconocido',
               desc: sp.resumen || '',
               stack: sp.stack ? (Array.isArray(sp.stack) ? sp.stack : sp.stack.split(',').map(s=>s.trim())) : ['General'],
-              estado: 'Público',
+              estado: sp.estado || 'Público',
               nota: sp.nota || 6.5,
               archivo_url: sp.archivo_url || null
             });
           }
         });
-        renderCards(PROJECTS.filter(p => p.estado === 'Público'));
+        renderCards(PROJECTS.filter(p => isStudent ? p.estado === 'Público' : true));
         filterTable();
         renderKpis();
       }

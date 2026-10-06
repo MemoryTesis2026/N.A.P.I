@@ -524,13 +524,18 @@ def clear_chat_history(email: str, role: Optional[str] = None):
 
 # ── Proyectos ──
 @app.get("/api/projects")
-def get_projects():
-    """Obtiene todos los proyectos registrados en Supabase, incluyendo archivo_url si existe."""
+def get_projects(role: Optional[str] = None):
+    """Obtiene todos los proyectos registrados en Supabase. Si role == 'estudiante', filtra solo los públicos."""
     try:
+        cols_full = "id, titulo, resumen, carrera, anio, autores, created_at, archivo_url, estado, area, stack, nota"
+        cols_safe = "id, titulo, resumen, carrera, anio, autores, created_at, archivo_url"
         try:
-            response = db_anon.table("proyectos_titulo").select("id, titulo, resumen, carrera, anio, autores, created_at, archivo_url").order("anio", desc=True).execute()
+            query = db_anon.table("proyectos_titulo").select(cols_full)
+            if role == "estudiante":
+                query = query.eq("estado", "Público")
+            response = query.order("anio", desc=True).execute()
         except Exception:
-            response = db_anon.table("proyectos_titulo").select("id, titulo, resumen, carrera, anio, autores, created_at").order("anio", desc=True).execute()
+            response = db_anon.table("proyectos_titulo").select(cols_safe).order("anio", desc=True).execute()
         return {"projects": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -548,6 +553,7 @@ async def create_project(request: Request):
         nota = 6.5
         area = "Informática, Ciberseguridad y Telecomunicaciones"
         stack = ""
+        estado = "Público"
         archivo_url = None
 
         if "multipart/form-data" in content_type:
@@ -566,12 +572,12 @@ async def create_project(request: Request):
                 nota = 6.5
             area = str(form.get("area") or "Informática, Ciberseguridad y Telecomunicaciones").strip()
             stack = str(form.get("stack") or "").strip()
+            estado = str(form.get("estado") or "Público").strip()
 
             file_item = form.get("archivo")
             if file_item and hasattr(file_item, "filename") and file_item.filename:
                 if db_admin:
                     try:
-                        # Asegurar existencia del bucket público 'proyectos-docs'
                         try:
                             db_admin.storage.create_bucket("proyectos-docs", options={"public": True})
                         except Exception:
@@ -612,6 +618,7 @@ async def create_project(request: Request):
             nota = float(data.get("nota", 6.5)) if data.get("nota") is not None else 6.5
             area = str(data.get("area") or "Informática, Ciberseguridad y Telecomunicaciones").strip()
             stack = str(data.get("stack") or "").strip()
+            estado = str(data.get("estado") or "Público").strip()
             archivo_url = data.get("archivo_url")
 
         # Validación de nota según normativa INACAP
@@ -634,26 +641,81 @@ async def create_project(request: Request):
         }
         if archivo_url:
             payload["archivo_url"] = archivo_url
+        if area:
+            payload["area"] = area
+        if stack:
+            payload["stack"] = stack
+        if nota is not None:
+            payload["nota"] = nota
+        if estado:
+            payload["estado"] = estado
 
         if db_admin:
             try:
                 res = db_admin.table("proyectos_titulo").insert(payload).execute()
                 return {"success": True, "project": res.data[0] if res.data else payload}
             except Exception as db_e:
-                log.warning(f"Aviso guardando en Supabase proyectos_titulo: {db_e}")
-                # Fallback si la columna 'archivo_url' aún no existe en Supabase
-                if "archivo_url" in str(db_e).lower() and "archivo_url" in payload:
-                    try:
-                        del payload["archivo_url"]
-                        res = db_admin.table("proyectos_titulo").insert(payload).execute()
-                        payload["archivo_url"] = archivo_url
-                        return {"success": True, "project": res.data[0] if res.data else payload}
-                    except Exception as fb_e:
-                        log.warning(f"Fallback sin archivo_url también falló: {fb_e}")
+                log.warning(f"Aviso guardando con metadata completa ({db_e}). Reintentando con esquema seguro...")
+                try:
+                    safe_payload = {
+                        "titulo": titulo,
+                        "resumen": resumen,
+                        "carrera": carrera,
+                        "anio": anio,
+                        "autores": autores,
+                        "embedding": embedding
+                    }
+                    if archivo_url:
+                        safe_payload["archivo_url"] = archivo_url
+                    res = db_admin.table("proyectos_titulo").insert(safe_payload).execute()
+                    safe_payload["estado"] = estado
+                    safe_payload["area"] = area
+                    safe_payload["stack"] = stack
+                    safe_payload["nota"] = nota
+                    return {"success": True, "project": res.data[0] if res.data else safe_payload}
+                except Exception as fb_e:
+                    log.error(f"Error definitivo insertando en Supabase: {fb_e}")
+                    raise HTTPException(status_code=500, detail=str(fb_e))
 
         return {"success": True, "project": payload}
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/projects/{project_id}")
+async def update_project(project_id: str, request: Request):
+    """Actualiza metadatos de un proyecto (incluyendo visibilidad y estado)."""
+    try:
+        data = await request.json()
+        update_data = {}
+        for field in ["titulo", "resumen", "carrera", "anio", "autores", "estado", "area", "stack", "nota"]:
+            if field in data and data[field] is not None:
+                update_data[field] = data[field]
+
+        if "titulo" in update_data and "resumen" in update_data:
+            texto = f"{update_data['titulo']}. {update_data['resumen']}"
+            update_data["embedding"] = get_doc_embedding(texto)
+
+        if db_admin and update_data:
+            try:
+                res = db_admin.table("proyectos_titulo").update(update_data).eq("id", project_id).execute()
+                return {"success": True, "data": res.data}
+            except Exception as db_e:
+                safe_update = {k: v for k, v in update_data.items() if k in ["titulo", "resumen", "carrera", "anio", "autores", "embedding"]}
+                if safe_update:
+                    db_admin.table("proyectos_titulo").update(safe_update).eq("id", project_id).execute()
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: str):
+    """Elimina un proyecto del repositorio en Supabase."""
+    try:
+        if db_admin:
+            db_admin.table("proyectos_titulo").delete().eq("id", project_id).execute()
+        return {"success": True, "message": "Proyecto eliminado correctamente de Supabase."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
