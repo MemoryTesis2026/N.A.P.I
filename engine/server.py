@@ -40,13 +40,15 @@ log = logging.getLogger("ArchivaIA-API")
 
 GEMINI_API_KEY       = os.environ.get("GEMINI_API_KEY", "")
 OPENAI_API_KEY       = os.environ.get("OPENAI_API_KEY", "")
+DEEPSEEK_API_KEY     = os.environ.get("DEEPSEEK_API_KEY", "")
 SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
 
 # Clientes
-gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+gemini_client   = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+openai_client   = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com") if DEEPSEEK_API_KEY else None
 db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
 db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
 
@@ -883,8 +885,32 @@ REGLAS ESTRICTAS:
         ))
 
         analisis_texto = ""
-        # Intentar con Gemini
-        if gemini_client:
+
+        # 1. Intentar primero con DeepSeek (si DEEPSEEK_API_KEY está configurada)
+        if deepseek_client:
+            try:
+                ds_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+                if req.history:
+                    for h in req.history[-6:]:
+                        role_name = "user" if h.role in ["user", "human"] else "assistant"
+                        ds_messages.append({"role": role_name, "content": h.content})
+                ds_messages.append({"role": "user", "content": user_prompt_content})
+
+                resp_ds = deepseek_client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=ds_messages,
+                    temperature=0.4,
+                    max_tokens=650,
+                    timeout=10.0
+                )
+                if resp_ds.choices and resp_ds.choices[0].message.content:
+                    analisis_texto = resp_ds.choices[0].message.content.strip()
+                    log.info("Respuesta generada exitosamente con DeepSeek API (deepseek-chat)")
+            except Exception as ds_ex:
+                log.warning(f"DeepSeek intento falló o timeout ({ds_ex}), pasando a Gemini...")
+
+        # 2. Intentar con Gemini si DeepSeek no respondió o no está configurado
+        if not analisis_texto and gemini_client:
             def _llamar_gemini(mod_name):
                 try:
                     resp = gemini_client.models.generate_content(
@@ -901,10 +927,10 @@ REGLAS ESTRICTAS:
                     log.warning(f"Error llamando {mod_name}: {e}")
                     return ""
 
-            for mod in ["gemini-3.8-flash"]:
+            for mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.8-flash"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=15.0)
+                    analisis_texto = fut.result(timeout=12.0)
                     if analisis_texto:
                         log.info(f"Respuesta generada exitosamente con {mod}")
                         break

@@ -43,14 +43,16 @@ logging.basicConfig(
 )
 log = logging.getLogger("ArchivaIA")
 
-GEMINI_API_KEY       = os.environ["GEMINI_API_KEY"]
-OPENAI_API_KEY       = os.environ["OPENAI_API_KEY"]
-SUPABASE_URL         = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
-SUPABASE_ANON_KEY    = os.environ["SUPABASE_ANON_KEY"]
+GEMINI_API_KEY       = os.environ.get("GEMINI_API_KEY", "")
+OPENAI_API_KEY       = os.environ.get("OPENAI_API_KEY", "")
+DEEPSEEK_API_KEY     = os.environ.get("DEEPSEEK_API_KEY", "")
+SUPABASE_URL         = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
 
-# Inicializar cliente Gemini (nuevo SDK)
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+# Inicializar clientes
+gemini_client   = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com") if DEEPSEEK_API_KEY else None
 
 EMBEDDING_MODEL = "gemini-embedding-2"   # truncado a 1536 dims (max HNSW = 2000)
 EMBEDDING_DIMS  = 1536
@@ -223,21 +225,40 @@ Usa markdown. Responde en espanol, tono profesional y cercano."""
             f"## Proyectos similares encontrados por RAG\n{similares_txt}"
         )
 
-    # Generación con Gemini 3.6 Flash (100% gratuito)
-    try:
-        response = gemini_client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=f"{SYSTEM_PROMPT}\n\n---\n\n{contexto}",
-            config=genai_types.GenerateContentConfig(
+    # 1. Generación con DeepSeek (si está configurada DEEPSEEK_API_KEY)
+    if deepseek_client:
+        try:
+            resp_ds = deepseek_client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": contexto}
+                ],
                 temperature=0.4,
-                max_output_tokens=1500
+                max_tokens=1500
             )
-        )
-        log.info("Analisis generado con Gemini 3.6 Flash (gratuito).")
-        return response.text
-    except Exception as e:
-        log.error(f"Error generando con Gemini: {e}")
-        return f"Error al generar analisis: {e}"
+            if resp_ds.choices and resp_ds.choices[0].message.content:
+                log.info("Analisis generado con DeepSeek (deepseek-chat).")
+                return resp_ds.choices[0].message.content.strip()
+        except Exception as e_ds:
+            log.warning(f"Error generando con DeepSeek ({e_ds}), pasando a Gemini...")
+
+    # 2. Generación con Gemini como respaldo
+    if gemini_client:
+        try:
+            response = gemini_client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=f"{SYSTEM_PROMPT}\n\n---\n\n{contexto}",
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.4,
+                    max_output_tokens=1500
+                )
+            )
+            log.info("Analisis generado con Gemini Flash.")
+            return response.text
+        except Exception as e:
+            log.error(f"Error generando con Gemini: {e}")
+            return f"Error al generar analisis: {e}"
 
 
 # ─────────────────────────────────────────────────────────────
