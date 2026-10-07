@@ -1216,7 +1216,7 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Documento Adjunto (PDF o Word .docx)</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Documento Adjunto (PDF o Word .docx / .doc)</label>
               <div id="dropZone" class="upload-zone p-6 text-center cursor-pointer transition-all border-2 border-dashed border-slate-300 hover:border-[#4A7FA7] rounded-2xl" onclick="document.getElementById('pdfInput').click()">
                 <input id="pdfInput" type="file" accept=".pdf,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" class="hidden" onchange="handleFile(event)"/>
                 <div id="uploadDefault">
@@ -1224,14 +1224,23 @@
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                   </div>
                   <p class="text-xs font-bold text-slate-700">Arrastra aquí o haz clic para adjuntar el informe técnico (PDF / Word)</p>
-                  <p class="text-[11px] text-slate-400 mt-1">Archivos PDF o Word (.docx) hasta 50MB</p>
+                  <p class="text-[11px] text-slate-400 mt-1">Archivos PDF (.pdf) o Word (.docx, .doc) hasta 50MB</p>
+                  <button type="button" onclick="event.stopPropagation(); document.getElementById('pdfInput').click()" class="mt-3 px-4 py-2 rounded-xl bg-slate-100 hover:bg-[#8BA3C5]/20 text-slate-700 text-xs font-bold transition-all border border-slate-300 inline-flex items-center gap-2 shadow-xs cursor-pointer">
+                    <svg class="w-4 h-4 text-[#495B7D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    <span>Seleccionar Archivo (PDF / Word)</span>
+                  </button>
                 </div>
                 <div id="uploadSelected" class="hidden">
                   <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 flex items-center justify-center mx-auto mb-2">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
                   <p id="fileName" class="text-xs font-bold text-slate-800"></p>
-                  <p class="text-[11px] text-emerald-600 font-bold mt-1">Documento adjuntado e indexable</p>
+                  <p class="text-[11px] text-emerald-600 font-bold mt-1">Documento adjuntado e indexable (PDF / Word habilitado)</p>
+                  <div class="mt-2.5 flex items-center justify-center gap-3">
+                    <button type="button" onclick="event.stopPropagation(); document.getElementById('pdfInput').click()" class="text-xs text-[#223355] hover:underline font-bold cursor-pointer">Cambiar archivo</button>
+                    <span class="text-slate-300">|</span>
+                    <button type="button" onclick="event.stopPropagation(); clearUploadedFile()" class="text-xs text-red-500 hover:underline font-semibold cursor-pointer">Quitar archivo</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1529,17 +1538,17 @@
     <!-- Documento disponible para descarga -->
     <div id="mDownloadContainer" class="hidden p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+        <div id="mFileIconContainer" class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </div>
         <div>
-          <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300">Documento Oficial Disponible</p>
-          <p class="text-[11px] text-slate-600 dark:text-[#B0ADA4] mt-0.5">Archivo alojado en Supabase Storage para consulta comunitaria.</p>
+          <p id="mFileTitle" class="text-xs font-bold text-emerald-800 dark:text-emerald-300">Documento Oficial Disponible (PDF / Word)</p>
+          <p id="mFileSubtitle" class="text-[11px] text-slate-600 dark:text-[#B0ADA4] mt-0.5">Archivo oficial para consulta institucional comunitaria.</p>
         </div>
       </div>
       <a id="mDownloadDocBtn" href="#" target="_blank" download class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5 shrink-0">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        <span>📥 Descargar Documento (PDF)</span>
+        <span id="mDownloadDocBtnText">📥 Descargar Documento (PDF / DOC)</span>
       </a>
     </div>
 
@@ -1735,6 +1744,16 @@
           <option value="Oculto">Oculto (Sólo Administración)</option>
           <option value="En Revisión">En Revisión (Pendiente)</option>
         </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Documento Adjunto (PDF o Word .docx)</label>
+        <div class="flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+          <input id="editFileInput" type="file" accept=".pdf,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" class="hidden" onchange="handleEditFile(event)"/>
+          <button type="button" onclick="document.getElementById('editFileInput').click()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer">
+            <span>📎 Seleccionar PDF o Word</span>
+          </button>
+          <span id="editFileName" class="text-xs text-slate-500 truncate">Sin archivo seleccionado</span>
+        </div>
       </div>
       <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-[rgba(139,163,197,0.2)]">
         <button onclick="closeEdit()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700">Cancelar</button>

@@ -103,19 +103,33 @@ const AREAS_CARRERAS = {
 //  DATASET — 12 Proyectos Sede Maipú
 // ──────────────────────────────────────────
 const PROJECTS = [
-  { id:1, nombre:"Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", area:"Automatización, Electrónica y Robótica", carrera:"Ingeniería en Electrónica y Sistemas Inteligentes", anio:2025, autores:"Diego Álvarez, Valentina Cruz", desc:"Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack:["ESP32","MQTT","Node.js","React","MongoDB","TensorFlow Lite"], estado:"Público", nota:6.7 },
-  { id:2, nombre:"App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2025, autores:"Camila Herrera, Francisco Sepúlveda", desc:"App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack:["React Native","FastAPI","PostgreSQL","Docker","AWS S3"], estado:"Público", nota:6.8 },
-  { id:3, nombre:"Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Matías Rojas, Sofía Morales, Ignacio Vega", desc:"E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack:["Next.js","Python","Scikit-learn","Redis","Transbank API","MySQL"], estado:"Público", nota:6.9 },
-  { id:4, nombre:"Diagnóstico Predictivo de Vibraciones en Motores Diésel", area:"Mecánica", carrera:"Ingeniería en Mantenimiento Industrial", anio:2025, autores:"Pablo Fuentes, Andrés Muñoz", desc:"Telemetría mecánica con FFT y acelerómetros MEMS para prevención de desalineaciones y desbalances en maquinaria pesada industrial.", stack:["Python","SciPy","InfluxDB","Grafana","Raspberry Pi 4","Twilio API"], estado:"Público", nota:6.7 },
-  { id:5, nombre:"Dashboard BI y Predicción RFM para Retail Maipú", area:"Administración", carrera:"Ingeniería en Administración de Empresas", anio:2024, autores:"Javiera Contreras, Rodrigo Sánchez", desc:"Inteligencia de negocios para retail local: consolida ERP, segmenta clientes por RFM y proyecta ventas estacionales con modelos predictivos.", stack:["Power BI","SQL Server","Python","Excel VBA","Azure Synapse"], estado:"Público", nota:6.5 },
-  { id:6, nombre:"Simulador Inmersivo WebGL de Circuitos Eléctricos Trifásicos", area:"Energía", carrera:"Ingeniería Eléctrica", anio:2023, autores:"Nicolás Torres, Ángela Ramírez", desc:"Plataforma 3D interactiva en el navegador para ensayar tableros eléctricos trifásicos con multímetro virtual y cálculo de caídas de tensión seguro.", stack:["Three.js","WebRTC","Python Flask","SQLite","Tailwind CSS"], estado:"Público", nota:6.6 },
-  { id:7, nombre:"Gestor Documental y Trazabilidad Aduanera para Embarques Marítimos", area:"Administración", carrera:"Ingeniería en Comercio Exterior", anio:2024, autores:"Carolina Espinoza, Luis Medina", desc:"Automatización de carpeta de importaciones con cálculo de aranceles Ad-Valorem, validación de Certificados de Origen y tracking GPS de contenedores.", stack:["Vue.js","Laravel","MySQL","Google Maps API","PDF.js"], estado:"Público", nota:6.4 },
-  { id:8, nombre:"Control de Acceso Biométrico por Reconocimiento Facial con Edge AI", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Maximiliano Bravo, Renata Castillo", desc:"Seguridad física con validación facial en tiempo real usando embeddings DeepFace, generación de informes de asistencia e integración con relé electromagnético.", stack:["Python","DeepFace","OpenCV","Django","PostgreSQL","Raspberry Pi"], estado:"Público", nota:7.0 },
+  { id:1, nombre:"Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", area:"Automatización, Electrónica y Robótica", carrera:"Ingeniería en Electrónica y Sistemas Inteligentes", anio:2025, autores:"Diego Álvarez, Valentina Cruz", desc:"Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack:["ESP32","MQTT","Node.js","React","MongoDB","TensorFlow Lite"], estado:"Público", nota:6.7, archivo:"anteproyecto_iot_maipu.pdf", archivo_url:"assets/docs/anteproyecto_iot_maipu.pdf" },
+  { id:2, nombre:"App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2025, autores:"Camila Herrera, Francisco Sepúlveda", desc:"App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack:["React Native","FastAPI","PostgreSQL","Docker","AWS S3"], estado:"Público", nota:6.8, archivo:"app_stock_trazabilidad.docx", archivo_url:"assets/docs/app_stock_trazabilidad.docx" },
+  { id:3, nombre:"Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Matías Rojas, Sofía Morales, Ignacio Vega", desc:"E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack:["Next.js","Python","Scikit-learn","Redis","Transbank API","MySQL"], estado:"Público", nota:6.9, archivo:"ecommerce_recomendacion_ia.pdf", archivo_url:"assets/docs/ecommerce_recomendacion_ia.pdf" },
+  { id:4, nombre:"Diagnóstico Predictivo de Vibraciones en Motores Diésel", area:"Mecánica", carrera:"Ingeniería en Mantenimiento Industrial", anio:2025, autores:"Pablo Fuentes, Andrés Muñoz", desc:"Telemetría mecánica con FFT y acelerómetros MEMS para prevención de desalineaciones y desbalances en maquinaria pesada industrial.", stack:["Python","SciPy","InfluxDB","Grafana","Raspberry Pi 4","Twilio API"], estado:"Público", nota:6.7, archivo:"diagnostico_vibraciones_motores.docx", archivo_url:"assets/docs/diagnostico_vibraciones_motores.docx" },
+  { id:5, nombre:"Dashboard BI y Predicción RFM para Retail Maipú", area:"Administración", carrera:"Ingeniería en Administración de Empresas", anio:2024, autores:"Javiera Contreras, Rodrigo Sánchez", desc:"Inteligencia de negocios para retail local: consolida ERP, segmenta clientes por RFM y proyecta ventas estacionales con modelos predictivos.", stack:["Power BI","SQL Server","Python","Excel VBA","Azure Synapse"], estado:"Público", nota:6.5, archivo:"dashboard_bi_retail_maipu.docx", archivo_url:"assets/docs/dashboard_bi_retail_maipu.docx" },
+  { id:6, nombre:"Simulador Inmersivo WebGL de Circuitos Eléctricos Trifásicos", area:"Energía", carrera:"Ingeniería Eléctrica", anio:2023, autores:"Nicolás Torres, Ángela Ramírez", desc:"Plataforma 3D interactiva en el navegador para ensayar tableros eléctricos trifásicos con multímetro virtual y cálculo de caídas de tensión seguro.", stack:["Three.js","WebRTC","Python Flask","SQLite","Tailwind CSS"], estado:"Público", nota:6.6, archivo:"simulador_circuitos_trifasicos.pdf", archivo_url:"assets/docs/anteproyecto_iot_maipu.pdf" },
+  { id:7, nombre:"Gestor Documental y Trazabilidad Aduanera para Embarques Marítimos", area:"Administración", carrera:"Ingeniería en Comercio Exterior", anio:2024, autores:"Carolina Espinoza, Luis Medina", desc:"Automatización de carpeta de importaciones con cálculo de aranceles Ad-Valorem, validación de Certificados de Origen y tracking GPS de contenedores.", stack:["Vue.js","Laravel","MySQL","Google Maps API","PDF.js"], estado:"Público", nota:6.4, archivo:"gestor_documental_aduanero.pdf", archivo_url:"assets/docs/gestor_documental_aduanero.pdf" },
+  { id:8, nombre:"Control de Acceso Biométrico por Reconocimiento Facial con Edge AI", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Maximiliano Bravo, Renata Castillo", desc:"Seguridad física con validación facial en tiempo real usando embeddings DeepFace, generación de informes de asistencia e integración con relé electromagnético.", stack:["Python","DeepFace","OpenCV","Django","PostgreSQL","Raspberry Pi"], estado:"Público", nota:7.0, archivo:"reconocimiento_facial_edge.pdf", archivo_url:"assets/docs/reconocimiento_facial_edge.pdf" },
   { id:9, nombre:"Asistente Conversacional NLP para Mantenimiento de Maquinaria Pesada", area:"Mecánica", carrera:"Ingeniería en Maquinaria Pesada y Vehículos Automotrices", anio:2025, autores:"Emilia Castro, Daniel Flores", desc:"Chatbot técnico especializado en manuales de talleres mecánicos que diagnóstica fallas hidráulicas y eléctricas mediante procesamiento de lenguaje natural.", stack:["Python","spaCy","Rasa Core","React","MongoDB","FastAPI"], estado:"En Revisión", nota:6.3 },
-  { id:10, nombre:"Software BIM y Estimación Presupuestaria para Edificación", area:"Construcción", carrera:"Construcción Civil", anio:2024, autores:"Felipe Gutiérrez, Sebastián Vargas", desc:"Extrae cantidades de obra de archivos IFC/Revit y genera presupuestos de materiales automatizados según normativas chilenas.", stack:["Autodesk Forge","Node.js","Python","PostgreSQL","Three.js"], estado:"Público", nota:6.8 },
-  { id:11, nombre:"Rover Teleoperado para Minería Subterránea con Sensores de Gas", area:"Minería", carrera:"Ingeniería en Minas", anio:2025, autores:"Gonzalo Parra, Tamara Henríquez", desc:"Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack:["Arduino","ROS 2","Python","React","WebSockets"], estado:"Público", nota:6.9 },
-  { id:12, nombre:"Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", area:"Agroindustria y Medioambiente", carrera:"Ingeniería en Medioambiente y Sustentabilidad", anio:2023, autores:"Bastián Morales, Camila Silva", desc:"Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack:["React","Express.js","PostgreSQL","Chart.js","Node.js"], estado:"Público", nota:6.5 }
+  { id:10, nombre:"Software BIM y Estimación Presupuestaria para Edificación", area:"Construcción", carrera:"Construcción Civil", anio:2024, autores:"Felipe Gutiérrez, Sebastián Vargas", desc:"Extrae cantidades de obra de archivos IFC/Revit y genera presupuestos de materiales automatizados según normativas chilenas.", stack:["Autodesk Forge","Node.js","Python","PostgreSQL","Three.js"], estado:"Público", nota:6.8, archivo:"software_bim_presupuestos.docx", archivo_url:"assets/docs/software_bim_presupuestos.docx" },
+  { id:11, nombre:"Rover Teleoperado para Minería Subterránea con Sensores de Gas", area:"Minería", carrera:"Ingeniería en Minas", anio:2025, autores:"Gonzalo Parra, Tamara Henríquez", desc:"Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack:["Arduino","ROS 2","Python","React","WebSockets"], estado:"Público", nota:6.9, archivo:"rover_teleoperado_mineria.pdf", archivo_url:"assets/docs/rover_teleoperado_mineria.pdf" },
+  { id:12, nombre:"Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", area:"Agroindustria y Medioambiente", carrera:"Ingeniería en Medioambiente y Sustentabilidad", anio:2023, autores:"Bastián Morales, Camila Silva", desc:"Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack:["React","Express.js","PostgreSQL","Chart.js","Node.js"], estado:"Público", nota:6.5, archivo:"auditoria_ambiental_huella_carbono.docx", archivo_url:"assets/docs/software_bim_presupuestos.docx" }
 ];
+
+function getFileInfo(urlOrName) {
+  if (!urlOrName) return { isDoc: false, isPdf: false, label: 'Documento', fullLabel: 'Documento', badge: '📎 Archivo', ext: '' };
+  const str = String(urlOrName).toLowerCase();
+  const isDoc = str.endsWith('.docx') || str.endsWith('.doc') || str.includes('.docx?') || str.includes('.doc?') || str.includes('word') || str.includes('.docx');
+  const isPdf = str.endsWith('.pdf') || str.includes('.pdf?') || str.includes('pdf');
+  if (isDoc) {
+    return { isDoc: true, isPdf: false, label: 'Descargar DOC', fullLabel: 'Word (.docx)', badge: '📝 Word (.docx)', ext: 'docx' };
+  }
+  if (isPdf) {
+    return { isDoc: false, isPdf: true, label: 'Descargar PDF', fullLabel: 'PDF', badge: '📄 PDF', ext: 'pdf' };
+  }
+  return { isDoc: false, isPdf: false, label: 'Descargar Archivo', fullLabel: 'Oficial', badge: '📎 Archivo', ext: '' };
+}
 
 const shortC = c => c ? c.split('/')[0].trim() : '';
 
@@ -133,12 +147,23 @@ const API_BASE_URL = (() => {
   return '/api';
 })();
 
-let currentRole = 'docente'; // 'estudiante', 'docente', 'administrador'
+let currentRole = 'estudiante'; // 'estudiante', 'docente', 'administrador'
 let napiOpen = false;
 let editingId = null;
 let visPublic = true;
 let currentModal = null;
 let currentUser = null;
+
+function canDownloadDocuments() {
+  if (currentUser && currentUser.rol) {
+    return currentUser.rol === 'docente' || currentUser.rol === 'administrador';
+  }
+  const studentScreen = document.getElementById('studentScreen');
+  if (studentScreen && !studentScreen.classList.contains('hidden')) {
+    return false;
+  }
+  return currentRole === 'docente' || currentRole === 'administrador';
+}
 
 // ──────────────────────────────────────────
 //  HELPERS PARA DROPDOWNS EN CASCADA (ÁREA -> CARRERA)
@@ -1253,11 +1278,18 @@ function renderTable(list) {
       </td>
       <td class="px-4 py-3">
         <div class="flex gap-1.5 items-center">
-          ${p.archivo_url ? `
-            <a href="${p.archivo_url}" target="_blank" download class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 transition-colors" title="Descargar Documento Oficial (PDF)">
+          ${(p.archivo_url || p.archivo) ? (() => {
+            const fi = getFileInfo(p.archivo_url || p.archivo);
+            const downloadUrl = p.archivo_url || p.archivo;
+            const btnColor = fi.isDoc
+              ? 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+              : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400';
+            return `
+            <a href="${downloadUrl}" target="_blank" download class="p-1.5 rounded-lg ${btnColor} transition-colors" title="Descargar Documento Oficial (${fi.fullLabel})">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            </a>` : `
-            <button onclick="toast('⚠️ Este proyecto no tiene documento PDF adjunto')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed" title="Sin archivo PDF adjunto">
+            </a>`;
+          })() : `
+            <button onclick="toast('⚠️ Este proyecto no tiene documento adjunto (PDF o Word)')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed" title="Sin archivo adjunto (PDF / Word)">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             </button>`
           }
@@ -1288,6 +1320,25 @@ function filterTable() {
   }));
 }
 
+let currentEditFile = null;
+
+function handleEditFile(e) {
+  const f = e.target?.files?.[0];
+  if (!f) return;
+  const validExtensions = ['.pdf', '.docx', '.doc'];
+  const nameLower = f.name.toLowerCase();
+  if (!validExtensions.some(ext => nameLower.endsWith(ext))) {
+    toast('⚠️ Formato no compatible. Adjunta un archivo PDF (.pdf) o Word (.docx, .doc)');
+    return;
+  }
+  currentEditFile = f;
+  const labelEl = document.getElementById('editFileName');
+  const isDoc = nameLower.endsWith('.docx') || nameLower.endsWith('.doc');
+  const extBadge = isDoc ? '📝 Word (.docx)' : '📄 PDF';
+  if (labelEl) labelEl.textContent = `${extBadge}: ${f.name}`;
+  toast(`📎 Archivo "${f.name}" adjuntado para actualización.`);
+}
+
 function openEdit(id) {
   editingId = id;
   const p = PROJECTS.find(x => String(x.id) === String(id));
@@ -1302,6 +1353,20 @@ function openEdit(id) {
   document.getElementById('editStack').value   = Array.isArray(p.stack) ? p.stack.join(', ') : (p.stack || '');
   document.getElementById('editDesc').value    = p.desc || '';
   document.getElementById('editEstado').value  = p.estado || 'Público';
+
+  currentEditFile = null;
+  const editFileInput = document.getElementById('editFileInput');
+  if (editFileInput) editFileInput.value = '';
+  const editFileName = document.getElementById('editFileName');
+  if (editFileName) {
+    if (p.archivo || p.archivo_url) {
+      const fi = getFileInfo(p.archivo || p.archivo_url);
+      editFileName.textContent = `${fi.badge}: ${p.archivo || 'Archivo adjunto'}`;
+    } else {
+      editFileName.textContent = 'Sin archivo adjunto';
+    }
+  }
+
   document.getElementById('editModal').classList.remove('hidden');
 }
 
@@ -1338,6 +1403,12 @@ function saveEdit() {
   p.stack   = stackStr ? stackStr.split(',').map(s=>s.trim()).filter(Boolean) : ['General'];
   p.desc    = desc || p.desc;
   p.estado  = estado;
+
+  if (currentEditFile) {
+    p.archivo = currentEditFile.name;
+    p.archivo_url = URL.createObjectURL(currentEditFile);
+    logActivity('📎', `Documento actualizado para "${p.nombre}": ${currentEditFile.name}`);
+  }
 
   closeEdit(); 
   filterTable(); 
@@ -1519,6 +1590,14 @@ function toggleVis() {
 
 let currentUploadedFile = null;
 
+function clearUploadedFile() {
+  currentUploadedFile = null;
+  const input = document.getElementById('pdfInput');
+  if (input) input.value = '';
+  document.getElementById('uploadDefault')?.classList.remove('hidden');
+  document.getElementById('uploadSelected')?.classList.add('hidden');
+}
+
 function handleFile(e) {
   const f = e.target?.files?.[0];
   if (!f) return;
@@ -1531,7 +1610,7 @@ function processUploadedFile(file) {
   const isValid = validExtensions.some(ext => nameLower.endsWith(ext));
   
   if (!isValid) {
-    toast('⚠️ Formato no compatible. Por favor adjunta un archivo PDF o Word (.docx)');
+    toast('⚠️ Formato no compatible. Por favor adjunta un archivo PDF (.pdf) o Word (.docx, .doc)');
     return;
   }
 
@@ -1539,10 +1618,11 @@ function processUploadedFile(file) {
   document.getElementById('uploadDefault')?.classList.add('hidden');
   document.getElementById('uploadSelected')?.classList.remove('hidden');
   const sizeMb = (file.size / 1048576).toFixed(1);
-  const extBadge = nameLower.endsWith('.pdf') ? '📄 PDF' : '📝 Word';
+  const isWord = nameLower.endsWith('.docx') || nameLower.endsWith('.doc');
+  const extBadge = isWord ? '📝 Word (.docx)' : '📄 PDF';
   const fnEl = document.getElementById('fileName');
   if (fnEl) fnEl.textContent = `${extBadge}: ${file.name} (${sizeMb} MB)`;
-  toast(`📎 Documento "${file.name}" cargado para indexación.`);
+  toast(`📎 Documento "${file.name}" (${extBadge}) cargado para indexación.`);
 }
 
 function initDragAndDrop() {
@@ -1663,7 +1743,7 @@ async function submitProject() {
     estado: visPublic ? 'Público' : 'Oculto', 
     nota: nota,
     archivo: fileToUpload ? fileToUpload.name : null,
-    archivo_url: serverProjectData?.project?.archivo_url || null
+    archivo_url: serverProjectData?.project?.archivo_url || (fileToUpload ? URL.createObjectURL(fileToUpload) : null)
   };
   PROJECTS.unshift(newProjectItem);
 
@@ -1731,6 +1811,7 @@ async function syncProjectsFromSupabase() {
 }
 
 function initStudent() { 
+  currentRole = 'estudiante';
   if (currentUser) updateUserDisplay(currentUser);
   populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
   renderCards(PROJECTS.filter(p=>p.estado==='Público')); 
@@ -1814,12 +1895,21 @@ function renderCards(list) {
           ${p.stack.length>4?`<span class="text-[10px] text-slate-500 dark:text-[#8BA3C5] font-semibold">+${p.stack.length-4}</span>`:''}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-slate-700/60">
-          ${p.archivo_url ? `
-            <a href="${p.archivo_url}" target="_blank" download onclick="event.stopPropagation()" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-sm">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              <span>Descargar PDF</span>
-            </a>
-          ` : `
+          ${(canDownloadDocuments() && (p.archivo_url || p.archivo)) ? (() => {
+            const fi = getFileInfo(p.archivo_url || p.archivo);
+            const downloadUrl = p.archivo_url || p.archivo;
+            const btnClass = fi.isDoc 
+              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60' 
+              : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60';
+            const iconSvg = fi.isDoc
+              ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`
+              : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>`;
+            return `
+            <a href="${downloadUrl}" target="_blank" download onclick="event.stopPropagation()" class="px-2.5 py-1.5 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-sm ${btnClass}" title="${fi.isDoc ? 'Descargar Documento Oficial Word (.docx)' : 'Descargar Documento Oficial PDF'}">
+              ${iconSvg}
+              <span>${fi.label}</span>
+            </a>`;
+          })() : `
             <span class="badge-restricted">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
               <span>Acceso Académico</span>
@@ -1872,35 +1962,50 @@ function openProjModal(id) {
   const dlBtn = document.getElementById('mDownloadDocBtn');
   const alertRestricted = document.getElementById('mRestrictedAlert');
   const reqBtn = document.getElementById('mRequestAccessBtn');
-  const isDocenteOrAdmin = (currentUser?.rol === 'docente' || currentUser?.rol === 'administrador' || currentRole === 'docente' || currentRole === 'administrador');
+  const isDocenteOrAdmin = canDownloadDocuments();
+  const fileTarget = p.archivo_url || p.archivo;
 
-  if (p.archivo_url) {
-    if (dlContainer) {
-      dlContainer.classList.remove('hidden');
-      const dlBtnSpan = dlBtn?.querySelector('span');
-      if (dlBtnSpan) {
-        dlBtnSpan.textContent = isDocenteOrAdmin ? '📥 Descargar Documento Oficial (PDF)' : '📥 Descargar Documento (PDF)';
+  if (isDocenteOrAdmin) {
+    // DOCENTE Y ADMINISTRADOR: Tienen acceso a la descarga
+    if (fileTarget) {
+      if (dlContainer) {
+        dlContainer.classList.remove('hidden');
+        const fi = getFileInfo(fileTarget);
+        const dlBtnSpan = dlBtn?.querySelector('span') || document.getElementById('mDownloadDocBtnText');
+        if (dlBtnSpan) {
+          dlBtnSpan.textContent = `📥 Descargar Documento Oficial (${fi.fullLabel})`;
+        }
+        const mFileTitle = document.getElementById('mFileTitle');
+        if (mFileTitle) {
+          mFileTitle.textContent = `Documento Oficial Disponible (${fi.fullLabel})`;
+        }
+      }
+      if (dlBtn) dlBtn.href = fileTarget;
+      if (alertRestricted) alertRestricted.classList.add('hidden');
+    } else {
+      if (dlContainer) dlContainer.classList.add('hidden');
+      if (alertRestricted) {
+        alertRestricted.classList.remove('hidden');
+        const alertTitle = alertRestricted.querySelector('p.font-bold');
+        const alertSubtitle = alertRestricted.querySelector('p.text-\\[11px\\]');
+        if (alertTitle) alertTitle.textContent = 'Sin documento adjunto (PDF / Word)';
+        if (alertSubtitle) alertSubtitle.textContent = 'Este proyecto fue registrado en la base de datos sin archivo adjunto cargado.';
       }
     }
-    if (dlBtn) dlBtn.href = p.archivo_url;
-    if (alertRestricted) alertRestricted.classList.add('hidden');
+    // Docentes y administradores nunca necesitan pedir permiso
     if (reqBtn) reqBtn.classList.add('hidden');
   } else {
+    // ALUMNO: El botón de descarga está estrictamente NO disponible
     if (dlContainer) dlContainer.classList.add('hidden');
     if (alertRestricted) {
       alertRestricted.classList.remove('hidden');
       const alertTitle = alertRestricted.querySelector('p.font-bold');
       const alertSubtitle = alertRestricted.querySelector('p.text-\\[11px\\]');
-      if (isDocenteOrAdmin) {
-        if (alertTitle) alertTitle.textContent = 'Sin documento PDF adjunto';
-        if (alertSubtitle) alertSubtitle.textContent = 'Este proyecto fue registrado en la base de datos sin archivo adjunto cargado.';
-      } else {
-        if (alertTitle) alertTitle.textContent = 'Descarga restringida por normativa institucional';
-        if (alertSubtitle) alertSubtitle.textContent = 'El proyecto requiere autorización docente para consulta o descarga del archivo completo.';
-      }
+      if (alertTitle) alertTitle.textContent = 'Descarga restringida por normativa institucional';
+      if (alertSubtitle) alertSubtitle.textContent = 'La descarga del archivo completo (PDF / Word) está restringida para alumnos. Docentes y administradores tienen acceso directo.';
     }
-    // Docentes y administradores nunca necesitan pedir permiso
-    if (reqBtn) reqBtn.classList.toggle('hidden', isDocenteOrAdmin);
+    // Solicitar autorización al docente
+    if (reqBtn) reqBtn.classList.remove('hidden');
   }
 
   document.getElementById('projModal').classList.remove('hidden');
@@ -2350,7 +2455,11 @@ function handleNapiFileUpload(event) {
   const sizeKb = (file.size / 1024).toFixed(1);
   const sizeStr = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${sizeKb} KB`;
 
-  if (nameEl) nameEl.textContent = file.name;
+  const isWord = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc');
+  const isPdf = file.name.toLowerCase().endsWith('.pdf');
+  const typeBadge = isWord ? '📝 Word' : (isPdf ? '📄 PDF' : '📎 Archivo');
+
+  if (nameEl) nameEl.textContent = `${typeBadge}: ${file.name}`;
   if (sizeEl) sizeEl.textContent = `(${sizeStr})`;
   if (preview) preview.classList.remove('hidden');
 
@@ -2360,9 +2469,10 @@ function handleNapiFileUpload(event) {
       name: file.name,
       size: file.size,
       sizeStr: sizeStr,
+      badge: typeBadge,
       content: e.target.result ? String(e.target.result).substring(0, 15000) : ''
     };
-    toast(`📎 Archivo adjunto: ${file.name}`);
+    toast(`📎 Documento "${file.name}" (${typeBadge}) adjuntado.`);
     document.getElementById('napiInput')?.focus();
   };
   reader.onerror = () => {
