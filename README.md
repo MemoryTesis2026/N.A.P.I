@@ -126,122 +126,381 @@ Desarrollar e implementar una plataforma web institucional que integre un reposi
 
 ---
 
-## 🏗️ Arquitectura Técnica del Sistema
+## 🏛️ 1. Diagrama de Arquitectura Global (C4 Containers & Enterprise Layering)
 
-El sistema implementa una arquitectura desacoplada y orientada a servicios, optimizada para baja latencia, resiliencia y alta precisión en la recuperación de información.
+El sistema implementa una **Arquitectura en Capas Enterprise** desacoplada y orientada a servicios, modelada bajo el estándar **C4 (Nivel 2: Contenedores)** y las prácticas de **Enterprise Architect**:
 
 ```mermaid
-graph TD
-    subgraph Frontend [Cliente Web - UX/UI Accesible]
-        UI[Portal Web SPA - Vanilla JS / CSS3]
-        Nav[PillNav Flotante + Accesibilidad CVD]
-        Voice[Web Speech API - Voz Bidireccional]
-        Modals[Modales de Autenticación RBAC]
+graph TB
+    subgraph PresentationTier ["💻 Capa de Presentación (Presentation Tier - SPA)"]
+        UI["Portal Web SPA (HTML5 Semántico + CSS3 Variables)"]
+        Audio["Subsistema de Voz (Web Speech API: Micrófono & TTS)"]
+        Nav["PillNav Flotante (GSAP Micro-animaciones)"]
+        Access["Motor de Accesibilidad CVD (Daltonismo & Alto Contraste)"]
     end
 
-    subgraph Backend [Servidor de Aplicación - FastAPI]
-        API[FastAPI Gateway - server.py]
-        Auth[Gestor de Sesiones & Auditoría]
-        AdminModule[CRUD Jerárquico de Usuarios y Carreras]
-        ProjectModule[Validador de Notas >= 6.0 & Drag-and-Drop]
-        ChatModule[Gestor de Historial por Usuario/Rol]
+    subgraph ApplicationTier ["⚡ Capa de Aplicación (Application & Gateway Tier)"]
+        Gateway["FastAPI Gateway (server.py en Python 3.12 / Uvicorn)"]
+        RBAC["Control de Acceso RBAC (Estudiante, Docente, Admin)"]
+        DocManager["Gestor de Memorias & Validación (Nota >= 6.0)"]
+        ChatManager["Gestor de Historial Aislado por Usuario"]
     end
 
-    subgraph RAG_Engine [Motor RAG & Inteligencia Artificial]
-        EmbedEngine[Generador de Embeddings gemini-embedding-2]
-        CosineCalc[Cálculo de Distancia Coseno & HNSW]
-        PromptGen[Prompt de Sistema NAPI & Memoria Multi-Turno]
-        LLM[Google Gemini 2.0/1.5 Flash / Fallback OpenAI]
+    subgraph RAGTier ["🧠 Capa de Inteligencia y Motor RAG (RAG Engine Tier)"]
+        RAGOrchestrator["Orquestador RAG (ArchivaIAEngine)"]
+        VectorService["Generador de Embeddings Semánticos (1536 dimensiones)"]
+        ThreadPool["ThreadPoolExecutor Concurrente (Control Timeout 15s)"]
     end
 
-    subgraph Database [Capa de Persistencia - Supabase]
-        PG[(PostgreSQL + pgvector)]
-        TableProjects[public.proyectos_titulo - 1536 dims]
-        TableChat[public.napi_chat_history]
-        TableUsers[public.napi_usuarios]
+    subgraph AITier ["🤖 Capa de Servicios Cognitivos Externos (Multi-LLM)"]
+        DeepSeek["DeepSeek API (Motor de Razonamiento Principal)"]
+        Gemini["Google Gemini 2.0 / 1.5 Flash (Secundario)"]
+        OpenAI["OpenAI GPT-4o-mini (Fallback de Contingencia)"]
     end
 
-    UI <-->|HTTP / JSON REST con Timeout 20s| API
-    Voice <--> UI
-    API <--> Auth
-    API <--> AdminModule
-    API <--> ProjectModule
-    API <--> ChatModule
-    ProjectModule -->|Indexación de Proyectos| EmbedEngine
-    ChatModule <--> TableChat
-    AdminModule <--> TableUsers
-    EmbedEngine --> TableProjects
-    API -->|Consulta Semántica| CosineCalc
-    CosineCalc <-->|Búsqueda HNSW vector_cosine_ops| TableProjects
-    CosineCalc -->|Contexto Recuperado Top-K| PromptGen
-    PromptGen -->|Inferencia Contextual Timeout 15s| LLM
-    LLM -->|Diagnóstico Técnico Sintético| API
+    subgraph PersistenceTier ["🐘 Capa de Persistencia Cloud (Supabase BaaS)"]
+        PGVector[("PostgreSQL 15+ & pgvector (Índice HNSW Coseno)")]
+        PGRelational[("Almacén Relacional (napi_chat_history & napi_usuarios)")]
+        Storage[("Supabase Storage (Bucket proyectos-docs para PDF/Word)")]
+        AuthService["Supabase Auth (GoTrue RBAC & JWTs)"]
+    end
+
+    UI <--> Audio
+    UI <--> Nav
+    UI <--> Access
+    UI <-->|"HTTPS REST / JSON (Timeout Resiliente 20s)"| Gateway
+
+    Gateway <--> RBAC
+    Gateway <--> DocManager
+    Gateway <--> ChatManager
+    Gateway <--> RAGOrchestrator
+
+    RAGOrchestrator -->|"1. Vectorizar texto"| VectorService
+    VectorService -->|"gemini-embedding-2"| Gemini
+    RAGOrchestrator -->|"2. RPC buscar_proyectos_similares"| PGVector
+    RAGOrchestrator -->|"3. Inferencia asistida"| ThreadPool
+
+    ThreadPool -->|"Intento 1"| DeepSeek
+    DeepSeek -.->|"Fallback"| Gemini
+    Gemini -.->|"Fallback"| OpenAI
+
+    DocManager -->|"Subida multipart"| Storage
+    DocManager -->|"Indexación"| PGVector
+    ChatManager <--> PGRelational
+    RBAC <--> AuthService
 ```
 
-> 📚 **Suite Completa de Arquitectura Enterprise (Estándar Sparx EA / TOGAF / C4 / UML 2.5):**  
-> Para una revisión técnica profunda y especificaciones formales de ingeniería de software, consulte el directorio especializado [`docs/arquitectura/`](docs/arquitectura/README.md):
-> - [🏛️ **01. Diagrama de Arquitectura Global** (C4 Containers & Enterprise Layering)](docs/arquitectura/01_diagrama_arquitectura.md)
-> - [🧩 **02. Diagrama de Componentes** (UML 2.5 Component Specification)](docs/arquitectura/02_diagrama_componentes.md)
-> - [📊 **03. Modelo de Datos** (Relational & Vectorial ERD + HNSW 1536d)](docs/arquitectura/03_modelo_datos.md)
-> - [🌐 **04. Topología de Comunicación y Red** (Deployment & Protocols Matrix)](docs/arquitectura/04_topologia_comunicacion.md)
-> - [🏗️ **05. Diagrama de Estructura y Clases** (Packages, Composite Structure & DTOs)](docs/arquitectura/05_diagrama_estructura.md)
+**Aspectos Clave de la Arquitectura Global:**
+- **Separación de Responsabilidades:** El cliente SPA nunca interactúa directamente con los modelos de lenguaje ni posee credenciales privilegiadas; toda transacción pasa por el API Gateway en FastAPI.
+- **Resiliencia ante Cold Starts:** El cliente maneja un margen de 20 segundos mediante `AbortController`, absorbiendo reinicios de servidores cloud sin interrumpir al usuario.
+- **Cascada de Tolerancia a Fallos:** Despacho secuencial concurrente con timeout de 15 segundos entre DeepSeek, Google Gemini y OpenAI.
 
 ---
 
-## 👥 Módulos Funcionales y Control de Accesos (RBAC)
+## 🧩 2. Diagrama de Componentes (UML 2.5 Component Specification)
 
-| Módulo | Perfil de Acceso | Descripción Funcional |
-| :--- | :--- | :--- |
-| **Landing & Catálogo Público** | Libre / Estudiantes | Exploración de proyectos aprobados, filtrado por carrera/año/área, visualización de fichas técnicas y carrusel institucional interactivo. |
-| **Asistente NAPI (Chat & Voz)** | Estudiantes / Docentes | Diagnóstico de originalidad, contextualización por carrera, análisis de archivos adjuntos, memoria conversacional multi-turno y consultas guiadas por voz. |
-| **Panel Docente** | Docente / Revisor | Indexación de nuevas tesis, validación obligatoria de calificación ($\ge 6.0$), drag-and-drop de archivos y visualización de métricas de sede. |
-| **Panel Administrador** | Administrador | CRUD completo de usuarios (alumnos y profesores), doble filtro jerárquico por Área Académica (13 áreas INACAP) y Carrera, auditoría del repositorio. |
-| **Accesibilidad Universal (CVD)** | Todos los usuarios | Selector de temas (Claro / Oscuro) con bordes de alto contraste y simulación de daltonismo: Deuteranopia, Protanopia, Tritanopia y Acromatopsia. |
+Modela los subsistemas de software modulares, sus interfaces provistas (endpoints REST) y sus interfaces requeridas:
+
+```mermaid
+graph LR
+    subgraph FrontendComponents ["«subsystem» Componentes Frontend"]
+        C_Catalog["«component»\nCatálogo de Proyectos\n(js/app.js)"]
+        C_Chat["«component»\nAsistente NAPI Chat\n(js/app.js)"]
+        C_Voice["«component»\nControlador de Voz\n(Web Speech API)"]
+        C_Docente["«component»\nPanel Docente\n(js/app.js)"]
+        C_Admin["«component»\nPanel Administrador\n(js/app.js)"]
+        C_Nav["«component»\nPillNav GSAP\n(js/PillNav.js)"]
+    end
+
+    subgraph InterfacesProvistas ["Interfaces Provistas API (RESTful Gateway)"]
+        I_Analyze("(o) IAnalyzeService\nPOST /api/analyze")
+        I_Projects("(o) IProjectManagement\nCRUD /api/projects")
+        I_Auth("(o) IAuthManagement\n/api/auth/* & /api/admin/*")
+        I_History("(o) IChatPersistence\n/api/chat/history")
+    end
+
+    subgraph BackendComponents ["«subsystem» Componentes Backend"]
+        C_Gateway["«component»\nFastAPI Gateway Router\n(engine/server.py)"]
+        C_Validator["«component»\nValidador de Memorias\n(Nota >= 6.0)"]
+        C_RAG["«component»\nOrquestador RAG\n(ArchivaIAEngine)"]
+        C_Embedder["«component»\nServicio Vectorial 1536d\n(engine/motor_rag.py)"]
+        C_Dispatcher["«component»\nDespachador Multi-LLM\n(ThreadPool 15s)"]
+        C_Storage["«component»\nAdaptador Supabase Storage\n(engine/server.py)"]
+    end
+
+    subgraph CloudServices ["«subsystem» Persistencia y Servicios Externos"]
+        S_PG[("PostgreSQL 15 + pgvector\n(proyectos_titulo)")]
+        S_Storage[("Supabase Storage\n(proyectos-docs)")]
+        S_Gemini["Google Cloud GenAI\n(gemini-embedding-2)"]
+        S_DeepSeek["DeepSeek Cloud API\n(deepseek-chat)"]
+        S_OpenAI["OpenAI API Platform\n(gpt-4o-mini)"]
+    end
+
+    C_Chat --> I_Analyze
+    C_Chat <--> C_Voice
+    C_Chat --> I_History
+    C_Catalog --> I_Projects
+    C_Docente --> I_Projects
+    C_Admin --> I_Auth
+    C_Admin --> I_Projects
+
+    I_Analyze --> C_Gateway
+    I_Projects --> C_Gateway
+    I_Auth --> C_Gateway
+    I_History --> C_Gateway
+
+    C_Gateway --> C_Validator
+    C_Gateway --> C_RAG
+    C_Gateway --> C_Storage
+
+    C_Validator --> C_Embedder
+    C_Validator --> S_PG
+    C_Storage --> S_Storage
+
+    C_RAG --> C_Embedder
+    C_RAG --> C_Dispatcher
+    C_RAG -->|"RPC Similitud Coseno"| S_PG
+
+    C_Embedder --> S_Gemini
+    C_Dispatcher --> S_DeepSeek
+    C_Dispatcher -.-> S_Gemini
+    C_Dispatcher -.-> S_OpenAI
+```
+
+**Interfaces Principales:**
+- `IAnalyzeService`: Recibe la propuesta, área académica y adjunto; ejecuta el pipeline semántico RAG y retorna diagnóstico sintético.
+- `IProjectManagement`: Controla altas, bajas y modificaciones de memorias de título, validando obligatoriamente que `nota >= 6.0`.
+- `IChatPersistence`: Almacena y recupera los mensajes garantizando aislamiento por usuario y rol en Supabase.
 
 ---
 
-## 📊 Modelo de Datos (PostgreSQL + Supabase)
+## 📊 3. Modelo de Datos (Relational & Vectorial ERD Specification)
 
-### 1. Tabla `proyectos_titulo` (Repositorio Vectorial)
-```sql
-CREATE TABLE public.proyectos_titulo (
-  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  titulo      TEXT        NOT NULL,
-  resumen     TEXT        NOT NULL,
-  carrera     TEXT        NOT NULL,
-  anio        INT         NOT NULL CHECK (anio >= 2000 AND anio <= 2100),
-  autores     TEXT        NOT NULL,
-  embedding   VECTOR(1536), -- Generado con gemini-embedding-2
-  archivo_url TEXT,         -- URL pública del PDF/Word en Supabase Storage (bucket: proyectos-docs)
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
+Diagrama Entidad-Relación en **Notación Crow's Foot** que integra el esquema relacional con la capa vectorial de `pgvector`:
 
--- Si la tabla ya existe, agregar la columna con:
--- ALTER TABLE public.proyectos_titulo ADD COLUMN IF NOT EXISTS archivo_url TEXT;
+```mermaid
+erDiagram
+    PROYECTOS_TITULO {
+        uuid id PK "Identificador único (gen_random_uuid)"
+        text titulo "Título del proyecto de titulación"
+        text resumen "Resumen ejecutivo / abstract"
+        text carrera "Carrera académica de titulación"
+        int anio "Año de defensa (CHECK >= 2000 AND <= 2100)"
+        text autores "Autores y tesistas de la memoria"
+        vector_1536 embedding "Vector de 1536 dimensiones (gemini-embedding-2)"
+        text archivo_url "URL a PDF/Word en Supabase Storage"
+        text estado "Público | En Revisión | Archivado"
+        text area "Una de las 13 áreas oficiales INACAP"
+        text stack "Tecnologías y herramientas utilizadas"
+        numeric nota "Calificación final (CHECK >= 6.0 AND <= 7.0)"
+        timestamptz created_at "Fecha y hora de registro"
+        timestamptz updated_at "Actualizada por Trigger set_updated_at()"
+    }
 
--- Índice vectorial de alta velocidad
-CREATE INDEX idx_proyectos_embedding_hnsw
-  ON public.proyectos_titulo
-  USING hnsw (embedding vector_cosine_ops)
-  WITH (m = 16, ef_construction = 64);
+    NAPI_CHAT_HISTORY {
+        uuid id PK "Identificador único del mensaje"
+        text user_email "Correo institucional del emisor"
+        text user_role "estudiante | docente | administrador"
+        text sender "user | napi | card"
+        text message "Cuerpo del mensaje en texto o Markdown"
+        jsonb metadata "Metadatos técnicos y contexto RAG"
+        timestamptz created_at "Marca de tiempo cronológica"
+    }
+
+    NAPI_USUARIOS {
+        text id PK "Identificador de usuario (auth.users)"
+        text email UK "Correo institucional único"
+        text nombre "Nombre completo del usuario"
+        text rol "estudiante | docente | administrador"
+        text area "Área académica institucional"
+        text carrera "Carrera de especialidad"
+        timestamptz created_at "Fecha de creación del perfil"
+    }
+
+    AUTH_USERS {
+        uuid id PK "ID criptográfico de identidad GoTrue"
+        varchar email "Correo de autenticación"
+        varchar encrypted_password "Hash Bcrypt de contraseña"
+        jsonb raw_user_meta_data "Metadatos de sesión y rol"
+    }
+
+    STORAGE_OBJECTS {
+        text id PK "ID de objeto en bucket"
+        text bucket_id "Bucket: proyectos-docs"
+        text name "Ruta segura sanitizada de archivo"
+    }
+
+    AUTH_USERS ||--o| NAPI_USUARIOS : "extiende perfil en"
+    NAPI_USUARIOS ||--o{ NAPI_CHAT_HISTORY : "posee historial aislado en"
+    NAPI_USUARIOS ||--o{ PROYECTOS_TITULO : "supervisa / indexa"
+    STORAGE_OBJECTS ||--o| PROYECTOS_TITULO : "vincula documento PDF/DOC en"
 ```
 
-### 2. Tabla `napi_chat_history` (Historial Aislado)
-```sql
-CREATE TABLE public.napi_chat_history (
-  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_email  TEXT        NOT NULL,
-  user_role   TEXT        NOT NULL DEFAULT 'estudiante',
-  sender      TEXT        NOT NULL, -- 'user' | 'napi' | 'card'
-  message     TEXT        NOT NULL,
-  metadata    JSONB       DEFAULT '{}'::jsonb,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
+**Especificación Técnica del Almacén Vectorial:**
+- **Dimensión Óptima (1536 dims):** Se utiliza `gemini-embedding-2` con `output_dimensionality = 1536`. Esto garantiza la máxima fidelidad semántica manteniéndose estrictamente por debajo del límite de 2000 dimensiones impuesto por los índices HNSW de `pgvector`.
+- **Índice HNSW:**
+  ```sql
+  CREATE INDEX idx_proyectos_embedding_hnsw
+    ON public.proyectos_titulo
+    USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 64);
+  ```
+- **Procedimiento Almacenado RPC:** `public.buscar_proyectos_similares(query_embedding vector(1536), match_threshold float, match_count int, filtro_carrera text)` calcula la similitud mediante el operador de distancia coseno `1 - (p.embedding <=> query_embedding)`.
 
-CREATE INDEX idx_napi_chat_user 
-  ON public.napi_chat_history (user_email, user_role, created_at);
+---
+
+## 🌐 4. Topología de Comunicación y Red (Deployment & Protocols)
+
+Describe los nodos computacionales, fronteras de seguridad (**DMZ**), canales de transporte, protocolos y puertos involucrados:
+
+```mermaid
+graph TB
+    subgraph ClientNode ["📱 Nodo Cliente (Edge User Device)"]
+        ClientBrowser["Navegador Web (Chrome / Edge / Firefox)\n- Single Page Application (SPA)\n- Web Speech Subsystem (Micrófono local & TTS)\n- AbortController (Timeout 20 segundos)"]
+    end
+
+    subgraph AppServerNode ["☁️ Servidor de Aplicación (Host Local / Render Cloud PaaS)"]
+        UvicornServer["Servidor ASGI Uvicorn (Puerto 8000)\n- Python 3.12 Runtime\n- FastAPI Gateway & Reverse Proxy\n- ThreadPoolExecutor Concurrente (4 Workers / Timeout 15s)"]
+        EnvSecret["Bóveda de Variables (.env)\n- GEMINI_API_KEY\n- SUPABASE_SERVICE_KEY\n- DEEPSEEK_API_KEY\n- OPENAI_API_KEY"]
+    end
+
+    subgraph SupabaseCluster ["🐘 Nodo Supabase BaaS (AWS Cloud Cluster)"]
+        PostgresEngine["PostgreSQL 15+ (Puerto 5432 / TLS Directo & Puerto 443)\n- Extensión pgvector con índice HNSW\n- Tablas: proyectos_titulo, napi_chat_history, napi_usuarios\n- Stored Procedure: buscar_proyectos_similares"]
+        StorageEngine["Supabase Storage S3 API (Puerto 443 / HTTPS)\n- Bucket protegido: proyectos-docs (Memorias PDF/DOCX)"]
+        AuthEngine["Supabase GoTrue Auth (Puerto 443 / HTTPS)\n- Criptografía de sesiones y JWTs institucionales"]
+    end
+
+    subgraph CognitiveCluster ["🤖 Nodos de Inteligencia Artificial (AI Cloud Endpoints)"]
+        GoogleAPI["Google Cloud AI Studio / Vertex (Puerto 443 / TLS 1.3)\n- gemini-embedding-2 (1536 dimensiones)\n- gemini-2.0-flash / gemini-1.5-flash"]
+        DeepSeekAPI["DeepSeek Cloud API (Puerto 443 / TLS 1.3)\n- deepseek-chat (Motor LLM Principal)"]
+        OpenAIAPI["OpenAI API Platform (Puerto 443 / TLS 1.3)\n- gpt-4o-mini (Fallback Terciario)"]
+    end
+
+    ClientBrowser <-->|"HTTPS / TLS 1.3 (Puerto 8000 / 443)\nREST JSON & Multipart Stream (Timeout 20s)"| UvicornServer
+
+    UvicornServer <-->|"TCP 5432 (SSL require) & HTTPS 443\nConsultas Relacionales & RPC HNSW Vectorial"| PostgresEngine
+    UvicornServer <-->|"HTTPS 443 (S3 REST Protocol)\nUpload Binario Multipart"| StorageEngine
+    UvicornServer <-->|"HTTPS 443\nValidación de Tokens de Sesión"| AuthEngine
+
+    UvicornServer -->|"HTTPS 443 (SDK google-genai)\nGeneración de Embeddings 1536d"| GoogleAPI
+    UvicornServer -->|"HTTPS 443 (OpenAI Compatible REST)\nInferencia LLM Primaria (Timeout 15s)"| DeepSeekAPI
+    DeepSeekAPI -.->|"Conmutación automática ante fallo/timeout"| GoogleAPI
+    GoogleAPI -.->|"Conmutación automática ante fallo/timeout"| OpenAIAPI
 ```
+
+**Matriz de Comunicaciones y Seguridad:**
+| Canal | Protocolo | Puerto | Payload / Contenido | Autenticación | SLA / Timeout |
+| :--- | :--- | :---: | :--- | :--- | :---: |
+| **Cliente $\to$ FastAPI** | HTTPS / TLS 1.3 | `443` / `8000` | JSON / Multipart Form-Data | JWT / Sesión | 20s (`AbortController`) |
+| **FastAPI $\to$ PostgreSQL** | Direct TCP / SSL | `5432` | Protocolo Binario pgvector / RPC | `service_role` | < 100 ms |
+| **FastAPI $\to$ Supabase Storage** | HTTPS S3 REST | `443` | Stream Binario (PDF / DOCX) | `service_role` Secret | 10s |
+| **FastAPI $\to$ Google AI** | HTTPS / gRPC | `443` | Vectorización 1536d | `GEMINI_API_KEY` | 3s |
+| **FastAPI $\to$ DeepSeek** | HTTPS REST | `443` | Chat Completions | `DEEPSEEK_API_KEY` | 15s (`ThreadPool`) |
+
+---
+
+## 🏗️ 5. Diagrama de Estructura y Clases (Composite Structure & Class Hierarchy)
+
+Modela la jerarquía de paquetes del sistema, las clases del motor RAG, los modelos de validación Pydantic y los controladores de cliente:
+
+```mermaid
+classDiagram
+    class ArchivaIAEngine {
+        +OpenAI openai
+        +Client db_admin
+        +Client db
+        +generar_embedding(texto: str) list
+        +generar_embedding_consulta(texto: str) list
+        +buscar_proyectos_similares(query_embedding: list, umbral: float, limite: int, carrera: str) list
+        +buscar_por_texto(query: str, limite: int) list
+        +analizar_propuesta(query: str, carrera: str, history: list) dict
+    }
+
+    class AnalyzeRequest {
+        +str query
+        +float umbral
+        +int limite
+        +str carrera
+        +List history
+        +str file_name
+        +str file_content
+    }
+
+    class ChatHistoryItem {
+        +str role
+        +str content
+    }
+
+    class ChatMessageRequest {
+        +str email
+        +str role
+        +str sender
+        +str message
+        +dict metadata
+    }
+
+    class ProjectCreateRequest {
+        +str titulo
+        +str resumen
+        +str carrera
+        +int anio
+        +str autores
+        +float nota
+        +str area
+        +str stack
+    }
+
+    class LoginRequest {
+        +str email
+        +str password
+        +str role
+    }
+
+    class RegisterRequest {
+        +str email
+        +str password
+        +str nombre
+        +str rol
+        +str carrera
+    }
+
+    class NapiClientController {
+        -Array activeProjects
+        -Object currentAuthSession
+        -AbortController currentAbort
+        +init() void
+        +handleLogin(email, pass, rol) void
+        +submitNapiChat(prompt, attachment) void
+        +startSpeechRecognition() void
+        +speakUtterance(text) void
+        +applyAccessibilityFilter(mode) void
+        +renderProjectsCatalog(containerId) void
+    }
+
+    class PillNavInteractive {
+        -HTMLElement navElement
+        -Timeline gsapTimeline
+        +init() void
+        +animateActiveIndicator(targetPill) void
+        +bindScrollSpy() void
+    }
+
+    AnalyzeRequest *-- ChatHistoryItem : "contiene lista de"
+    ArchivaIAEngine ..> AnalyzeRequest : "procesa"
+    ArchivaIAEngine ..> ProjectCreateRequest : "genera embedding"
+    NapiClientController ..> AnalyzeRequest : "envia via REST"
+    NapiClientController ..> ChatMessageRequest : "persiste via REST"
+    NapiClientController ..> LoginRequest : "autentica via REST"
+    NapiClientController --> PillNavInteractive : "coordina con"
+```
+
+**Detalle de Módulos y Clases:**
+- **`ArchivaIAEngine` (`engine/motor_rag.py`):** Encapsula la generación de tensores de 1536 dimensiones, la invocación de la función RPC `buscar_proyectos_similares` en Supabase y el fallback léxico por texto.
+- **DTOs Pydantic (`engine/server.py`):** `AnalyzeRequest`, `ProjectCreateRequest`, `ChatMessageRequest`, etc., aseguran tipificación fuerte y sanitización en tiempo de ejecución.
+- **`NapiClientController` (`js/app.js`):** Gestiona el estado de la SPA, la interacción por voz con la Web Speech API, los filtros de daltonismo CVD y el renderizado dinámico de tarjetas y diagnósticos.
+- **`PillNavInteractive` (`js/PillNav.js`):** Controlador de navegación flotante animado mediante **GSAP**.
+
+---
 
 ---
 
