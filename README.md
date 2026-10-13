@@ -178,6 +178,14 @@ graph TD
     LLM -->|Diagnóstico Técnico Sintético| API
 ```
 
+> 📚 **Suite Completa de Arquitectura Enterprise (Estándar Sparx EA / TOGAF / C4 / UML 2.5):**  
+> Para una revisión técnica profunda y especificaciones formales de ingeniería de software, consulte el directorio especializado [`docs/arquitectura/`](docs/arquitectura/README.md):
+> - [🏛️ **01. Diagrama de Arquitectura Global** (C4 Containers & Enterprise Layering)](docs/arquitectura/01_diagrama_arquitectura.md)
+> - [🧩 **02. Diagrama de Componentes** (UML 2.5 Component Specification)](docs/arquitectura/02_diagrama_componentes.md)
+> - [📊 **03. Modelo de Datos** (Relational & Vectorial ERD + HNSW 1536d)](docs/arquitectura/03_modelo_datos.md)
+> - [🌐 **04. Topología de Comunicación y Red** (Deployment & Protocols Matrix)](docs/arquitectura/04_topologia_comunicacion.md)
+> - [🏗️ **05. Diagrama de Estructura y Clases** (Packages, Composite Structure & DTOs)](docs/arquitectura/05_diagrama_estructura.md)
+
 ---
 
 ## 👥 Módulos Funcionales y Control de Accesos (RBAC)
