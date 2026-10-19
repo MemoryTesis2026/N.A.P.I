@@ -42,6 +42,8 @@ GEMINI_API_KEY       = os.environ.get("GEMINI_API_KEY", "")
 OPENAI_API_KEY       = os.environ.get("OPENAI_API_KEY", "")
 DEEPSEEK_API_KEY     = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_MODEL       = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
+GROQ_API_KEY         = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODELS          = [m.strip() for m in (os.environ.get("GROQ_MODEL") or "llama-3.3-70b-versatile,openai/gpt-oss-120b").split(",") if m.strip()]
 SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
@@ -50,6 +52,7 @@ SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
 gemini_client   = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 openai_client   = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com") if DEEPSEEK_API_KEY else None
+groq_client     = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0) if GROQ_API_KEY else None
 db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
 db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
 
@@ -892,8 +895,32 @@ ESTILO:
 
         analisis_texto = ""
 
-        # 1. Intentar primero con DeepSeek (si DEEPSEEK_API_KEY está configurada)
-        if deepseek_client:
+        # 0. Groq (capa gratuita, compatible con OpenAI, muy rápido)
+        if groq_client:
+            gq_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+            if req.history:
+                for h in req.history[-6:]:
+                    role_name = "user" if h.role in ["user", "human"] else "assistant"
+                    gq_messages.append({"role": role_name, "content": h.content})
+            gq_messages.append({"role": "user", "content": user_prompt_content})
+            for gmod in GROQ_MODELS:
+                try:
+                    resp_gq = groq_client.chat.completions.create(
+                        model=gmod,
+                        messages=gq_messages,
+                        temperature=0.8,
+                        max_tokens=1000,
+                        timeout=15.0
+                    )
+                    if resp_gq.choices and resp_gq.choices[0].message.content:
+                        analisis_texto = resp_gq.choices[0].message.content.strip()
+                        log.info(f"Respuesta generada exitosamente con Groq ({gmod})")
+                        break
+                except Exception as gq_ex:
+                    log.warning(f"Groq ({gmod}) falló: {gq_ex}")
+
+        # 1. DeepSeek (solo si Groq no respondió y hay saldo)
+        if not analisis_texto and deepseek_client:
             try:
                 ds_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
                 if req.history:
