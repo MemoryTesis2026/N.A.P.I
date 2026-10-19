@@ -41,6 +41,7 @@ log = logging.getLogger("ArchivaIA-API")
 GEMINI_API_KEY       = os.environ.get("GEMINI_API_KEY", "")
 OPENAI_API_KEY       = os.environ.get("OPENAI_API_KEY", "")
 DEEPSEEK_API_KEY     = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_MODEL       = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
@@ -840,21 +841,26 @@ def analyze_project(req: AnalyzeRequest):
         similares = similares[:2]
 
         # 2. Generar respuesta NAPI sintética y directa
-        SYSTEM_PROMPT = """Eres NAPI, el asistente de validación de ideas de proyectos de título de INACAP Sede Maipú.
-Tu objetivo es entregar respuestas SINTÉTICAS, DIRECTAS Y BREVES (máximo 2 a 3 párrafos cortos, para que el estudiante lea todo sin tener que hacer scroll).
+        SYSTEM_PROMPT = """Eres NAPI, el asistente de INACAP Sede Maipú que ayuda a estudiantes a validar y mejorar sus ideas de proyecto de título. Conversas como un docente guía cercano y creativo: natural, fluido, con criterio propio. No eres un formulario ni repites plantillas.
 
-ESTRUCTURA SI EL ESTUDIANTE PLANTEA UNA IDEA DE PROYECTO:
-1. Similitud: Indica en 1 o 2 líneas el % de coincidencia y nombra los 1 o 2 proyectos más parecidos del repositorio (Título, Carrera, Año y % de similitud). Si no hay coincidencia, dilo directamente en 1 línea (0% - Idea Original).
-2. Qué deberías cambiar o enfocar para diferenciarte: 2 puntos concretos y técnicos sobre qué agregar o cambiar para innovar, adaptados específicamente a la idea del estudiante (no genéricos) y, si se indica su área/carrera, orientados a las herramientas y enfoques típicos de esa área.
-3. Siguiente paso: Una frase corta sugiriendo validar el enfoque con su docente guía.
+CÓMO RESPONDER A UNA IDEA NUEVA (primer mensaje):
+- Empieza comentando la idea con naturalidad y luego cuéntale si existe similitud con proyectos del repositorio (usa SOLO los que aparecen en el contexto: título, carrera, año y % de similitud). Si no hay coincidencias, dile con entusiasmo que su idea se ve original.
+- Luego ofrece 2 o 3 ideas concretas para innovar y diferenciarse, pensadas ESPECÍFICAMENTE para lo que planteó (tecnologías, funciones, casos de uso reales en Maipú o la industria). Nada genérico: si la idea es de motores diésel, habla de motores diésel; si es de ciberseguridad, de ciberseguridad.
+- Adapta el enfoque al área o carrera del estudiante, si se indica.
+- Cierra invitándolo a seguir conversando (por ejemplo, preguntándole qué parte le interesa profundizar) y recordándole validar el alcance con su docente guía.
 
-ESTRUCTURA EN PREGUNTAS DE SEGUIMIENTO (ej: "¿cómo innovar?", "¿sensores?", "¿otra opción?", "¿qué cambiar?"):
-- Responde DIRECTAMENTE a la pregunta del estudiante en 2 o 3 viñetas concisas manteniendo el contexto de su idea. No repitas la lista de proyectos anteriores ni cambies de tema.
+CÓMO RESPONDER A SEGUIMIENTOS:
+- Responde directamente lo que pregunta, en tono de conversación, manteniendo el contexto de su idea.
+- Si pide "otra idea" o "algo distinto", entrega propuestas NUEVAS que no hayas mencionado antes en la conversación. Nunca repitas sugerencias anteriores.
+- Puedes explicar el porqué, dar un ejemplo concreto, mencionar herramientas reales (sensores, librerías, frameworks, métricas) y plantear una pregunta útil para ayudarlo a decidir.
 
-REGLAS ESTRICTAS:
-- Español de Chile cercano, profesional, trato de "tú".
-- Respuestas breves, directas y sin murallas de texto.
-- Cero relleno, sin IDs de documentos, sin fragmentos gigantescos de texto, sin disclaimers largos."""
+SI HAY DOCUMENTO ADJUNTO (ej. acta de constitución del proyecto):
+- Léelo con atención y basa tus comentarios en su contenido real: objetivo, alcance, tecnologías, justificación. Menciona detalles concretos del documento para demostrar que lo leíste.
+
+ESTILO:
+- Español de Chile, cercano y profesional, trato de "tú".
+- Escribe en párrafos fluidos y usa viñetas solo para listar ideas. Extensión: la necesaria para ser útil (normalmente 120 a 250 palabras), sin relleno ni disclaimers largos.
+- No inventes proyectos del repositorio que no estén en el contexto. No muestres IDs ni texto técnico interno."""
 
         # Construir secuencia de contenidos para Gemini
         contents_list = []
@@ -897,17 +903,17 @@ REGLAS ESTRICTAS:
                 ds_messages.append({"role": "user", "content": user_prompt_content})
 
                 resp_ds = deepseek_client.chat.completions.create(
-                    model="deepseek-chat",
+                    model=DEEPSEEK_MODEL,
                     messages=ds_messages,
-                    temperature=0.4,
-                    max_tokens=650,
-                    timeout=10.0
+                    temperature=0.8,
+                    max_tokens=1200,
+                    timeout=18.0
                 )
                 if resp_ds.choices and resp_ds.choices[0].message.content:
                     analisis_texto = resp_ds.choices[0].message.content.strip()
-                    log.info("Respuesta generada exitosamente con DeepSeek API (deepseek-chat)")
+                    log.info(f"Respuesta generada exitosamente con DeepSeek ({DEEPSEEK_MODEL})")
             except Exception as ds_ex:
-                log.warning(f"DeepSeek intento falló o timeout ({ds_ex}), pasando a Gemini...")
+                log.warning(f"DeepSeek ({DEEPSEEK_MODEL}) falló: {ds_ex} -> pasando a Gemini")
 
         # 2. Intentar con Gemini si DeepSeek no respondió o no está configurado
         if not analisis_texto and gemini_client:
@@ -918,8 +924,8 @@ REGLAS ESTRICTAS:
                         contents=contents_list,
                         config=genai_types.GenerateContentConfig(
                             system_instruction=SYSTEM_PROMPT,
-                            temperature=0.4,
-                            max_output_tokens=600
+                            temperature=0.8,
+                            max_output_tokens=1200
                         )
                     )
                     return resp.text if resp and resp.text else ""
@@ -927,7 +933,7 @@ REGLAS ESTRICTAS:
                     log.warning(f"Error llamando {mod_name}: {e}")
                     return ""
 
-            for mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.8-flash"]:
+            for mod in ["gemini-3.8-flash", "gemini-3.8-flash"]:
                 try:
                     fut = gemini_executor.submit(_llamar_gemini, mod)
                     analisis_texto = fut.result(timeout=12.0)
@@ -950,9 +956,9 @@ REGLAS ESTRICTAS:
                 resp_oa = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=oa_messages,
-                    temperature=0.4,
-                    max_tokens=450,
-                    timeout=4.5
+                    temperature=0.8,
+                    max_tokens=900,
+                    timeout=12.0
                 )
                 if resp_oa.choices and resp_oa.choices[0].message.content:
                     analisis_texto = resp_oa.choices[0].message.content.strip()
