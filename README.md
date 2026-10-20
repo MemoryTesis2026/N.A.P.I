@@ -29,42 +29,41 @@ El sistema **N.A.P.I** está estructurado estrictamente bajo el patrón de **Arq
 4. **Seguridad y Perímetro Transversal:** Se implementa una capa perimetral y de seguridad obligatoria entre la presentación y la aplicación, garantizando que ninguna transacción acceda a los recursos internos sin autenticación previa, validación de tipos, autorización de roles (**RBAC**) y políticas a nivel de fila (**RLS**).
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│  TIER 1: CAPA DE PRESENTACIÓN (Presentation Tier - SPA HTML5 / CSS3)   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Req: HTTPS POST/GET (JSON/Multipart, Bearer Token)
-                                    │ Res: JSON (Status, JWT, Texto/Citas) [AbortController 20s]
-┌───────────────────────────────────▼────────────────────────────────────┐
-│  TIER 2: SEGURIDAD PERIMETRAL Y ACCESO (Security & Gateway Tier)       │
-│  • Reverse Proxy / SSL (TLS 1.3)   • Middleware Seguridad (CORS/Rate)  │
-│  • Validador JWT (GoTrue / RBAC)   • Gestor de Secretos (.env Vault)   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ In-process / Localhost pass (Contexto saneado, UserContext)
-┌───────────────────────────────────▼────────────────────────────────────┐
-│  TIER 3: NEGOCIO Y APLICACIÓN (Application & Domain Tier - FastAPI)    │
-│  • FastAPI Controller (server.py)  • Validador Académico (Nota >= 6.0) │
-│  • Gestor de Sesiones e Historial Aislado (Estudiante, Docente, Admin) │
-└───────────────────────┬───────────────────────────────┬────────────────┘
-                        │ Invocación RAG                │ Multipart / Logs / CRUD
-                        │ Req: Prompt, Query, Doc       │ Req: Upload S3, DML
-                        │ Res: Contexto + Síntesis      │ Res: Signed URL, IDs
-┌───────────────────────▼──────────────┐ ┌──────────────▼────────────────┐
-│ TIER 4: INTELIGENCIA Y MOTOR RAG     │ │ TIER 5: PERSISTENCIA CLOUD     │
-│ (RAG Engine Tier)                    │ │ (Data Tier - Supabase BaaS)    │
-│ • ArchivaIAEngine (motor_rag.py)     │ │ • PostgreSQL 15+ & pgvector    │
-│ • Embeddings 1536d (gemini-embed-2)  │ │ • Índice HNSW (vector_cosine)  │
-│ • ThreadPool (Timeout 15s) Fallback  │ │ • Supabase Storage (S3 Docs)   │
-└───────────────────────┬──────────────┘ │ • GoTrue Auth & Chat History   │
-                        │                └───────────────────────────────┘
-                        │ RPC buscar_proyectos_similares(vector 1536d)
-                        │ Res: Top-K chunks + Cosine similarity score
-                        ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│  BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS (Multi-LLM)         │
-│  • Intento 1: DeepSeek API (deepseek-chat) [Timeout 15s]               │
-│  • Intento 2: Google Cloud Gemini Flash (2.0 / 1.5) [Fallback]         │
-│  • Intento 3: OpenAI Platform API (gpt-4o-mini) [Fallback Final]       │
-└────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  TIER 1: CAPA DE PRESENTACIÓN (SPA HTML5 / CSS3 / Accesibilidad CVD y Voz)             │
+│  • Menu_Estudiante            • Menu_Docente                                           │
+│  • Menu_gestion de proyectos  • Menu_Creacion de usuarios                              │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Req: HTTPS POST/GET (JSON/Multipart, Bearer JWT)
+                                            │ Res: JSON (Status, JWT, Diagnóstico) [AbortController 20s]
+┌───────────────────────────────────────────▼────────────────────────────────────────────┐
+│  TIER 2: SEGURIDAD PERIMETRAL Y ACCESO (Security & Gateway Tier)                       │
+│  • Reverse Proxy / SSL (TLS 1.3)   • Gestor de Secretos en Memoria (.env Vault)        │
+│  • SolicitudAcceso (Sesiones, Validación JWT, RBAC, Rate Limiting)                     │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Req: Peticiones validadas con UserContext
+             ┌──────────────────────────────┴──────────────────────────────┐
+             │                                                             │
+┌────────────▼───────────────────────────────────────────┐ ┌───────────────▼────────────────────────────┐
+│ TIER 3: NEGOCIO Y APLICACIÓN (Domain Tier - FastAPI)   │ │ TIER 4: INTELIGENCIA Y MOTOR RAG            │
+│ • Proyecto (/api/projects, metadata, upload)           │ │ (RAG Engine Tier)                           │
+│ • Evaluacion (Validación institucional Nota >= 6.0)    │ │ • AsistenteIA (Orquestador RAG)             │
+└────────────────────────────┬───────────────────────────┘ │ • VectorEmbedding (gemini-embedding-2 1536d)│
+                             │ Upload S3 / Insert DDL      └───────────────┬─────────────────────────────┘
+                             │                             ┌───────────────┘ RPC HNSW Coseno
+┌────────────────────────────▼─────────────────────────────▼─────────────────────────────┐
+│ TIER 5: PERSISTENCIA CLOUD (Data Tier - BaseDatos_Supabase)                            │
+│ • PostgreSQL 15+ & pgvector (Índice HNSW Coseno para VectorEmbedding)                 │
+│ • Supabase Storage (Bucket proyectos-docs para componente Proyecto)                    │
+│ • Supabase Auth & Tablas Relacionales (Para SolicitudAcceso e historial de chat)       │
+└──────────────────────────────────────────────────────────┬─────────────────────────────┘
+                                                           │
+┌──────────────────────────────────────────────────────────▼─────────────────────────────┐
+│ BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS (Multi-LLM Fallback)                 │
+│ • Intento 1: DeepSeek API (deepseek-chat) [Timeout 15s]                                │
+│ • Intento 2: Google Cloud Gemini Flash (2.0 / 1.5) [Fallback Secuencial]               │
+│ • Intento 3: OpenAI Platform API (gpt-4o-mini) [Fallback Final]                        │
+└────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---

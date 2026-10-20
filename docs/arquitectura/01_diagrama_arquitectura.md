@@ -1,7 +1,7 @@
 # 01 — Diagrama de Arquitectura Global (Enterprise Architecture / C4 Model)
 ### *N.A.P.I — Núcleo Académico de Proyectos e Innovación · INACAP Sede Maipú*
 
-El presente documento define la **Arquitectura Global del Sistema** siguiendo el estándar del **Modelo C4 (Nivel 2: Contenedores)** y el marco de capas del **Enterprise Architect (EA)**. La solución está reestructurada formalmente en una **Arquitectura en 5 Tiers + Bloque Transversal de Servicios Cognitivos**, resolviendo la separación estricta entre la **Capa de Seguridad Perimetral / Gateway** y la **Capa de Negocio y Aplicación**, además de definir formalmente todos los contratos y flujos de datos (Request / Response).
+El presente documento define la **Arquitectura Global del Sistema** siguiendo el estándar del **Modelo C4 (Nivel 2: Contenedores)** y el marco de capas del **Enterprise Architect (EA)**. La solución mantiene una **correspondencia 1:1 estricta** con el Diagrama de Componentes modelado en Enterprise Architect, estructurada en una **Arquitectura en 5 Tiers + Bloque Transversal de Inferencia Multi-LLM**, definiendo con rigurosidad los contratos de comunicación, interfaces y flujos de datos (Request / Response).
 
 ---
 
@@ -18,155 +18,163 @@ graph TB
     classDef t5Style fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
     classDef extStyle fill:#701a75,stroke:#ec4899,stroke-width:2px,color:#ffffff;
 
-    %% ACTORES DEL SISTEMA
-    subgraph Actors ["👥 Actores del Negocio (Comunidad Académica INACAP Maipú)"]
-        Estudiante["👨‍🎓 Estudiante / Tesista\n(Consulta viabilidad, originalidad y RAG)"]:::actorStyle
-        Docente["👨‍🏫 Docente / Comisión Evaluadora\n(Valida e indexa proyectos con nota >= 6.0)"]:::actorStyle
-        Biblioteca["👩‍💼 Jefa de Biblioteca / Admin\n(Supervisión del acervo institucional y auditoría)"]:::actorStyle
+    %% 1. ACTORES DEL NEGOCIO (NOMENCLATURA EXACTA DE EA)
+    subgraph Actors ["👥 Actores del Negocio (Enterprise Architect)"]
+        Actor_Estudiante["👨‍🎓 Estudiante (Tesista)\n(Consulta viabilidad, originalidad y RAG)"]:::actorStyle
+        Actor_Docente["👨‍🏫 Docente (Comisión Evaluadora)\n(Carga de proyectos y revisión de evaluaciones)"]:::actorStyle
+        Actor_Admin["👩‍💼 Administrador/CRAI (Jefa de Biblioteca / Admin)\n(Gestión administrativa institucional y auditoría)"]:::actorStyle
     end
 
-    %% TIER 1: CAPA DE PRESENTACIÓN
+    %% 2. TIER 1: CAPA DE PRESENTACIÓN (SPA)
     subgraph Tier1 ["«layer» Tier 1: Capa de Presentación (Presentation Tier - SPA)"]
-        SPA_Portal["«container» Portal Web SPA\n(HTML5 Semántico + CSS3 Design System)"]:::t1Style
-        SPA_Nav["«component» PillNav Flotante\n(Navegación reactiva GSAP)"]:::t1Style
-        SPA_Voice["«component» Subsistema de Voz\n(Web Speech API: Micrófono & TTS)"]:::t1Style
-        SPA_Access["«component» Motor de Accesibilidad CVD\n(Filtros Daltonismo & Alto Contraste)"]:::t1Style
+        SPA_Portal["«container» Portal Web SPA\n(HTML5 Semántico + Accesibilidad CVD + Web Speech Voz)"]:::t1Style
+        Menu_Estudiante["«component» Menu_Estudiante\n(Chat de consulta semántica, viabilidad)"]:::t1Style
+        Menu_Docente["«component» Menu_Docente\n(Carga de proyectos, revisión de evaluaciones)"]:::t1Style
+        Menu_Gestion["«component» Menu_gestion de proyectos\n(Búsqueda y visualización de catálogo)"]:::t1Style
+        Menu_Usuarios["«component» Menu_Creacion de usuarios\n(Gestión administrativa institucional)"]:::t1Style
     end
 
-    %% TIER 2: CAPA DE SEGURIDAD PERIMETRAL Y ACCESO
+    %% 3. TIER 2: CAPA DE SEGURIDAD PERIMETRAL Y ACCESO
     subgraph Tier2 ["«layer» Tier 2: Capa de Seguridad Perimetral y Acceso (Security & Gateway Tier)"]
         GW_ReverseProxy["«container» Reverse Proxy / SSL Termination\n(HTTPS / TLS 1.3)"]:::t2Style
-        GW_SecurityMiddleware["«component» Middleware de Seguridad\n(CORS Policy, Rate Limiting, Sanitizador Anti-Prompt Injection)"]:::t2Style
-        GW_TokenValidator["«component» Validador Criptográfico de Tokens JWT\n(Decodificación claims y roles RBAC vinculados a Supabase GoTrue)"]:::t2Style
-        GW_SecretVault["«component» Gestor de Secretos en Memoria\n(Bóveda protegida de API Keys para LLMs externos)"]:::t2Style
+        GW_SolicitudAcceso["«component» SolicitudAcceso\n(Manejo de sesiones, validación criptográfica JWTs, control RBAC & Rate Limiting)"]:::t2Style
+        GW_SecretVault["«component» Gestor de Secretos en Memoria\n(Bóveda protegida de API Keys para LLMs)"]:::t2Style
     end
 
-    %% TIER 3: CAPA DE NEGOCIO Y APLICACIÓN
+    %% 4. TIER 3: CAPA DE NEGOCIO Y APLICACIÓN
     subgraph Tier3 ["«layer» Tier 3: Capa de Negocio y Aplicación (Application & Domain Tier - FastAPI)"]
-        APP_FastAPIController["«container» FastAPI Controller\n(Endpoints REST /api/analyze, /api/projects, Upload Multipart)"]:::t3Style
-        APP_BusinessValidator["«component» Validador de Reglas de Negocio Institucionales\n(Aprobación académica, validación Nota >= 6.0, formato de memoria)"]:::t3Style
-        APP_SessionManager["«component» Gestor de Sesiones e Historial Aislado por Rol\n(Estudiante, Docente, Jefa de Biblioteca)"]:::t3Style
+        COMP_Proyecto["«component» Proyecto\n(Lógica de gestión de memorias, metadatos y endpoints FastAPI /api/projects)"]:::t3Style
+        COMP_Evaluacion["«component» Evaluacion\n(Reglas institucionales de validación y filtro Nota >= 6.0)"]:::t3Style
     end
 
-    %% TIER 4: CAPA DE INTELIGENCIA Y MOTOR RAG
+    %% 5. TIER 4: CAPA DE INTELIGENCIA Y MOTOR RAG
     subgraph Tier4 ["«layer» Tier 4: Capa de Inteligencia y Motor RAG (RAG Engine Tier)"]
-        RAG_Orchestrator["«container» Orquestador RAG (ArchivaIAEngine)\n(Inyección de contexto, especialidad de carrera y turnos)"]:::t4Style
-        RAG_Embedder["«component» Generador de Embeddings Semánticos\n(Google gemini-embedding-2 / 1536 dimensiones)"]:::t4Style
-        RAG_ThreadPool["«component» ThreadPoolExecutor Concurrente (15s Timeout)\n(Patrón Cascada Fallback Multi-LLM)"]:::t4Style
+        COMP_AsistenteIA["«component» AsistenteIA\n(Orquestador RAG: atiende peticiones de Menu_Estudiante y Menu_Docente)"]:::t4Style
+        COMP_VectorEmbedding["«component» VectorEmbedding\n(Generación de vectores 1536d gemini-embedding-2 & Despacho concurrente 15s)"]:::t4Style
     end
 
-    %% TIER 5: CAPA DE PERSISTENCIA CLOUD
+    %% 6. TIER 5: CAPA DE PERSISTENCIA CLOUD
     subgraph Tier5 ["«layer» Tier 5: Capa de Persistencia Cloud (Data Tier - Supabase BaaS)"]
-        DB_PGVector[("«database» PostgreSQL 15+ & pgvector\n(Tabla proyectos_titulo con Índice HNSW Coseno)")]:::t5Style
-        DB_Storage[("«storage» Supabase Object Storage\n(Bucket seguro proyectos-docs para PDF/DOCX)")]:::t5Style
-        DB_AuthService["«service» Supabase Auth (GoTrue)\n(Gestor de Identidad Criptográfica y JWTs)"]:::t5Style
-        DB_RelationalStore[("«database» Almacén Relacional\n(napi_chat_history, napi_usuarios)")]:::t5Style
+        subgraph BaseDatos_Supabase ["«component» BaseDatos_Supabase"]
+            DB_PGVector[("«database» PostgreSQL 15+ & pgvector\n(Índice HNSW Coseno para VectorEmbedding)")]:::t5Style
+            DB_Storage[("«storage» Supabase Storage\n(Bucket proyectos-docs para componente Proyecto)")]:::t5Style
+            DB_AuthRelational[("«database» Supabase Auth & Tablas Relacionales\n(Para SolicitudAcceso e historial de chat)")]:::t5Style
+        end
     end
 
-    %% BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS
+    %% 7. BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS
     subgraph ExternalTier ["«layer» Bloque Transversal: Servicios Cognitivos Externos (Multi-LLM Inference)"]
         EXT_DeepSeek["«external» DeepSeek API (deepseek-chat)\n(Motor Principal de Razonamiento - Intento 1)"]:::extStyle
         EXT_GeminiFlash["«external» Google Cloud Gemini Flash (2.0 / 1.5)\n(Motor Secundario de Alta Concurrencia - Intento 2)"]:::extStyle
         EXT_OpenAI["«external» OpenAI Platform API (gpt-4o-mini)\n(Fallback Final de Contingencia - Intento 3)"]:::extStyle
     end
 
-    %% RELACIONES DE USUARIO CON PRESENTACIÓN
-    Estudiante -->|"Interactúa vía web / voz"| SPA_Portal
-    Docente -->|"Carga memoria y evalúa nota"| SPA_Portal
-    Biblioteca -->|"Supervisa repositorio y audita"| SPA_Portal
+    %% INTERACCIÓN ACTORES -> INTERFACES DE PRESENTACIÓN
+    Actor_Estudiante -->|"Interactúa con consultas"| Menu_Estudiante
+    Actor_Estudiante -->|"Explora catálogo"| Menu_Gestion
+    Actor_Docente -->|"Carga y evalúa memorias"| Menu_Docente
+    Actor_Docente -->|"Consulta proyectos"| Menu_Gestion
+    Actor_Admin -->|"Administra usuarios y permisos"| Menu_Usuarios
+    Actor_Admin -->|"Auditoría de catálogo"| Menu_Gestion
 
-    SPA_Portal <--> SPA_Nav
-    SPA_Portal <--> SPA_Voice
-    SPA_Portal <--> SPA_Access
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Estudiante
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Docente
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Gestion
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Usuarios
 
-    %% FLUJO 1: PRESENTACIÓN -> SEGURIDAD / GATEWAY
-    SPA_Portal -->|"Req: HTTPS POST/GET (Payload JSON / Multipart, Auth Header Bearer Token)"| GW_ReverseProxy
-    GW_ReverseProxy -->|"Res: JSON (Status HTTP, JWT firmado, respuesta texto/citas) [20s AbortController]"| SPA_Portal
+    %% FLUJO 1: PRESENTACIÓN (TIER 1) -> PERÍMETRO (TIER 2)
+    Menu_Estudiante -->|"Req: Consulta semántica (JSON + Bearer JWT)"| GW_ReverseProxy
+    Menu_Docente -->|"Req: Upload memoria / consulta (Multipart/JSON + Bearer JWT)"| GW_ReverseProxy
+    Menu_Gestion -->|"Req: Búsqueda / consulta catálogo (GET /api/projects)"| GW_ReverseProxy
+    Menu_Usuarios -->|"Req: Gestión administrativa (POST/GET /api/admin/users)"| GW_ReverseProxy
 
-    %% PIPELINE INTERNO DE SEGURIDAD
-    GW_ReverseProxy --> GW_SecurityMiddleware
-    GW_SecurityMiddleware --> GW_TokenValidator
-    GW_TokenValidator <-->|"Verifica firma criptográfica y claims"| DB_AuthService
-    GW_SecurityMiddleware -.-> GW_SecretVault
+    GW_ReverseProxy -->|"Tráfico TLS 1.3 / Enrutamiento perimetral"| GW_SolicitudAcceso
+    GW_SolicitudAcceso -.->|"Carga protegida de llaves maestras"| GW_SecretVault
+    GW_SolicitudAcceso <-->|"Validación de tokens JWT y sesiones criptográficas"| DB_AuthRelational
+    GW_ReverseProxy -->|"Res: JSON / diagnóstico sintetizado [AbortController 20s]"| SPA_Portal
 
-    %% FLUJO 2: SEGURIDAD -> DOMINIO / FASTAPI
-    GW_TokenValidator -->|"In-process / Localhost pass (Contexto saneado, UserContext verificado con roles)"| APP_FastAPIController
+    %% FLUJO 2: SEGURIDAD (TIER 2) -> COMUNICACIÓN CON ASISTENTEIA, PROYECTO Y USUARIOS
+    %% Requisito 8: Menu_Estudiante y Menu_Docente se comunican con AsistenteIA a través de SolicitudAcceso
+    GW_SolicitudAcceso -->|"Req: Peticiones de Menu_Estudiante y Menu_Docente (UserContext verificado)"| COMP_AsistenteIA
+    GW_SolicitudAcceso -->|"Req: Gestión de memorias y catálogo (/api/projects)"| COMP_Proyecto
+    GW_SolicitudAcceso -->|"Req: Registro y administración de usuarios"| DB_AuthRelational
 
-    %% COMPONENTES INTERNOS DE NEGOCIO
-    APP_FastAPIController <--> APP_BusinessValidator
-    APP_FastAPIController <--> APP_SessionManager
+    %% FLUJO 3: CAPA DE NEGOCIO Y APLICACIÓN (TIER 3)
+    COMP_Proyecto <-->|"Valida regla institucional (Nota >= 6.0)"| COMP_Evaluacion
+    COMP_Proyecto -->|"Req: Indexación de proyecto aprobado (Vectorización)"| COMP_VectorEmbedding
+    COMP_Proyecto -->|"Req: Subida binaria multipart de memoria PDF/DOCX"| DB_Storage
+    DB_Storage -->|"Res: Storage URL firmada del archivo"| COMP_Proyecto
+    COMP_Proyecto -->|"Req: Persistencia de registro y metadatos"| DB_PGVector
 
-    %% FLUJO 3: DOMINIO -> PERSISTENCIA (STORAGE Y RELACIONAL)
-    APP_FastAPIController -->|"Req: Subida multipart de memorias, inserción de logs/usuarios"| DB_Storage
-    DB_Storage -->|"Res: Storage URL firmada, IDs de registro"| APP_FastAPIController
+    %% FLUJO 4: CAPA DE INTELIGENCIA Y MOTOR RAG (TIER 4)
+    COMP_AsistenteIA -->|"1. Req: Generación de embedding de consulta (1536d)"| COMP_VectorEmbedding
+    COMP_VectorEmbedding -->|"Invocación gemini-embedding-2"| EXT_GeminiFlash
+    COMP_VectorEmbedding -->|"Res: Vector denso normalizado (1536d)"| COMP_AsistenteIA
 
-    APP_FastAPIController <-->|"Persistencia de turnos aislados por rol"| DB_RelationalStore
-    APP_BusinessValidator -->|"Validación de nota >= 6.0 e inserción aprobada"| DB_PGVector
+    COMP_AsistenteIA -->|"2. Req: RPC buscar_proyectos_similares (Filtro Coseno HNSW)"| DB_PGVector
+    DB_PGVector -->|"Res: Top-K fragmentos y metadatos relevantes"| COMP_AsistenteIA
 
-    %% FLUJO 4: DOMINIO -> CAPA RAG
-    APP_FastAPIController -->|"Req: Prompt de usuario saneado, query semántica, documento para indexar"| RAG_Orchestrator
-    RAG_Orchestrator -->|"Res: Contexto recuperado y respuesta sintetizada del LLM"| APP_FastAPIController
+    COMP_AsistenteIA -->|"3. Persistencia de turnos en historial de chat"| DB_AuthRelational
 
-    %% SUB-FLUJOS RAG Y EMBEDDINGS
-    RAG_Orchestrator -->|"1. Genera embedding (1536d)"| RAG_Embedder
-    RAG_Embedder -->|"Invocación gemini-embedding-2"| EXT_GeminiFlash
+    %% FLUJO 5: CASCADA MULTI-LLM EN FALLBACK SECUENCIAL
+    COMP_AsistenteIA -->|"4. Despacho inferencia con metaprompt aumentado (15s timeout)"| EXT_DeepSeek
+    EXT_DeepSeek -.->|"Fallback secuencial 1 (latencia > 15s / error)"| EXT_GeminiFlash
+    EXT_GeminiFlash -.->|"Fallback secuencial 2 (cuota saturada / error)"| EXT_OpenAI
 
-    %% FLUJO 5: CAPA RAG -> POSTGRESQL & PGVECTOR
-    RAG_Orchestrator -->|"Req: Vector 1536 dimensiones vía RPC buscar_proyectos_similares"| DB_PGVector
-    DB_PGVector -->|"Res: Top-K fragmentos/chunks con cosine similarity score"| RAG_Orchestrator
-
-    %% FLUJO 6: CAPA RAG -> SERVICIOS EXTERNOS MULTI-LLM
-    RAG_Orchestrator -->|"2. Despacho concurrente (Metaprompt aumentado)"| RAG_ThreadPool
-    RAG_ThreadPool -->|"Intento 1: Inferencia primaria (15s timeout)"| EXT_DeepSeek
-    EXT_DeepSeek -.->|"Fallback condicional por falla/timeout"| EXT_GeminiFlash
-    EXT_GeminiFlash -.->|"Fallback condicional por cuota/timeout"| EXT_OpenAI
+    COMP_AsistenteIA -->|"Res: Diagnóstico sintetizado + fuentes citadas"| GW_SolicitudAcceso
 ```
 
 ---
 
 ## 🔄 Especificación Exhaustiva de Flujos de Datos (Request / Response)
 
-### 1. Flujo Presentación $\to$ Seguridad/Gateway (Tier 1 $\to$ Tier 2)
-- **Protocolo de Transporte:** HTTPS sobre **TLS 1.3**, puertos `443` / `8000`.
+### 1. Flujo Interfaces de Presentación $\to$ Seguridad/Gateway (Tier 1 $\to$ Tier 2)
+- **Protocolo de Transporte:** HTTPS sobre **TLS 1.3**, puertos estándar `443` / `8000`.
 - **Estructura del Request:**
   - *Headers:* `Authorization: Bearer <JWT_TOKEN>`, `Content-Type: application/json` o `multipart/form-data`.
-  - *Payload:* Objeto `AnalyzeRequest` con propuesta de titulación y especialidad académica, o formulario de subida de proyectos con archivo binario (PDF/DOCX).
+  - *Payloads por Componente de Interfaz:*
+    - `Menu_Estudiante`: Objeto `AnalyzeRequest` con propuesta de titulación textual, carrera y archivos adjuntos (Word/PDF).
+    - `Menu_Docente`: Formulario con metadatos del proyecto, archivo binario de memoria e ingreso de calificación final.
+    - `Menu_gestion de proyectos`: Filtros de búsqueda (carrera, año, término de búsqueda libre).
+    - `Menu_Creacion de usuarios`: Credenciales institucionales, nombre, rol (`estudiante`, `docente`, `administrador`) y área académica.
 - **Estructura del Response:**
-  - *Status HTTP:* `200 OK`, `400 Bad Request` (por violación de reglas), `401 Unauthorized` o `403 Forbidden`.
-  - *Body:* JSON con diagnóstico contextualizado de NAPI, porcentaje de similitud calculado, nivel de riesgo institucional, tarjetas con metadatos y URLs de descarga directa.
-- **Control de Resiliencia en Cliente:** Configuración de `AbortController` fijado en **20 segundos** para amortiguar arranques en frío (*cold starts*) de entornos en la nube sin degradar la experiencia de usuario.
+  - *Status HTTP:* `200 OK`, `400 Bad Request` (por rechazo normativo o esquema inválido), `401 Unauthorized` o `403 Forbidden`.
+  - *Body:* JSON con diagnóstico contextualizado generado por `AsistenteIA`, porcentaje de similitud calculado, nivel de riesgo institucional, tarjetas de proyectos con metadatos o confirmación de operaciones CRUD.
+- **Control de Resiliencia en Cliente:** Configuración de `AbortController` fijado en **20 segundos** para amortiguar arranques en frío (*cold starts*) y tiempos de inferencia LLM sin congelar la interfaz.
 
 ---
 
-### 2. Flujo Seguridad $\to$ Negocio/FastAPI (Tier 2 $\to$ Tier 3)
-- **Mecanismo:** Comunicación *In-process* y canal ASGI interno de alto rendimiento.
-- **Transformación de Datos:**
-  - El middleware de seguridad sanitiza la entrada textual, neutralizando vectores de inyección SQL y patrones maliciosos de *Prompt Injection*.
-  - El validador criptográfico decodifica el token JWT emitido por **Supabase GoTrue**, extrayendo claims verificados: `sub` (ID de usuario), `email`, `rol` (`estudiante`, `docente`, `administrador` / `jefa de biblioteca`) y `carrera`.
-  - Entrega a los controladores un objeto `UserContext` validado e inmutable.
+### 2. Flujo Seguridad Perimetral $\to$ Negocio e Inteligencia RAG (Tier 2 $\to$ Tier 3 / Tier 4)
+- **Componente Central:** `SolicitudAcceso` actúa como el punto neurálgico de mediación y autorización.
+- **Canal y Mecanismo:** Comunicación *In-process* y canal ASGI interno de alto rendimiento.
+- **Pipeline de Validación:**
+  1. `SolicitudAcceso` intercepta cada petición HTTPS entrante proveniente de `Reverse Proxy / SSL Termination`.
+  2. Valida la firma criptográfica del JWT consultando a `Supabase Auth & Tablas Relacionales` en `BaseDatos_Supabase`.
+  3. Ejecuta control de acceso basado en roles (**RBAC**) y control de tasa de consumo (**Rate Limiting**).
+  4. Neutraliza vectores maliciosos (SQL Injection y Prompt Injection) mediante esquemas tipados Pydantic.
+  5. Carga de forma segura las API Keys desde `Gestor de Secretos en Memoria` sin exponerlas al cliente.
+  6. Enruta peticiones de `Menu_Estudiante` y `Menu_Docente` directamente a `AsistenteIA` (con `UserContext` validado).
+  7. Enruta peticiones de catálogo y carga a `Proyecto`.
 
 ---
 
-### 3. Flujo Negocio $\to$ Persistencia Cloud (Tier 3 $\to$ Tier 5)
-- **Subida de Memorias:**
-  - *Request:* Stream binario multipart sanitizado hacia el bucket seguro `proyectos-docs` mediante protocolo compatible con **Amazon S3 REST**.
-  - *Response:* URL firmada y metadatos del objeto persistido (`archivo_url`).
-- **Persistencia Transaccional y Auditoría:**
-  - *Request:* Operaciones DML sobre `napi_chat_history` y `napi_usuarios` a través de conexiones SSL directas a PostgreSQL o REST via Supabase Python SDK.
-  - *Response:* Confirmación de inserción con IDs únicos generados (`UUID v4`).
+### 3. Flujo Gestión de Proyectos $\to$ Validación Institucional y Persistencia (Tier 3 $\to$ Tier 5)
+- **Validación Normativa:**
+  - `Proyecto` delega la comprobación de nota al componente `Evaluacion`.
+  - Si $\text{Nota} < 6.0$, la memoria es **rechazada automáticamente**, emitiendo un `HTTP 400 Bad Request`.
+  - Si $\text{Nota} \ge 6.0$, el proyecto es aprobado para indexación y almacenamiento.
+- **Persistencia en `BaseDatos_Supabase`:**
+  - **Supabase Storage:** Transferencia binaria multipart hacia el bucket protegido `proyectos-docs` (protocolo compatible con S3 REST). Retorna URL pública firmada (`archivo_url`).
+  - **Vectorización:** `Proyecto` notifica a `VectorEmbedding` para generar el embedding denso (1536 dimensiones) de título y resumen.
+  - **PostgreSQL 15+ & pgvector:** Inserción de la tupla relacional con metadatos y vector en la tabla `proyectos_titulo`.
 
 ---
 
-### 4. Flujo Negocio $\to$ Capa RAG (Tier 3 $\to$ Tier 4)
-- **Invocación:** Método interno `ArchivaIAEngine.analizar_propuesta(...)` ejecutado dentro del ciclo de vida asíncrono de FastAPI.
-- **Request:** Cadena textual saneada, umbral de coincidencia coseno (`match_threshold = 0.40`), límite de proyectos afines (`match_count = 4`), carrera de especialidad, e historial conversacional multi-turno.
-- **Response:** Contexto estructurado de memorias similares recuperadas y respuesta diagnóstica final sintetizada por el modelo LLM.
-
----
-
-### 5. Flujo Capa RAG $\to$ PostgreSQL & pgvector (Tier 4 $\to$ Tier 5)
-- **Vectorización Previa:** `gemini-embedding-2` calcula el vector denso normalizado de **1536 dimensiones** con directiva `task_type="RETRIEVAL_QUERY"`.
-- **Llamada RPC:**
+### 4. Flujo Asistente IA $\to$ Motor RAG y Persistencia Vectorial (Tier 4 $\to$ Tier 5)
+- **Orquestación RAG:**
+  - `AsistenteIA` recibe la consulta validada desde `SolicitudAcceso`.
+  - Invoca al componente `VectorEmbedding`, el cual genera un vector denso normalizado de **1536 dimensiones** mediante el modelo `gemini-embedding-2` (`task_type="RETRIEVAL_QUERY"`).
+- **Llamada RPC a PostgreSQL:**
   ```sql
   SELECT * FROM public.buscar_proyectos_similares(
     query_embedding := [0.0124, -0.0451, ..., 0.0892],
@@ -175,54 +183,56 @@ graph TB
     filtro_carrera := 'Ingeniería en Informática'
   );
   ```
-- **Respuesta:** Top-K tuplas ordenadas por proximidad angular en el índice **HNSW** (`vector_cosine_ops`), retornando `id`, `titulo`, `resumen`, `carrera`, `anio`, `autores`, `archivo_url`, `nota` y `similitud` calculada como:
-  $$\text{Similitud} = 1 - (\text{embedding} \Leftrightarrow \text{query\_embedding})$$
+- **Índice HNSW:** `BaseDatos_Supabase` ejecuta la búsqueda por proximidad angular en el índice **HNSW Coseno** (`vector_cosine_ops`), retornando los fragmentos más relevantes y metadatos en menos de 100 ms.
+- **Historial de Diálogo:** `AsistenteIA` persiste los turnos de conversación de forma multi-inquilino en `Supabase Auth & Tablas Relacionales` (`napi_chat_history`).
 
 ---
 
-### 6. Flujo Capa RAG $\to$ Servicios Cognitivos Multi-LLM (Tier 4 $\to$ External Tier)
-- **Estrategia:** Despacho concurrente desacoplado en `ThreadPoolExecutor` con **timeout estricto de 15 segundos por intento**.
-- **Patrón Cascada Fallback:**
-  1. **Intento 1 (Principal):** **DeepSeek API** (`deepseek-chat`) — Selección por su alta capacidad de razonamiento técnico y consistencia pedagógica.
-  2. **Intento 2 (Fallback Secundario):** **Google Cloud Gemini Flash** (`gemini-2.0-flash` / `1.5-flash`) — Activado automáticamente ante latencia > 15s o error de conectividad.
-  3. **Intento 3 (Fallback de Emergencia):** **OpenAI Platform API** (`gpt-4o-mini`) — Activado si la cuota de Gemini se satura, garantizando 99.9% de disponibilidad operativa.
+### 5. Flujo Asistente IA $\to$ Cascada Multi-LLM (Tier 4 $\to$ Bloque Transversal)
+- **Estrategia Concurrente:** Despacho concurrente en `ThreadPoolExecutor` con **timeout estricto de 15 segundos por intento**.
+- **Cascada Multi-LLM en Fallback Secuencial:**
+  1. **Intento 1 (Principal):** **DeepSeek API** (`deepseek-chat`) — Seleccionado por su rigor técnico, capacidad de análisis de código y solidez pedagógica.
+  2. **Intento 2 (Fallback Secundario):** **Google Cloud Gemini Flash** (`gemini-2.0-flash` / `1.5-flash`) — Se activa de inmediato ante latencia > 15s o fallos de red de DeepSeek.
+  3. **Intento 3 (Fallback de Contingencia):** **OpenAI Platform API** (`gpt-4o-mini`) — Garantiza la continuidad operacional (99.9% disponibilidad) si la cuota de Gemini se satura.
 
 ---
 
-## 📋 Catálogo de Componentes por Tier Arquitectónico
+## 📋 Catálogo de Componentes (Correspondencia 1:1 con Enterprise Architect)
 
-| Tier | Componente | Responsabilidad Técnica |
-| :--- | :--- | :--- |
-| **Tier 1: Presentación** | `SPA_Portal` | Renderizado reactivo SPA en Vanilla JS/CSS3. Consumo asíncrono de la API REST. |
-| **Tier 1: Presentación** | `SPA_Nav` | Barra flotante dinámica gestionada con **GSAP** (`PillNav.js`). |
-| **Tier 1: Presentación** | `SPA_Voice` | Dictado continuo y síntesis de voz mediante **Web Speech API**. |
-| **Tier 1: Presentación** | `SPA_Access` | Filtros dinámicos CSS para accesibilidad universal (Daltonismo CVD y alto contraste). |
-| **Tier 2: Seguridad/Gateway** | `GW_ReverseProxy` | Terminación SSL/TLS 1.3, ruteo perimetral y servidor estático. |
-| **Tier 2: Seguridad/Gateway** | `GW_SecurityMiddleware` | Políticas CORS, rate limiting y sanitización tipada contra inyecciones de código y prompts. |
-| **Tier 2: Seguridad/Gateway** | `GW_TokenValidator` | Decodificación y validación de tokens JWT vinculados con **Supabase GoTrue** y RBAC. |
-| **Tier 2: Seguridad/Gateway** | `GW_SecretVault` | Almacenamiento seguro en servidor de llaves maestras (`.env`) sin exposición al cliente. |
-| **Tier 3: Negocio/Aplicación**| `APP_FastAPIController` | Controlador REST en FastAPI 3.12 (`server.py`), gestión de endpoints y multipart streams. |
-| **Tier 3: Negocio/Aplicación**| `APP_BusinessValidator` | Cumplimiento normativo institucional INACAP: **bloqueo automático de memorias con nota < 6.0**. |
-| **Tier 3: Negocio/Aplicación**| `APP_SessionManager` | Aislamiento multi-inquilino de chats e historiales por usuario y rol académico. |
-| **Tier 4: Inteligencia RAG** | `RAG_Orchestrator` | Ensamblaje de metaprompts con contexto institucional, carrera y archivos adjuntos. |
-| **Tier 4: Inteligencia RAG** | `RAG_Embedder` | Generación de tensores semánticos densos de 1536 dimensiones (`gemini-embedding-2`). |
-| **Tier 4: Inteligencia RAG** | `RAG_ThreadPool` | Orquestación concurrente con timeout de 15 segundos y fallback en cascada. |
-| **Tier 5: Persistencia Cloud**| `DB_PGVector` | PostgreSQL 15+ con extensión `pgvector` e índice HNSW para búsqueda por coseno en milisegundos. |
-| **Tier 5: Persistencia Cloud**| `DB_Storage` | Supabase Object Storage (`proyectos-docs`) con enlaces públicos protegidos para PDF/DOCX. |
-| **Tier 5: Persistencia Cloud**| `DB_AuthService` | Emisión y renovación de sesiones de usuario vía Supabase GoTrue Auth. |
-| **Tier 5: Persistencia Cloud**| `DB_RelationalStore` | Persistencia relacional de mensajes (`napi_chat_history`) y metadatos de usuario (`napi_usuarios`). |
-| **Bloque Transversal Cognitivo**| `EXT_DeepSeek` | Inferencia primaria con modelo de razonamiento profundo `deepseek-chat`. |
-| **Bloque Transversal Cognitivo**| `EXT_GeminiFlash` | Inferencia de alta velocidad y concurrencia con `gemini-2.0-flash` / `1.5-flash`. |
-| **Bloque Transversal Cognitivo**| `EXT_OpenAI` | Motor de contingencia final con `gpt-4o-mini`. |
+| Tier / Capa | Componente EA | Responsabilidad Técnica | Correspondencia Código / Infraestructura |
+| :--- | :--- | :--- | :--- |
+| **Actores** | `Estudiante (Tesista)` | Usuario final que formula propuestas, consulta originalidad y evalúa viabilidad. | Rol `estudiante` en JWT y frontend |
+| **Actores** | `Docente (Comisión Evaluadora)` | Académico que indexa memorias aprobadas y revisa evaluaciones de viabilidad. | Rol `docente` en JWT y frontend |
+| **Actores** | `Administrador/CRAI` | Supervisión general del catálogo, administración de accesos y auditoría. | Rol `administrador` en JWT y frontend |
+| **Tier 1: Presentación** | `Portal Web SPA` | Contenedor base de la aplicación web: renderizado reactivo, accesibilidad CVD y soporte Web Speech. | `index.html`, `css/styles.css` |
+| **Tier 1: Presentación** | `Menu_Estudiante` | Interfaz conversacional del estudiante: chat semántico, análisis de viabilidad y carga de borradores. | Módulo Chat en `js/app.js` |
+| **Tier 1: Presentación** | `Menu_Docente` | Interfaz de carga de proyectos de título, formulario guiado de metadatos y revisión de evaluaciones. | Módulo Docente en `js/app.js` |
+| **Tier 1: Presentación** | `Menu_gestion de proyectos` | Vista del catálogo general: búsqueda por carrera, filtros combinados y visualización de memorias. | Módulo Catálogo en `js/app.js` |
+| **Tier 1: Presentación** | `Menu_Creacion de usuarios` | Módulo administrativo institucional: registro, modificación de credenciales y asignación de roles. | Módulo Admin en `js/app.js` |
+| **Tier 2: Seguridad** | `Reverse Proxy / SSL Termination` | Terminación TLS 1.3, gestión de certificados SSL y servidor de estáticos. | `engine/server.py` / Uvicorn |
+| **Tier 2: Seguridad** | `SolicitudAcceso` | Mediador central perimetral: validación de tokens JWT, control RBAC, sanitización y Rate Limiting. | Middleware y dependencias de autenticación en `engine/server.py` |
+| **Tier 2: Seguridad** | `Gestor de Secretos en Memoria` | Protección de llaves maestras de API y base de datos, aisladas fuera del alcance del cliente. | Variables de entorno `.env` en servidor |
+| **Tier 3: Negocio** | `Proyecto` | Lógica de gestión de memorias de título, metadatos y controladores FastAPI (`/api/projects`). | Endpoints REST en `engine/server.py` |
+| **Tier 3: Negocio** | `Evaluacion` | Reglas de negocio institucionales INACAP: **filtro estricto que rechaza proyectos con nota < 6.0**. | Validador normativo en `engine/server.py` |
+| **Tier 4: Inteligencia**| `AsistenteIA` | Orquestador central del motor RAG: inyección de contexto, preparación de metaprompt y síntesis. | `ArchivaIAEngine` en `engine/motor_rag.py` |
+| **Tier 4: Inteligencia**| `VectorEmbedding` | Generador de embeddings semánticos densos (1536d) y despachador concurrente con timeout de 15s. | Métodos de embedding y ThreadPool en `engine/motor_rag.py` |
+| **Tier 5: Persistencia** | `BaseDatos_Supabase` | Contenedor integral de almacenamiento y base de datos en la nube (BaaS Supabase). | Supabase BaaS Cloud Infrastructure |
+| **Tier 5: Persistencia** | `PostgreSQL 15+ & pgvector` | Motor relacional y vectorial con índice HNSW Coseno para búsqueda semántica ultrarrápida. | Tabla `proyectos_titulo` y función RPC |
+| **Tier 5: Persistencia** | `Supabase Storage` | Bucket seguro `proyectos-docs` para almacenamiento de memorias en formatos PDF y Word. | Object Storage S3-compatible |
+| **Tier 5: Persistencia** | `Supabase Auth & Tablas Relacionales` | Manejo de identidad criptográfica, usuarios (`napi_usuarios`) e historial (`napi_chat_history`). | GoTrue Auth & Tablas relacionales |
+| **Bloque Transversal** | `DeepSeek API` | Motor principal de inferencia (`deepseek-chat`) — Intento 1 en la cascada. | Cloud API DeepSeek |
+| **Bloque Transversal** | `Google Cloud Gemini Flash` | Motor secundario de alta concurrencia (`gemini-2.0-flash` / `1.5-flash`) — Intento 2 en la cascada. | Cloud API Google GenAI |
+| **Bloque Transversal** | `OpenAI Platform API` | Motor de contingencia final (`gpt-4o-mini`) — Intento 3 en la cascada. | Cloud API OpenAI |
 
 ---
 
 ## ⏱️ Acuerdos de Nivel de Servicio (SLA) y Presupuesto de Timeouts
 
-| Enlace / Operación | Timeout Máximo | Mecanismo de Fallback / Mitigación |
+| Enlace / Operación | Timeout Máximo | Mecanismo de Mitigación / Resiliencia |
 | :--- | :---: | :--- |
-| **Cliente $\to$ Gateway (Tier 1 $\to$ Tier 2)** | **20s** | `AbortController` en JavaScript aborta la llamada y presenta feedback amigable sin bloquear la UI. |
-| **Intento 1 Multi-LLM (DeepSeek)** | **15s** | El `ThreadPoolExecutor` cancela la espera y activa de inmediato el Intento 2 (Google Gemini). |
-| **Intento 2 Multi-LLM (Gemini Flash)** | **15s** | Conmuta automáticamente al Intento 3 (OpenAI GPT-4o-mini) ante fallas de cuota o red. |
-| **Búsqueda Vectorial HNSW (pgvector)** | **< 100ms** | Si el cálculo vectorial no responde, se activa búsqueda léxica fallback por palabras clave (`ILIKE`). |
-| **Subida de Archivo a Storage S3** | **10s** | Stream directo en trozos (*chunked streaming*) con prefijo UUID para prevenir colisiones de nombres. |
+| **Cliente $\to$ Gateway (`SolicitudAcceso`)** | **20s** | `AbortController` en JavaScript aborta la petición y presenta retroalimentación clara al usuario. |
+| **Intento 1 Multi-LLM (`DeepSeek API`)** | **15s** | El `ThreadPoolExecutor` cancela la espera y conmuta de inmediato a Google Gemini Flash. |
+| **Intento 2 Multi-LLM (`Google Gemini Flash`)** | **15s** | Conmuta automáticamente al Intento 3 (OpenAI GPT-4o-mini) ante fallas de cuota, latencia o conectividad. |
+| **Búsqueda Vectorial HNSW (`pgvector`)** | **< 100ms** | Si la función RPC vectorial no responde, se activa fallback de búsqueda léxica por palabras clave (`ILIKE`). |
+| **Subida de Memorias a `Supabase Storage`** | **10s** | Carga en flujo continuo binario multipart con UUID prefijado para prevenir colisiones de nombres. |
+| **Validación de Identidad en `SolicitudAcceso`** | **< 200ms** | Caché en memoria de claims de sesión para mitigar la sobrecarga sobre el servicio de autenticación. |
