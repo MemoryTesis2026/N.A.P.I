@@ -17,98 +17,207 @@ En el ámbito de la educación superior técnico-profesional, los proyectos de t
 **N.A.P.I** (*Núcleo Académico de Proyectos e Innovación*) es una plataforma web integral diseñada para centralizar, preservar, auditar y difundir el acervo de proyectos de título de INACAP Sede Maipú. La solución integra un **Motor RAG (Retrieval-Augmented Generation)** de última generación con **embeddings vectoriales semánticos** y un asistente conversacional interactivo (**NAPI**). A través de esta tecnología, estudiantes y docentes pueden validar ideas de tesis en tiempo real, evaluar porcentajes de similitud respecto al histórico institucional, recibir sugerencias técnicas de diferenciación e innovación adaptadas a su carrera, y gestionar la gobernanza de proyectos bajo estrictos estándares de aprobación académica.
 
 ---
+## 📐 Patrón Arquitectónico del Sistema: Arquitectura en Capas (Layered / N-Tier Architecture) bajo Modelo Cliente-Servidor
 
-## 💡 ¿Cómo Funciona N.A.P.I? (Funcionamiento Integral)
+El sistema **N.A.P.I** está estructurado estrictamente bajo el patrón de **Arquitectura en Capas (Layered / N-Tier Architecture)** implementado sobre un modelo **Cliente-Servidor (Client-Server)** desacoplado con integración de servicios cognitivos en la nube (*BaaS* e inferencia Multi-LLM).
 
-El sistema conecta una interfaz de usuario accesible y moderna con un motor de backend inteligente que combina bases de datos vectoriales e inteligencia artificial generativa. A continuación se desglosan los flujos operativos fundamentales:
+### Justificación Teórica y Estructural del Patrón
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Estudiante as 👨‍🎓 Estudiante / Docente
-    participant UI as 💻 Frontend (Vanilla JS / Web Speech)
-    participant API as ⚡ Backend FastAPI (server.py)
-    participant Embed as 🧬 Google Gemini Embeddings
-    participant DB as 🐘 Supabase (PostgreSQL + pgvector)
-    participant LLM as 🤖 Google Gemini Flash / OpenAI
+1. **Separación de Incumbencias (*Separation of Concerns - SoC*):** Cada nivel del sistema posee una responsabilidad única y delimitada. La interfaz de usuario no contiene lógica de negocio ni manipula vectores; la capa de aplicación no renderiza vistas; y la persistencia no toma decisiones de inferencia.
+2. **Dependencias Unidireccionales y Capas Cerradas:** Las peticiones fluyen de manera jerárquica de arriba hacia abajo (o hacia capas transversales de infraestructura). Ningún componente inferior tiene conocimiento de la implementación interna de los niveles superiores.
+3. **Desacoplamiento Cliente-Servidor (*Decoupled Client-Server*):** El frontend opera como un cliente liviano (*Single Page Application*) que consume servicios de manera asíncrona mediante contratos de interfaz bien definidos (**RESTful APIs** sobre HTTPS/TLS 1.3), lo que permite evolucionar o sustituir la interfaz gráfica sin impactar la lógica del servidor ni la base de datos.
+4. **Seguridad y Perímetro Transversal:** Se implementa una capa perimetral y de seguridad obligatoria entre la presentación y la aplicación, garantizando que ninguna transacción acceda a los recursos internos sin autenticación previa, validación de tipos, autorización de roles (**RBAC**) y políticas a nivel de fila (**RLS**).
 
-    Estudiante->>UI: Ingresa idea de tesis (texto, voz o archivo adjunto)
-    UI->>API: POST /api/analyze (query, carrera, historial, archivo) con Timeout Resiliente
-    
-    rect rgb(240, 248, 255)
-        note over API,DB: Fase 1: Recuperación Semántica (Retrieval)
-        API->>Embed: Vectorizar consulta (gemini-embedding-2, 1536 dims)
-        Embed-->>API: Vector denso de características
-        API->>DB: RPC buscar_proyectos_similares(vector, umbral, carrera)
-        DB-->>API: Top-K proyectos más afines + % similitud coseno
-    end
-
-    rect rgb(255, 250, 240)
-        note over API,LLM: Fase 2: Generación Aumentada (Augmentation & Generation)
-        API->>API: Inyectar contexto: Proyectos + Carrera Alumno + Archivo adjunto
-        API->>LLM: Inferencia asistida por ThreadPool (gemini-2.0-flash / gemini-1.5-flash)
-        LLM-->>API: Diagnóstico sintetizado (Similitud, Innovación personalizada, Siguiente paso)
-    end
-
-    API-->>UI: Respuesta JSON (diagnóstico + tarjetas de proyectos similares)
-    UI-->>Estudiante: Renderizado interactivo en chat + audio TTS opcional
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  TIER 1: CAPA DE PRESENTACIÓN (Presentation Tier - SPA HTML5 / CSS3)   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Req: HTTPS POST/GET (JSON/Multipart, Bearer Token)
+                                    │ Res: JSON (Status, JWT, Texto/Citas) [AbortController 20s]
+┌───────────────────────────────────▼────────────────────────────────────┐
+│  TIER 2: SEGURIDAD PERIMETRAL Y ACCESO (Security & Gateway Tier)       │
+│  • Reverse Proxy / SSL (TLS 1.3)   • Middleware Seguridad (CORS/Rate)  │
+│  • Validador JWT (GoTrue / RBAC)   • Gestor de Secretos (.env Vault)   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ In-process / Localhost pass (Contexto saneado, UserContext)
+┌───────────────────────────────────▼────────────────────────────────────┐
+│  TIER 3: NEGOCIO Y APLICACIÓN (Application & Domain Tier - FastAPI)    │
+│  • FastAPI Controller (server.py)  • Validador Académico (Nota >= 6.0) │
+│  • Gestor de Sesiones e Historial Aislado (Estudiante, Docente, Admin) │
+└───────────────────────┬───────────────────────────────┬────────────────┘
+                        │ Invocación RAG                │ Multipart / Logs / CRUD
+                        │ Req: Prompt, Query, Doc       │ Req: Upload S3, DML
+                        │ Res: Contexto + Síntesis      │ Res: Signed URL, IDs
+┌───────────────────────▼──────────────┐ ┌──────────────▼────────────────┐
+│ TIER 4: INTELIGENCIA Y MOTOR RAG     │ │ TIER 5: PERSISTENCIA CLOUD     │
+│ (RAG Engine Tier)                    │ │ (Data Tier - Supabase BaaS)    │
+│ • ArchivaIAEngine (motor_rag.py)     │ │ • PostgreSQL 15+ & pgvector    │
+│ • Embeddings 1536d (gemini-embed-2)  │ │ • Índice HNSW (vector_cosine)  │
+│ • ThreadPool (Timeout 15s) Fallback  │ │ • Supabase Storage (S3 Docs)   │
+└───────────────────────┬──────────────┘ │ • GoTrue Auth & Chat History   │
+                        │                └───────────────────────────────┘
+                        │ RPC buscar_proyectos_similares(vector 1536d)
+                        │ Res: Top-K chunks + Cosine similarity score
+                        ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS (Multi-LLM)         │
+│  • Intento 1: DeepSeek API (deepseek-chat) [Timeout 15s]               │
+│  • Intento 2: Google Cloud Gemini Flash (2.0 / 1.5) [Fallback]         │
+│  • Intento 3: OpenAI Platform API (gpt-4o-mini) [Fallback Final]       │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 1. El Flujo del Estudiante: Validación de Propuestas en Tiempo Real
-1. **Definición de Perfil y Carrera:** El estudiante indica o tiene configurada su carrera o área formativa (por ejemplo, *Ingeniería en Informática*, *Telecomunicaciones*, *Mecánica y Electromovilidad Automotriz*, etc.). Esto es crucial porque la IA no entregará recomendaciones genéricas, sino aterrizadas en las herramientas, normas y enfoques propios de su disciplina.
-2. **Ingreso de la Idea:**
-   - **Texto directo:** Redacción libre de la problemática o solución planteada.
-   - **Documento adjunto:** Carga de anteproyectos preliminares en formato PDF, Word (DOCX) o texto plano (TXT).
-   - **Entrada por Voz:** Integración nativa con la **Web Speech API** del navegador, permitiendo dictar la idea cómodamente desde cualquier dispositivo.
-3. **Resiliencia en Frontend (`js/app.js`):** La petición se envía con un `AbortController` configurado con **20 segundos de margen**, protegiendo la experiencia de usuario contra arranques en frío (*cold start*) de servidores cloud en capas gratuitas (como Render) y garantizando que el usuario siempre reciba retroalimentación.
+## 🔄 Flujos de Información Bidireccionales: Ingestión (Subida) y Consulta RAG (Bajada)
+
+El sistema procesa información en dos sentidos fundamentales:
+1. **Flujo de Subida / Ingestión (*Upstream Data Flow*):** Incorporación, validación, almacenamiento binario e indexación vectorial de tesis aprobadas.
+2. **Flujo de Bajada / Consulta y Recuperación (*Downstream Data Flow*):** Vectorización de dudas de alumnos, búsqueda semántica top-K en base de datos, aumento de contexto, inferencia LLM y entrega diagnóstica enriquecida.
 
 ---
 
-### 2. El Pipeline del Motor RAG en el Backend (`engine/server.py`)
-Cuando la API recibe la petición en el endpoint `/api/analyze`, se ejecuta un proceso en dos etapas:
+### A. Flujo de Subida de Información (Upstream: Ingestión, Almacenamiento e Indexación)
 
-#### A. Recuperación de Información (Retrieval)
-- **Vectorización Semántica:** Se limpia y envía el texto de la consulta al modelo `gemini-embedding-2` de Google Cloud con la configuración `task_type="RETRIEVAL_QUERY"`, obteniendo un vector normalizado de **1536 dimensiones**.
-- **Búsqueda Vectorial por Similitud Coseno:** La API invoca la función RPC de PostgreSQL `buscar_proyectos_similares` en Supabase. Gracias al índice **HNSW** (`vector_cosine_ops`), la base de datos compara el vector con miles de proyectos aprobados en milisegundos:
-  $$\text{Similitud} = 1 - \text{Distancia Coseno}(\vec{u}, \vec{v})$$
-- **Clasificación del Nivel de Riesgo Institucional:**
-  - 🟢 **Sin Riesgo (< 45%):** Propuesta altamente original en el contexto de la sede.
-  - 🟡 **Moderado (45% – 64%):** Existen antecedentes temáticos; se sugiere enfocar la diferenciación técnica.
-  - 🟠 **Alto (65% – 79%):** Coincidencia significativa con proyectos previos; se exige justificación metodológica clara.
-  - 🔴 **Crítico ($\ge 80\%$):** Alta probabilidad de duplicidad temática involuntaria con tesis ya aprobadas.
-- **Fallback Automático:** Si los servicios vectoriales experimentan micro-cortes, el sistema activa automáticamente un fallback de búsqueda léxica/textual ponderada en PostgreSQL para nunca dejar al alumno sin respuesta.
+Este flujo es ejecutado exclusivamente por usuarios autorizados (**Docentes** o **Administradores**) para preservar la integridad del acervo académico.
 
-#### B. Generación Aumentada y Personalizada (Generation)
-- **Inyección de Contexto y Carrera:** El sistema construye dinámicamente el prompt inyectando:
-  1. Los proyectos más parecidos encontrados en la base de datos (Título, Carrera, Año, Autores y Resumen).
-  2. El contexto explícito de la carrera o área del estudiante (`[Área/Carrera del estudiante: ...]`).
-  3. El extracto de documentos adjuntos (si existen).
-  4. Los últimos turnos del historial conversacional para mantener la memoria del diálogo.
-- **Orquestación Concurrente y Gestión de Timeouts:** Para evitar bloqueos, las llamadas a los modelos de lenguaje se procesan mediante un `ThreadPoolExecutor` con **timeout estricto de 15 segundos**. La arquitectura implementa cascada inteligente:
-  - Intento principal: `gemini-2.0-flash` (alta velocidad y razonamiento refinado).
-  - Segundo intento: `gemini-1.5-flash` (alta tolerancia a latencia).
-  - Respaldo final (Fallback): OpenAI `gpt-4o-mini`.
-- **Estructura Estricta de la Respuesta NAPI:** El modelo está parametrizado para generar respuestas sintéticas, directas y profesionales en español chileno:
-  1. **Grado de Similitud:** Porcentaje exacto y mención de las tesis antecedentes (o declaración explícita de idea 100% original).
-  2. **Vías Técnicas de Innovación:** 2 puntos concretos orientados a su especialidad (sensores específicos, arquitecturas, metodologías, algoritmos o frameworks).
-  3. **Paso Siguiente:** Llamado a la acción para validar el enfoque refinado con su docente guía de titulación.
-- **Preguntas de Seguimiento (Follow-ups):** Si el alumno repregunta (por ejemplo: *"¿qué sensores me recomiendas?"* o *"¿cómo lo hago más innovador?"*), NAPI detecta que es una consulta de profundización y responde de manera puntual y quirúrgica, sin repetir listas de proyectos anteriores.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Docente as 👨‍🏫 Docente / Administrador
+    participant UI as 💻 Frontend SPA (Panel Docente)
+    participant Sec as 🛡️ Capa de Seguridad (RBAC & Pydantic)
+    participant API as ⚡ Backend FastAPI (POST /api/projects)
+    participant Storage as 🗄️ Supabase Storage (Bucket proyectos-docs)
+    participant Embed as 🧬 Google Gemini Embeddings (RETRIEVAL_DOCUMENT)
+    participant DB as 🐘 Supabase (PostgreSQL 15 + pgvector)
+
+    Docente->>UI: Carga datos de memoria + Archivo PDF/DOCX + Nota final
+    UI->>Sec: Envío multipart/form-data con Bearer Token (JWT)
+    
+    rect rgb(255, 245, 245)
+        note over Sec,API: Validación de Perímetro y Normativa Académica
+        Sec->>Sec: Verificar Token JWT y Rol ('docente' o 'administrador')
+        Sec->>Sec: Validación de esquema Pydantic (Campos obligatorios)
+        Sec->>Sec: Validar regla institucional estricta: Nota final >= 6.0
+    end
+
+    Sec->>API: Petición autorizada y sanitizada
+    
+    rect rgb(240, 255, 240)
+        note over API,Storage: 1. Almacenamiento de Objeto Binario
+        API->>API: Sanitizar nombre de archivo con UUID prefix seguro
+        API->>Storage: Upload binario a bucket 'proyectos-docs' (protocolo S3)
+        Storage-->>API: URL pública protegida del documento (archivo_url)
+    end
+
+    rect rgb(240, 248, 255)
+        note over API,Embed: 2. Pipeline de Vectorización Semántica
+        API->>API: Concatenar corpus documental: Titulo + Resumen
+        API->>Embed: Invocación gemini-embedding-2 (task_type=RETRIEVAL_DOCUMENT, 1536d)
+        Embed-->>API: Vector denso de punto flotante de 1536 dimensiones
+    end
+
+    rect rgb(255, 250, 240)
+        note over API,DB: 3. Persistencia Relacional y Actualización de Índice HNSW
+        API->>DB: INSERT INTO proyectos_titulo (titulo, carrera, anio, autores, nota, embedding, archivo_url)
+        DB->>DB: Actualizar grafo HNSW en memoria (vector_cosine_ops)
+        DB-->>API: Confirmación de transacción exitosa (ID generado)
+    end
+
+    API-->>UI: HTTP 200 OK (Proyecto indexado con éxito)
+    UI-->>Docente: Notificación visual de confirmación + Actualización de catálogo
+```
+
+#### Detalle Técnico del Flujo de Subida:
+1. **Control de Acceso y Filtro Académico:** La Capa de Seguridad intercepta la petición. Si el rol no cuenta con privilegios de edición o si la calificación final del proyecto es inferior a **6.0** ($\text{nota} < 6.0$), la petición es rechazada de inmediato con `HTTP 400 Bad Request` sin consumir recursos de inferencia ni de base de datos.
+2. **Sanitización y Persistencia de Archivos:** El documento (PDF o DOCX) se procesa en memoria mediante streams asíncronos (`await file_item.read()`), se le asigna un nombre criptográfico único para evitar colisiones de rutas y se deposita en el bucket seguro `proyectos-docs` de Supabase Storage.
+3. **Generación de Embeddings Documentales:** Se invoca el modelo `gemini-embedding-2` con la etiqueta explícita `RETRIEVAL_DOCUMENT`. Esto entrena la representación latente del documento para responder a consultas formuladas en lenguaje natural.
+4. **Indexación Atómica en `pgvector`:** El vector resultante de 1536 dimensiones se almacena en la columna tipo `vector(1536)`, actualizando en tiempo real el índice **HNSW** (`m=16, ef_construction=64`) para su consulta inmediata en milisegundos.
 
 ---
 
-### 3. El Flujo del Docente: Aseguramiento de la Calidad y Aprobación
-- **Filtro Académico Riguroso:** Para salvaguardar la excelencia del repositorio, el sistema solo permite indexar proyectos con calificación igual o superior a **6.0 ($\ge 6.0$)**.
-- **Carga Rápida (Drag-and-Drop):** Los profesores pueden arrastrar memorias de titulación o completar formularios guiados.
-- **Indexación Vectorial Inmediata:** Al guardar un proyecto, el backend genera el vector denso (`RETRIEVAL_DOCUMENT`) y lo almacena transaccionalmente en Supabase, dejándolo inmediatamente disponible para el motor de búsqueda semántica.
+### B. Flujo de Bajada de Información (Downstream: Consulta, Búsqueda RAG y Generación)
 
----
+Este flujo representa la interacción del estudiante con el asistente conversacional **NAPI** para evaluar propuestas de titulación y recibir orientación personalizada.
 
-### 4. El Flujo del Administrador: Gobernanza y Auditoría
-- **Gestión Jerárquica de Usuarios:** Altas, bajas y modificaciones de cuentas para estudiantes, docentes y coordinadores.
-- **Organización por 13 Áreas INACAP:** Clasificación automática y filtrado según las áreas oficiales institucionales (Administración, Construcción, Informática y Ciberseguridad, Minería, Mecánica, etc.).
-- **Auditoría e Historial:** Monitoreo de consultas en `napi_chat_history` para analizar tendencias temáticas de titulación e identificar áreas con baja tasa de innovación.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Estudiante as 👨‍🎓 Estudiante / Tesista
+    participant UI as 💻 Frontend SPA (NAPI Chat & Web Speech)
+    participant Sec as 🛡️ Capa de Seguridad (CORS, Rate Limiting & DTOs)
+    participant API as ⚡ Backend FastAPI (POST /api/analyze)
+    participant Embed as 🧬 Google Gemini Embeddings (RETRIEVAL_QUERY)
+    participant DB as 🐘 Supabase (PostgreSQL 15 + pgvector HNSW)
+    participant MultiLLM as 🤖 Enrutador Multi-LLM (Groq -> DeepSeek -> Gemini -> OpenAI)
+    participant History as 📜 Supabase (napi_chat_history)
+
+    Estudiante->>UI: Ingresa propuesta (Texto, dictado por voz o adjunto preliminar)
+    UI->>Sec: POST /api/analyze (AbortController timeout: 20s)
+    Sec->>Sec: Validación de esquema AnalyzeRequest & Sanitización anti-inyección
+    Sec->>API: Carga útil limpia (query, carrera, umbral, historial)
+
+    rect rgb(240, 248, 255)
+        note over API,Embed: Fase 1: Vectorización de Consulta
+        API->>Embed: Vectorizar texto limpio (task_type=RETRIEVAL_QUERY, 1536d)
+        Embed-->>API: Vector denso de consulta (1536 dimensiones)
+    end
+
+    rect rgb(245, 255, 245)
+        note over API,DB: Fase 2: Recuperación Semántica (Vector Retrieval)
+        API->>DB: RPC buscar_proyectos_similares(vector, umbral, limite, carrera)
+        DB->>DB: Escaneo HNSW con operador coseno: 1 - (embedding <=> query)
+        DB-->>API: Retorno Top-K proyectos más afines + % similitud + URLs de descarga
+    end
+
+    rect rgb(255, 250, 240)
+        note over API,MultiLLM: Fase 3: Aumento de Contexto & Inferencia Resiliente
+        API->>API: Ensamblar Metaprompt: Contexto Antecedentes + Especialidad Alumno + Historial
+        
+        alt 1. Intento Primario: Groq LPU (Ultra-Baja Latencia)
+            API->>MultiLLM: Groq API (llama-3.3-70b-versatile, timeout 15s)
+            MultiLLM-->>API: Diagnóstico sintetizado y natural
+        else 2. Fallback Secundario: DeepSeek API
+            API->>MultiLLM: DeepSeek API (deepseek-chat)
+            MultiLLM-->>API: Diagnóstico sintetizado
+        else 3. Fallback Terciario: Google Gemini
+            API->>MultiLLM: Gemini API (gemini-2.0-flash / 1.5-flash)
+            MultiLLM-->>API: Diagnóstico sintetizado
+        else 4. Fallback de Emergencia: OpenAI
+            API->>MultiLLM: OpenAI API (gpt-4o-mini)
+            MultiLLM-->>API: Diagnóstico sintetizado
+        end
+    end
+
+    rect rgb(245, 245, 255)
+        note over API,History: Fase 4: Auditoría y Persistencia de Sesión
+        API->>History: INSERT INTO napi_chat_history (usuario, rol, mensaje, metadata)
+    end
+
+    API-->>UI: HTTP 200 OK (diagnóstico, porcentaje riesgo, tarjetas de proyectos con URLs)
+    UI->>UI: Renderizado reactivo en chat + Enlaces directos a PDFs en Supabase Storage
+    opt Síntesis de Voz Habilitada
+        UI-->>Estudiante: Locución de respuesta mediante Web Speech TTS
+    end
+```
+
+#### Detalle Técnico del Flujo de Bajada:
+1. **Captura Resiliente en el Cliente:** La petición se emite con un `AbortController` fijado en 20 segundos para neutralizar arranques en frío de servidores cloud sin colgar la interfaz del estudiante.
+2. **Generación de Embeddings de Búsqueda:** La consulta se envía a `gemini-embedding-2` con la directiva `task_type="RETRIEVAL_QUERY"`, alineando el espacio vectorial con los documentos previamente indexados.
+3. **Búsqueda Vectorial por Coseno:** La función RPC `buscar_proyectos_similares` consulta el índice HNSW sobre `proyectos_titulo`. La métrica de similitud se calcula matemáticamente como:
+   $$\text{Similitud} = 1 - (\vec{u} \cdot \vec{v}) / (\|\vec{u}\| \|\vec{v}\|)$$
+4. **Clasificación de Riesgo de Duplicidad:**
+   - 🟢 **Sin Riesgo (< 45%):** Propuesta original dentro de la sede.
+   - 🟡 **Moderado (45% – 64%):** Coincidencias temáticas; NAPI sugiere vías de innovación técnica específicas.
+   - 🟠 **Alto (65% – 79%):** Similitud marcada; se exigen metodologías o herramientas diferenciadoras.
+   - 🔴 **Crítico ($\ge 80\%$):** Alta probabilidad de duplicidad temática involuntaria con tesis aprobadas.
+5. **Cascada de Inferencia Multi-Proveedor:** Se emplea un `ThreadPoolExecutor` con **timeout estricto de 15 segundos** despachando en cascada:
+   - **Nivel 1 (Primario):** **Groq Cloud LPU** (`llama-3.3-70b-versatile` / `openai/gpt-oss-120b`), entregando respuestas en menos de 1 segundo sin coste.
+   - **Nivel 2 (Secundario):** **DeepSeek Cloud API** (`deepseek-chat`), para razonamiento profundo si Groq no responde.
+   - **Nivel 3 (Terciario):** **Google Gemini Flash** (`gemini-2.0-flash` / `gemini-1.5-flash`).
+   - **Nivel 4 (Contingencia):** **OpenAI** (`gpt-4o-mini`).
+6. **Descarga de Documentación:** Las tarjetas generadas en el chat incluyen hipervínculos directos a los archivos originales alojados en Supabase Storage, permitiendo al estudiante revisar las memorias de título antecedentes con un solo clic.
 
 ---
 
@@ -126,90 +235,153 @@ Desarrollar e implementar una plataforma web institucional que integre un reposi
 
 ---
 
-## 🏛️ 1. Diagrama de Arquitectura Global (C4 Containers & Enterprise Layering)
+## 🏛️ 1. Diagrama de Arquitectura Global (C4 Nivel 2: Contenedores / Enterprise Layering)
 
-El sistema implementa una **Arquitectura en Capas Enterprise** desacoplada y orientada a servicios, modelada bajo el estándar **C4 (Nivel 2: Contenedores)** y las prácticas de **Enterprise Architect**:
+El sistema implementa una **Arquitectura en 5 Tiers + Bloque Transversal de Servicios Cognitivos**, resolviendo formalmente la separación perimetral entre la **Capa de Seguridad / Gateway** y la **Capa de Negocio y Aplicación**, además de estandarizar los contratos de flujo de datos (Request / Response):
 
 ```mermaid
 graph TB
-    subgraph PresentationTier ["💻 Capa de Presentación (Presentation Tier - SPA)"]
-        UI["Portal Web SPA (HTML5 Semántico + CSS3 Variables)"]
-        Audio["Subsistema de Voz (Web Speech API: Micrófono & TTS)"]
-        Nav["PillNav Flotante (GSAP Micro-animaciones)"]
-        Access["Motor de Accesibilidad CVD (Daltonismo & Alto Contraste)"]
+    %% Paleta Dark Mode Enterprise Architect
+    classDef actorStyle fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef t1Style fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#f8fafc;
+    classDef t2Style fill:#2e1065,stroke:#a855f7,stroke-width:2px,color:#ffffff;
+    classDef t3Style fill:#0369a1,stroke:#0284c7,stroke-width:2px,color:#ffffff;
+    classDef t4Style fill:#3730a3,stroke:#6366f1,stroke-width:2px,color:#ffffff;
+    classDef t5Style fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
+    classDef extStyle fill:#701a75,stroke:#ec4899,stroke-width:2px,color:#ffffff;
+
+    %% ACTORES DEL SISTEMA
+    subgraph Actors ["👥 Actores del Negocio (Comunidad Académica INACAP Maipú)"]
+        Estudiante["👨‍🎓 Estudiante / Tesista\n(Consulta viabilidad, originalidad y RAG)"]:::actorStyle
+        Docente["👨‍🏫 Docente / Comisión Evaluadora\n(Valida e indexa proyectos con nota >= 6.0)"]:::actorStyle
+        Biblioteca["👩‍💼 Jefa de Biblioteca / Admin\n(Supervisión del acervo institucional y auditoría)"]:::actorStyle
     end
 
-    subgraph ApplicationTier ["⚡ Capa de Aplicación (Application & Gateway Tier)"]
-        Gateway["FastAPI Gateway (server.py en Python 3.12 / Uvicorn)"]
-        RBAC["Control de Acceso RBAC (Estudiante, Docente, Admin)"]
-        DocManager["Gestor de Memorias & Validación (Nota >= 6.0)"]
-        ChatManager["Gestor de Historial Aislado por Usuario"]
+    %% TIER 1: CAPA DE PRESENTACIÓN
+    subgraph Tier1 ["«layer» Tier 1: Capa de Presentación (Presentation Tier - SPA)"]
+        SPA_Portal["«container» Portal Web SPA\n(HTML5 Semántico + CSS3 Design System)"]:::t1Style
+        SPA_Nav["«component» PillNav Flotante\n(Navegación reactiva GSAP)"]:::t1Style
+        SPA_Voice["«component» Subsistema de Voz\n(Web Speech API: Micrófono & TTS)"]:::t1Style
+        SPA_Access["«component» Motor de Accesibilidad CVD\n(Filtros Daltonismo & Alto Contraste)"]:::t1Style
     end
 
-    subgraph RAGTier ["🧠 Capa de Inteligencia y Motor RAG (RAG Engine Tier)"]
-        RAGOrchestrator["Orquestador RAG (ArchivaIAEngine)"]
-        VectorService["Generador de Embeddings Semánticos (1536 dimensiones)"]
-        ThreadPool["ThreadPoolExecutor Concurrente (Control Timeout 15s)"]
+    %% TIER 2: CAPA DE SEGURIDAD PERIMETRAL Y ACCESO
+    subgraph Tier2 ["«layer» Tier 2: Capa de Seguridad Perimetral y Acceso (Security & Gateway Tier)"]
+        GW_ReverseProxy["«container» Reverse Proxy / SSL Termination\n(HTTPS / TLS 1.3)"]:::t2Style
+        GW_SecurityMiddleware["«component» Middleware de Seguridad\n(CORS Policy, Rate Limiting, Sanitizador Anti-Prompt Injection)"]:::t2Style
+        GW_TokenValidator["«component» Validador Criptográfico de Tokens JWT\n(Decodificación claims y roles RBAC vinculados a Supabase GoTrue)"]:::t2Style
+        GW_SecretVault["«component» Gestor de Secretos en Memoria\n(Bóveda protegida de API Keys para LLMs externos)"]:::t2Style
     end
 
-    subgraph AITier ["🤖 Capa de Servicios Cognitivos Externos (Multi-LLM)"]
-        DeepSeek["DeepSeek API (Motor de Razonamiento Principal)"]
-        Gemini["Google Gemini 2.0 / 1.5 Flash (Secundario)"]
-        OpenAI["OpenAI GPT-4o-mini (Fallback de Contingencia)"]
+    %% TIER 3: CAPA DE NEGOCIO Y APLICACIÓN
+    subgraph Tier3 ["«layer» Tier 3: Capa de Negocio y Aplicación (Application & Domain Tier - FastAPI)"]
+        APP_FastAPIController["«container» FastAPI Controller\n(Endpoints REST /api/analyze, /api/projects, Upload Multipart)"]:::t3Style
+        APP_BusinessValidator["«component» Validador de Reglas de Negocio Institucionales\n(Aprobación académica, validación Nota >= 6.0, formato de memoria)"]:::t3Style
+        APP_SessionManager["«component» Gestor de Sesiones e Historial Aislado por Rol\n(Estudiante, Docente, Jefa de Biblioteca)"]:::t3Style
     end
 
-    subgraph PersistenceTier ["🐘 Capa de Persistencia Cloud (Supabase BaaS)"]
-        PGVector[("PostgreSQL 15+ & pgvector (Índice HNSW Coseno)")]
-        PGRelational[("Almacén Relacional (napi_chat_history & napi_usuarios)")]
-        Storage[("Supabase Storage (Bucket proyectos-docs para PDF/Word)")]
-        AuthService["Supabase Auth (GoTrue RBAC & JWTs)"]
+    %% TIER 4: CAPA DE INTELIGENCIA Y MOTOR RAG
+    subgraph Tier4 ["«layer» Tier 4: Capa de Inteligencia y Motor RAG (RAG Engine Tier)"]
+        RAG_Orchestrator["«container» Orquestador RAG (ArchivaIAEngine)\n(Inyección de contexto, especialidad de carrera y turnos)"]:::t4Style
+        RAG_Embedder["«component» Generador de Embeddings Semánticos\n(Google gemini-embedding-2 / 1536 dimensiones)"]:::t4Style
+        RAG_ThreadPool["«component» ThreadPoolExecutor Concurrente (15s Timeout)\n(Patrón Cascada Fallback Multi-LLM)"]:::t4Style
     end
 
-    UI <--> Audio
-    UI <--> Nav
-    UI <--> Access
-    UI <-->|"HTTPS REST / JSON (Timeout Resiliente 20s)"| Gateway
+    %% TIER 5: CAPA DE PERSISTENCIA CLOUD
+    subgraph Tier5 ["«layer» Tier 5: Capa de Persistencia Cloud (Data Tier - Supabase BaaS)"]
+        DB_PGVector[("«database» PostgreSQL 15+ & pgvector\n(Tabla proyectos_titulo con Índice HNSW Coseno)")]:::t5Style
+        DB_Storage[("«storage» Supabase Object Storage\n(Bucket seguro proyectos-docs para PDF/DOCX)")]:::t5Style
+        DB_AuthService["«service» Supabase Auth (GoTrue)\n(Gestor de Identidad Criptográfica y JWTs)"]:::t5Style
+        DB_RelationalStore[("«database» Almacén Relacional\n(napi_chat_history, napi_usuarios)")]:::t5Style
+    end
 
-    Gateway <--> RBAC
-    Gateway <--> DocManager
-    Gateway <--> ChatManager
-    Gateway <--> RAGOrchestrator
+    %% BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS
+    subgraph ExternalTier ["«layer» Bloque Transversal: Servicios Cognitivos Externos (Multi-LLM Inference)"]
+        EXT_DeepSeek["«external» DeepSeek API (deepseek-chat)\n(Motor Principal de Razonamiento - Intento 1)"]:::extStyle
+        EXT_GeminiFlash["«external» Google Cloud Gemini Flash (2.0 / 1.5)\n(Motor Secundario de Alta Concurrencia - Intento 2)"]:::extStyle
+        EXT_OpenAI["«external» OpenAI Platform API (gpt-4o-mini)\n(Fallback Final de Contingencia - Intento 3)"]:::extStyle
+    end
 
-    RAGOrchestrator -->|"1. Vectorizar texto"| VectorService
-    VectorService -->|"gemini-embedding-2"| Gemini
-    RAGOrchestrator -->|"2. RPC buscar_proyectos_similares"| PGVector
-    RAGOrchestrator -->|"3. Inferencia asistida"| ThreadPool
+    %% RELACIONES DE USUARIO CON PRESENTACIÓN
+    Estudiante -->|"Interactúa vía web / voz"| SPA_Portal
+    Docente -->|"Carga memoria y evalúa nota"| SPA_Portal
+    Biblioteca -->|"Supervisa repositorio y audita"| SPA_Portal
 
-    ThreadPool -->|"Intento 1"| DeepSeek
-    DeepSeek -.->|"Fallback"| Gemini
-    Gemini -.->|"Fallback"| OpenAI
+    SPA_Portal <--> SPA_Nav
+    SPA_Portal <--> SPA_Voice
+    SPA_Portal <--> SPA_Access
 
-    DocManager -->|"Subida multipart"| Storage
-    DocManager -->|"Indexación"| PGVector
-    ChatManager <--> PGRelational
-    RBAC <--> AuthService
+    %% FLUJO 1: PRESENTACIÓN -> SEGURIDAD / GATEWAY
+    SPA_Portal -->|"Req: HTTPS POST/GET (Payload JSON / Multipart, Auth Header Bearer Token)"| GW_ReverseProxy
+    GW_ReverseProxy -->|"Res: JSON (Status HTTP, JWT firmado, respuesta texto/citas) [20s AbortController]"| SPA_Portal
+
+    %% PIPELINE INTERNO DE SEGURIDAD
+    GW_ReverseProxy --> GW_SecurityMiddleware
+    GW_SecurityMiddleware --> GW_TokenValidator
+    GW_TokenValidator <-->|"Verifica firma criptográfica y claims"| DB_AuthService
+    GW_SecurityMiddleware -.-> GW_SecretVault
+
+    %% FLUJO 2: SEGURIDAD -> DOMINIO / FASTAPI
+    GW_TokenValidator -->|"In-process / Localhost pass (Contexto saneado, UserContext verificado con roles)"| APP_FastAPIController
+
+    %% COMPONENTES INTERNOS DE NEGOCIO
+    APP_FastAPIController <--> APP_BusinessValidator
+    APP_FastAPIController <--> APP_SessionManager
+
+    %% FLUJO 3: DOMINIO -> PERSISTENCIA (STORAGE Y RELACIONAL)
+    APP_FastAPIController -->|"Req: Subida multipart de memorias, inserción de logs/usuarios"| DB_Storage
+    DB_Storage -->|"Res: Storage URL firmada, IDs de registro"| APP_FastAPIController
+
+    APP_FastAPIController <-->|"Persistencia de turnos aislados por rol"| DB_RelationalStore
+    APP_BusinessValidator -->|"Validación de nota >= 6.0 e inserción aprobada"| DB_PGVector
+
+    %% FLUJO 4: DOMINIO -> CAPA RAG
+    APP_FastAPIController -->|"Req: Prompt de usuario saneado, query semántica, documento para indexar"| RAG_Orchestrator
+    RAG_Orchestrator -->|"Res: Contexto recuperado y respuesta sintetizada del LLM"| APP_FastAPIController
+
+    %% SUB-FLUJOS RAG Y EMBEDDINGS
+    RAG_Orchestrator -->|"1. Genera embedding (1536d)"| RAG_Embedder
+    RAG_Embedder -->|"Invocación gemini-embedding-2"| EXT_GeminiFlash
+
+    %% FLUJO 5: CAPA RAG -> POSTGRESQL & PGVECTOR
+    RAG_Orchestrator -->|"Req: Vector 1536 dimensiones vía RPC buscar_proyectos_similares"| DB_PGVector
+    DB_PGVector -->|"Res: Top-K fragmentos/chunks con cosine similarity score"| RAG_Orchestrator
+
+    %% FLUJO 6: CAPA RAG -> SERVICIOS EXTERNOS MULTI-LLM
+    RAG_Orchestrator -->|"2. Despacho concurrente (Metaprompt aumentado)"| RAG_ThreadPool
+    RAG_ThreadPool -->|"Intento 1: Inferencia primaria (15s timeout)"| EXT_DeepSeek
+    EXT_DeepSeek -.->|"Fallback condicional por falla/timeout"| EXT_GeminiFlash
+    EXT_GeminiFlash -.->|"Fallback condicional por cuota/timeout"| EXT_OpenAI
 ```
 
-**Aspectos Clave de la Arquitectura Global:**
-- **Separación de Responsabilidades:** El cliente SPA nunca interactúa directamente con los modelos de lenguaje ni posee credenciales privilegiadas; toda transacción pasa por el API Gateway en FastAPI.
-- **Resiliencia ante Cold Starts:** El cliente maneja un margen de 20 segundos mediante `AbortController`, absorbiendo reinicios de servidores cloud sin interrumpir al usuario.
-- **Cascada de Tolerancia a Fallos:** Despacho secuencial concurrente con timeout de 15 segundos entre DeepSeek, Google Gemini y OpenAI.
+**Aspectos Clave de la Arquitectura Refactorizada:**
+- **Separación Gateway / Lógica de Negocio:** El Tier 2 (`Security & Gateway Tier`) asume de manera exclusiva la terminación TLS, el control CORS, rate limiting, la sanitización anti-inyección y la validación de JWTs; el Tier 3 (`Application & Domain Tier`) se enfoca puramente en las reglas de negocio institucionales de INACAP.
+- **Definición Formal de Conectores:** Todas las interfaces provistas y requeridas están tipadas con los esquemas de transferencia Request/Response, protocolos (`HTTPS/TLS 1.3`, `In-process ASGI`, `S3 REST`, `pgvector RPC`) y políticas de resiliencia (`AbortController 20s`, `ThreadPool 15s`).
+- **Cascada de Inferencia con Fallback Secuencial:** Enrutamiento resiliente que prioriza **DeepSeek** por consistencia pedagógica y profundidad técnica, conmutando ordenadamente a **Google Gemini Flash** y **OpenAI** ante saturaciones o expiración de timeouts.
+- **Aislamiento de Identidad y Roles:** Soporte granular multi-inquilino para estudiantes, docentes y jefa de biblioteca mediante decodificación de claims en GoTrue y políticas RLS directas en PostgreSQL.
 
 ---
-
 ## 🧩 2. Diagrama de Componentes (UML 2.5 Component Specification)
 
-Modela los subsistemas de software modulares, sus interfaces provistas (endpoints REST) y sus interfaces requeridas:
+Modela los subsistemas modulares de software, la capa perimetral de seguridad, sus interfaces provistas (endpoints REST) y sus interfaces requeridas:
 
 ```mermaid
 graph LR
-    subgraph FrontendComponents ["«subsystem» Componentes Frontend"]
+    subgraph FrontendComponents ["«subsystem» Capa de Presentación (Frontend SPA)"]
         C_Catalog["«component»\nCatálogo de Proyectos\n(js/app.js)"]
         C_Chat["«component»\nAsistente NAPI Chat\n(js/app.js)"]
         C_Voice["«component»\nControlador de Voz\n(Web Speech API)"]
         C_Docente["«component»\nPanel Docente\n(js/app.js)"]
         C_Admin["«component»\nPanel Administrador\n(js/app.js)"]
         C_Nav["«component»\nPillNav GSAP\n(js/PillNav.js)"]
+    end
+
+    subgraph SecurityComponents ["«subsystem» Capa de Seguridad y Control Perimetral"]
+        C_CORS["«component»\nMiddleware CORS\n(FastAPI)"]
+        C_AuthManager["«component»\nGestor de Autenticación\n(Supabase GoTrue JWT)"]
+        C_RBACGuard["«component»\nValidador de Roles RBAC\n(Estudiante/Docente/Admin)"]
+        C_PydanticValidator["«component»\nSanitizador DTOs Pydantic\n(Anti-Prompt Injection)"]
+        C_SecretVault["«component»\nBóveda de Secretos\n(.env en Servidor)"]
     end
 
     subgraph InterfacesProvistas ["Interfaces Provistas API (RESTful Gateway)"]
@@ -219,20 +391,21 @@ graph LR
         I_History("(o) IChatPersistence\n/api/chat/history")
     end
 
-    subgraph BackendComponents ["«subsystem» Componentes Backend"]
+    subgraph BackendComponents ["«subsystem» Capa de Aplicación y RAG"]
         C_Gateway["«component»\nFastAPI Gateway Router\n(engine/server.py)"]
-        C_Validator["«component»\nValidador de Memorias\n(Nota >= 6.0)"]
+        C_Validator["«component»\nValidador Académico\n(Nota >= 6.0)"]
         C_RAG["«component»\nOrquestador RAG\n(ArchivaIAEngine)"]
         C_Embedder["«component»\nServicio Vectorial 1536d\n(engine/motor_rag.py)"]
         C_Dispatcher["«component»\nDespachador Multi-LLM\n(ThreadPool 15s)"]
         C_Storage["«component»\nAdaptador Supabase Storage\n(engine/server.py)"]
     end
 
-    subgraph CloudServices ["«subsystem» Persistencia y Servicios Externos"]
-        S_PG[("PostgreSQL 15 + pgvector\n(proyectos_titulo)")]
-        S_Storage[("Supabase Storage\n(proyectos-docs)")]
-        S_Gemini["Google Cloud GenAI\n(gemini-embedding-2)"]
+    subgraph CloudServices ["«subsystem» Persistencia y Servicios Cognitivos Externos"]
+        S_PG[("PostgreSQL 15 + pgvector\n(proyectos_titulo + RLS)")]
+        S_Storage[("Supabase Storage S3\n(bucket proyectos-docs)")]
+        S_Groq["Groq Cloud LPU API\n(llama-3.3-70b-versatile)"]
         S_DeepSeek["DeepSeek Cloud API\n(deepseek-chat)"]
+        S_Gemini["Google Cloud GenAI\n(gemini-embedding-2 / Flash)"]
         S_OpenAI["OpenAI API Platform\n(gpt-4o-mini)"]
     end
 
@@ -244,10 +417,16 @@ graph LR
     C_Admin --> I_Auth
     C_Admin --> I_Projects
 
-    I_Analyze --> C_Gateway
-    I_Projects --> C_Gateway
-    I_Auth --> C_Gateway
-    I_History --> C_Gateway
+    I_Analyze --> C_CORS
+    I_Projects --> C_CORS
+    I_Auth --> C_CORS
+    I_History --> C_CORS
+
+    C_CORS --> C_PydanticValidator
+    C_PydanticValidator --> C_AuthManager
+    C_AuthManager --> C_RBACGuard
+    C_RBACGuard --> C_Gateway
+    C_Gateway -.-> C_SecretVault
 
     C_Gateway --> C_Validator
     C_Gateway --> C_RAG
@@ -261,16 +440,18 @@ graph LR
     C_RAG --> C_Dispatcher
     C_RAG -->|"RPC Similitud Coseno"| S_PG
 
-    C_Embedder --> S_Gemini
-    C_Dispatcher --> S_DeepSeek
-    C_Dispatcher -.-> S_Gemini
-    C_Dispatcher -.-> S_OpenAI
+    C_Embedder -->|"RETRIEVAL_QUERY / DOC"| S_Gemini
+    C_Dispatcher -->|"Primario"| S_Groq
+    S_Groq -.->|"Fallback"| S_DeepSeek
+    S_DeepSeek -.->|"Fallback"| S_Gemini
+    S_Gemini -.->|"Fallback"| S_OpenAI
 ```
 
-**Interfaces Principales:**
-- `IAnalyzeService`: Recibe la propuesta, área académica y adjunto; ejecuta el pipeline semántico RAG y retorna diagnóstico sintético.
-- `IProjectManagement`: Controla altas, bajas y modificaciones de memorias de título, validando obligatoriamente que `nota >= 6.0`.
-- `IChatPersistence`: Almacena y recupera los mensajes garantizando aislamiento por usuario y rol en Supabase.
+**Interfaces y Componentes Clave:**
+- `IAnalyzeService`: Recibe la propuesta de título, especialidad y adjunto preliminar; ejecuta sanitización, vectorización semántica, búsqueda cosenoidal y generación multimodelo.
+- `IProjectManagement`: Controla altas, bajas y modificaciones de memorias de título, validando obligatoriamente que `nota >= 6.0` y subiendo documentos a Supabase Storage.
+- `IChatPersistence`: Almacena y recupera el historial garantizando aislamiento por usuario y rol en Supabase.
+- `SecurityComponents`: Centralizan el control perimetral mediante CORS, autenticación JWT GoTrue, autorización RBAC y sanitización tipada con Pydantic contra ataques de inyección de código o prompts.
 
 ---
 
@@ -349,7 +530,7 @@ erDiagram
 
 ---
 
-## 🌐 4. Topología de Comunicación y Red (Deployment & Protocols)
+## 🌐 4. Topología de Comunicación, Red y DMZ (Deployment & Protocols)
 
 Describe los nodos computacionales, fronteras de seguridad (**DMZ**), canales de transporte, protocolos y puertos involucrados:
 
@@ -359,33 +540,43 @@ graph TB
         ClientBrowser["Navegador Web (Chrome / Edge / Firefox)\n- Single Page Application (SPA)\n- Web Speech Subsystem (Micrófono local & TTS)\n- AbortController (Timeout 20 segundos)"]
     end
 
+    subgraph SecurityDMZ ["🛡️ Perímetro DMZ & Pasarela de Seguridad"]
+        CORSControl["Control CORS & Cabeceras de Seguridad HTTP"]
+        PydanticSanitize["Filtro de Inyección & Sanitización Tipada"]
+        TokenValidator["Verificador Criptográfico de Tokens JWT"]
+    end
+
     subgraph AppServerNode ["☁️ Servidor de Aplicación (Host Local / Render Cloud PaaS)"]
         UvicornServer["Servidor ASGI Uvicorn (Puerto 8000)\n- Python 3.12 Runtime\n- FastAPI Gateway & Reverse Proxy\n- ThreadPoolExecutor Concurrente (4 Workers / Timeout 15s)"]
-        EnvSecret["Bóveda de Variables (.env)\n- GEMINI_API_KEY\n- SUPABASE_SERVICE_KEY\n- DEEPSEEK_API_KEY\n- OPENAI_API_KEY"]
+        EnvSecret["Bóveda de Secretos (.env Aislada)\n- GROQ_API_KEY / GROQ_MODELS\n- DEEPSEEK_API_KEY / DEEPSEEK_MODEL\n- GEMINI_API_KEY\n- SUPABASE_SERVICE_KEY / SUPABASE_ANON_KEY"]
     end
 
     subgraph SupabaseCluster ["🐘 Nodo Supabase BaaS (AWS Cloud Cluster)"]
-        PostgresEngine["PostgreSQL 15+ (Puerto 5432 / TLS Directo & Puerto 443)\n- Extensión pgvector con índice HNSW\n- Tablas: proyectos_titulo, napi_chat_history, napi_usuarios\n- Stored Procedure: buscar_proyectos_similares"]
+        PostgresEngine["PostgreSQL 15+ (Puerto 5432 / TLS Directo & Puerto 443)\n- Extensión pgvector con índice HNSW\n- Políticas Row Level Security (RLS)\n- Tablas: proyectos_titulo, napi_chat_history, napi_usuarios\n- Stored Procedure: buscar_proyectos_similares"]
         StorageEngine["Supabase Storage S3 API (Puerto 443 / HTTPS)\n- Bucket protegido: proyectos-docs (Memorias PDF/DOCX)"]
         AuthEngine["Supabase GoTrue Auth (Puerto 443 / HTTPS)\n- Criptografía de sesiones y JWTs institucionales"]
     end
 
     subgraph CognitiveCluster ["🤖 Nodos de Inteligencia Artificial (AI Cloud Endpoints)"]
+        GroqAPI["Groq Cloud LPU (Puerto 443 / TLS 1.3)\n- llama-3.3-70b-versatile (Inferencia Sub-Segundo)"]
+        DeepSeekAPI["DeepSeek Cloud API (Puerto 443 / TLS 1.3)\n- deepseek-chat (Motor LLM Secundario)"]
         GoogleAPI["Google Cloud AI Studio / Vertex (Puerto 443 / TLS 1.3)\n- gemini-embedding-2 (1536 dimensiones)\n- gemini-2.0-flash / gemini-1.5-flash"]
-        DeepSeekAPI["DeepSeek Cloud API (Puerto 443 / TLS 1.3)\n- deepseek-chat (Motor LLM Principal)"]
-        OpenAIAPI["OpenAI API Platform (Puerto 443 / TLS 1.3)\n- gpt-4o-mini (Fallback Terciario)"]
+        OpenAIAPI["OpenAI API Platform (Puerto 443 / TLS 1.3)\n- gpt-4o-mini (Fallback de Contingencia)"]
     end
 
-    ClientBrowser <-->|"HTTPS / TLS 1.3 (Puerto 8000 / 443)\nREST JSON & Multipart Stream (Timeout 20s)"| UvicornServer
+    ClientBrowser <-->|"HTTPS / TLS 1.3 (Puerto 8000 / 443)\nREST JSON & Multipart Stream (Timeout 20s)"| SecurityDMZ
+    SecurityDMZ <-->|"Tráfico Filtrado & Sanitizado"| UvicornServer
+    UvicornServer -.->|"Lectura de Credenciales"| EnvSecret
 
-    UvicornServer <-->|"TCP 5432 (SSL require) & HTTPS 443\nConsultas Relacionales & RPC HNSW Vectorial"| PostgresEngine
-    UvicornServer <-->|"HTTPS 443 (S3 REST Protocol)\nUpload Binario Multipart"| StorageEngine
-    UvicornServer <-->|"HTTPS 443\nValidación de Tokens de Sesión"| AuthEngine
+    UvicornServer <-->|"TCP 5432 (SSL require) & HTTPS 443\nConsultas Relacionales, RLS & RPC HNSW Vectorial"| PostgresEngine
+    UvicornServer <-->|"HTTPS 443 (S3 REST Protocol)\nUpload Binario Multipart & Stream de Descarga"| StorageEngine
+    UvicornServer <-->|"HTTPS 443\nValidación de Tokens de Sesión GoTrue"| AuthEngine
 
+    UvicornServer -->|"HTTPS 443 (OpenAI Compatible REST)\nInferencia Primaria Ultra-Rápida (Timeout 15s)"| GroqAPI
+    GroqAPI -.->|"Conmutación automática ante fallo/timeout"| DeepSeekAPI
+    DeepSeekAPI -.->|"Conmutación automática ante saldo/timeout"| GoogleAPI
+    GoogleAPI -.->|"Conmutación automática ante cuota/timeout"| OpenAIAPI
     UvicornServer -->|"HTTPS 443 (SDK google-genai)\nGeneración de Embeddings 1536d"| GoogleAPI
-    UvicornServer -->|"HTTPS 443 (OpenAI Compatible REST)\nInferencia LLM Primaria (Timeout 15s)"| DeepSeekAPI
-    DeepSeekAPI -.->|"Conmutación automática ante fallo/timeout"| GoogleAPI
-    GoogleAPI -.->|"Conmutación automática ante fallo/timeout"| OpenAIAPI
 ```
 
 **Matriz de Comunicaciones y Seguridad:**
@@ -395,7 +586,9 @@ graph TB
 | **FastAPI $\to$ PostgreSQL** | Direct TCP / SSL | `5432` | Protocolo Binario pgvector / RPC | `service_role` | < 100 ms |
 | **FastAPI $\to$ Supabase Storage** | HTTPS S3 REST | `443` | Stream Binario (PDF / DOCX) | `service_role` Secret | 10s |
 | **FastAPI $\to$ Google AI** | HTTPS / gRPC | `443` | Vectorización 1536d | `GEMINI_API_KEY` | 3s |
+| **FastAPI $\to$ Groq Cloud** | HTTPS REST | `443` | Chat Completions (Llama 3.3 70B) | `GROQ_API_KEY` | 15s (`ThreadPool`) |
 | **FastAPI $\to$ DeepSeek** | HTTPS REST | `443` | Chat Completions | `DEEPSEEK_API_KEY` | 15s (`ThreadPool`) |
+| **FastAPI $\to$ OpenAI** | HTTPS REST | `443` | Chat Completions (gpt-4o-mini) | `OPENAI_API_KEY` | 12s |
 
 ---
 
@@ -506,22 +699,32 @@ classDiagram
 
 ## 🛠️ Tecnologías Empleadas
 
-### **Frontend**
+### **Frontend (Capa de Presentación)**
 - **HTML5 & CSS3 Vanilla:** Estructura semántica, diseño responsivo, CSS Variables, glassmorphism y paleta corporativa moderna.
-- **JavaScript Moderno (ES6+):** Programación reactiva modular (`app.js`, `PillNav.js`), manipulación de DOM sin sobrecarga de frameworks, gestión de llamadas asíncronas con `AbortController`.
+- **JavaScript Moderno (ES6+):** Programación reactiva modular (`app.js`, `PillNav.js`), manipulación directa del DOM sin sobrecarga de dependencias, gestión de llamadas asíncronas con `AbortController` (timeout 20s).
 - **Web Speech API:** Reconocimiento de voz por micrófono y síntesis de voz (Text-to-Speech) integrado en el asistente.
 - **GSAP (GreenSock):** Micro-animaciones para el componente de navegación flotante (`PillNav`).
 
-### **Backend**
-- **Python 3.12 & FastAPI:** Framework asíncrono de alto rendimiento para exponer la API REST de búsqueda, autenticación y chat.
-- **Uvicorn:** Servidor ASGI para ejecución en producción y desarrollo.
-- **ThreadPoolExecutor:** Gestión concurrente de llamadas a modelos LLM con control de timeouts para evitar bloqueos del hilo principal.
-- **Pydantic:** Validación estricta de esquemas de datos y peticiones HTTP.
+### **Capa de Seguridad, Identidad & Perímetro**
+- **Supabase Auth (GoTrue):** Emisión y validación criptográfica de JSON Web Tokens (JWT) con firma asimétrica para sesiones de usuario.
+- **Control de Acceso RBAC (Role-Based Access Control):** Separación estricta de privilegios entre Estudiantes, Docentes y Administradores.
+- **PostgreSQL Row Level Security (RLS):** Aislamiento de consultas y modificaciones en base de datos a nivel de registro.
+- **FastAPI CORS Middleware:** Reglas de origen cruzado para despliegues locales y cloud.
+- **Pydantic V2:** Validación estricta y sanitización de esquemas tipados en tiempo de ejecución (defensa contra Prompt Injection y XSS).
+- **Aislamiento de Entorno (.env Vault):** Almacenamiento perimetral en servidor de todas las llaves maestras sin exposición al cliente.
 
-### **Inteligencia Artificial & Base de Datos**
-- **Google GenAI SDK (`google-genai`):** Embeddings de 1536 dimensiones (`gemini-embedding-2`) e inferencia con `gemini-2.0-flash` y `gemini-1.5-flash`.
-- **OpenAI API (`openai`):** Motor de respaldo (fallback) con `gpt-4o-mini`.
-- **Supabase (PostgreSQL 15+):** Base de datos relacional en la nube con soporte nativo de la extensión `pgvector` y Row Level Security (RLS).
+### **Backend & Motor RAG (Capa de Aplicación)**
+- **Python 3.12 & FastAPI:** Framework asíncrono ASGI de alto rendimiento para exponer la API RESTful.
+- **Uvicorn:** Servidor ASGI para ejecución productiva y desarrollo continuo.
+- **ThreadPoolExecutor Concurrente:** Despacho multi-hilo con control estricto de timeouts (15s) para orquestar llamadas concurrentes a modelos LLM.
+- **ArchivaIAEngine:** Orquestador RAG personalizado para cálculo de tensores, indexación y similitud semántica.
+
+### **Inteligencia Artificial & Persistencia Cloud**
+- **Groq Cloud LPU API:** Motor LLM primario de ultra-alta velocidad (`llama-3.3-70b-versatile`, `openai/gpt-oss-120b`).
+- **DeepSeek Cloud API:** Motor LLM secundario para razonamiento profundo (`deepseek-chat`).
+- **Google GenAI SDK (`google-genai`):** Embeddings semánticos normalizados de 1536 dimensiones (`gemini-embedding-2`) e inferencia con `gemini-2.0-flash` y `gemini-1.5-flash`.
+- **OpenAI Platform API:** Motor de respaldo terciario (`gpt-4o-mini`).
+- **Supabase (PostgreSQL 15+ & pgvector):** Motor relacional y vectorial con índice HNSW (`vector_cosine_ops`), RPCs de búsqueda y Storage S3 (`proyectos-docs`).
 
 ---
 
@@ -548,8 +751,15 @@ pip install -r engine/requirements.txt
 ### 3. Configurar Variables de Entorno (`.env`)
 Crear un archivo `.env` dentro de la carpeta `engine/` o en la raíz del proyecto:
 ```env
+# Proveedores de Inteligencia Artificial (Inferencia & Embeddings)
+GROQ_API_KEY=tu_api_key_de_groq_cloud
+GROQ_MODEL=llama-3.3-70b-versatile,openai/gpt-oss-120b
+DEEPSEEK_API_KEY=tu_api_key_de_deepseek_opcional
+DEEPSEEK_MODEL=deepseek-chat
 GEMINI_API_KEY=tu_api_key_de_google_ai_studio
 OPENAI_API_KEY=tu_api_key_de_openai_opcional
+
+# Persistencia y Autenticación en Supabase
 SUPABASE_URL=https://tu-proyecto.supabase.co
 SUPABASE_SERVICE_KEY=tu_service_role_key_supabase
 SUPABASE_ANON_KEY=tu_anon_key_supabase
@@ -603,12 +813,22 @@ N.A.P.I/
 
 ---
 
-## 🔒 Consideraciones de Seguridad y Ética de la Información
+## 🔒 Capa de Seguridad Integral y Ética de la Información
 
-1. **Aislamiento de Credenciales:** Las llaves de API (`GEMINI_API_KEY`, `SUPABASE_SERVICE_KEY`) se administran estrictamente mediante variables de entorno en el servidor, sin exposición directa en el código del cliente.
-2. **Políticas RLS en Base de Datos:** PostgreSQL aplica *Row Level Security*, restringiendo la inserción y modificación de proyectos únicamente a peticiones autenticadas vía `service_role`.
-3. **Privacidad del Estudiante:** El historial conversacional (`napi_chat_history`) se encuentra aislado por identificador de usuario y rol, impidiendo el cruce no autorizado de consultas preliminares de titulación.
-4. **Resiliencia Operativa:** Control estricto de timeouts (20s en cliente, 15s en backend) para amortiguar periodos de alta demanda o arranques en frío en infraestructuras de nube.
+La seguridad y la confidencialidad constituyen un requerimiento no funcional de primer orden en N.A.P.I. Se implementan siete pilares formales de protección:
+
+1. **Aislamiento Perimetral y Bóveda de Credenciales:** Todas las llaves maestras de API (`GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_KEY`) residen exclusivamente en variables de entorno del servidor. El frontend opera como cliente sin privilegios, consumiendo la API sin visibilidad de secretos de infraestructura.
+2. **Autenticación Criptográfica (Supabase Auth / JWT):** La identidad de estudiantes, docentes y administradores es verificada mediante JSON Web Tokens firmados criptográficamente. Las sesiones expiran y se renuevan de acuerdo con los estándares OAuth 2.0 y GoTrue.
+3. **Control de Acceso Basado en Roles (RBAC):** Se implementa separación de privilegios a nivel de endpoint:
+   - **Estudiante:** Acceso a lectura del catálogo público, formulación de consultas en NAPI Chat y gestión de su propio historial.
+   - **Docente:** Carga de memorias de título, validación de notas ($\ge 6.0$), indexación de documentos y acceso a estadísticas académicas.
+   - **Administrador:** Gobernanza integral de usuarios, asignación de roles, auditoría transversal y supervisión del repositorio.
+4. **Seguridad a Nivel de Fila (PostgreSQL Row Level Security - RLS):** A nivel de motor de base de datos, las tablas críticas (`proyectos_titulo`, `napi_chat_history`, `napi_usuarios`) aplican políticas RLS, impidiendo que consultas no autorizadas o fallos de aplicación expongan registros ajenos.
+5. **Sanitización y Validación Tipada en Tiempo de Ejecución (Pydantic V2):** Toda petición entrante es deserializada y validada por esquemas Pydantic estrictos, neutralizando ataques de inyección SQL, desbordamientos de buffer e inyección de prompts maliciosos (*Jailbreak / Prompt Injection*).
+6. **Integridad Académica Institucional:** Cumplimiento estricto del reglamento de titulación de INACAP: el sistema bloquea automáticamente la indexación de cualquier memoria con calificación inferior a **6.0** ($\text{nota} < 6.0$).
+7. **Resiliencia Operativa y Mitigación de Denegación de Servicio:** Mecanismos de protección en ambos extremos:
+   - **Cliente:** `AbortController` con 20 segundos de tolerancia ante reinicios en frío (*cold starts*) de nubes PaaS.
+   - **Backend:** `ThreadPoolExecutor` con timeouts no bloqueantes de 15 segundos y fallback automático en cascada (Groq $\to$ DeepSeek $\to$ Gemini $\to$ OpenAI).
 
 ---
 

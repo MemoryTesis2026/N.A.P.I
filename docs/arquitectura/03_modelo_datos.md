@@ -1,7 +1,7 @@
 # 03 — Modelo de Datos (Relational & Vectorial ERD Specification)
 ### *N.A.P.I — Núcleo Académico de Proyectos e Innovación · INACAP Sede Maipú*
 
-El **Modelo de Datos** de N.A.P.I combina un diseño **relacional normalizado** con capacidades de **base de datos vectorial de alta dimensión** provistas por la extensión `pgvector` sobre PostgreSQL 15 en **Supabase**.
+El **Modelo de Datos** de N.A.P.I combina un diseño **relacional normalizado** con capacidades de **base de datos vectorial de alta dimensión** provistas por la extensión `pgvector` sobre PostgreSQL 15 en **Supabase**, garantizando integridad referencial, seguridad a nivel de fila (RLS) y recuperación semántica en milisegundos.
 
 ---
 
@@ -18,8 +18,8 @@ erDiagram
         int anio "Año de defensa (CHECK >= 2000 AND <= 2100)"
         text autores "Nombres y apellidos de los tesistas"
         vector_1536 embedding "Tensor semántico (gemini-embedding-2)"
-        text archivo_url "Enlace público a Supabase Storage (PDF/Word)"
-        text estado "Estado de visibilidad: 'Público' | 'En Revisión'"
+        text archivo_url "Enlace público/firmado a Supabase Storage (PDF/DOCX)"
+        text estado "Estado: 'Público' | 'En Revisión' | 'Archivado'"
         text area "Área académica oficial (13 áreas INACAP)"
         text stack "Tecnologías y herramientas utilizadas"
         numeric nota "Calificación final (CHECK >= 6.0 AND <= 7.0)"
@@ -90,7 +90,7 @@ Representa el acervo oficial de memorias de título aprobadas por la comisión e
 | `anio` | `INTEGER` | NO | `CHECK (anio >= 2000 AND anio <= 2100)` | Año lectivo en que el proyecto fue sustentado y aprobado. |
 | `autores` | `TEXT` | NO | - | Tesistas y desarrolladores autores del proyecto. |
 | `embedding` | `VECTOR(1536)` | SÍ | - | Vector denso de características semánticas generado por `gemini-embedding-2`. |
-| `archivo_url` | `TEXT` | SÍ | - | URL pública o firmada del archivo PDF/Word en Supabase Storage. |
+| `archivo_url` | `TEXT` | SÍ | - | URL pública protegida del archivo PDF/Word en Supabase Storage. |
 | `estado` | `TEXT` | SÍ | `DEFAULT 'Público'` | Estado del documento (`Público`, `En Revisión`, `Archivado`). |
 | `area` | `TEXT` | SÍ | `DEFAULT 'Informática, Ciberseguridad...'` | Una de las 13 áreas académicas oficiales de INACAP. |
 | `stack` | `TEXT` | SÍ | - | Tecnologías clave empleadas (ej. Python, ESP32, Docker, Next.js). |
@@ -159,6 +159,10 @@ CREATE INDEX idx_napi_chat_user
 -- Optimiza la búsqueda de proyectos por año lectivo
 CREATE INDEX idx_proyectos_anio 
   ON public.proyectos_titulo (anio DESC);
+
+-- Optimiza filtros combinados por carrera y estado público
+CREATE INDEX idx_proyectos_carrera_estado 
+  ON public.proyectos_titulo (carrera, estado);
 ```
 
 ---
@@ -173,13 +177,16 @@ CREATE OR REPLACE FUNCTION public.buscar_proyectos_similares(
   filtro_carrera   TEXT    DEFAULT NULL
 )
 RETURNS TABLE (
-  id          UUID,
-  titulo      TEXT,
-  resumen     TEXT,
-  carrera     TEXT,
-  anio        INT,
-  autores     TEXT,
-  similitud   FLOAT
+  id           UUID,
+  titulo       TEXT,
+  resumen      TEXT,
+  carrera      TEXT,
+  anio         INT,
+  autores      TEXT,
+  archivo_url  TEXT,
+  nota         NUMERIC,
+  area         TEXT,
+  similitud    FLOAT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -194,6 +201,9 @@ BEGIN
     p.carrera,
     p.anio,
     p.autores,
+    p.archivo_url,
+    p.nota,
+    p.area,
     (1 - (p.embedding <=> query_embedding))::FLOAT AS similitud
   FROM public.proyectos_titulo p
   WHERE
@@ -210,9 +220,29 @@ $$;
 
 ## 🔒 Políticas de Seguridad a Nivel de Fila (Row Level Security - RLS)
 
-1. **Tabla `proyectos_titulo`:**
-   - **SELECT:** Acceso público de lectura a todos los usuarios para alimentar el catálogo institucional y el motor RAG.
-   - **INSERT / UPDATE / DELETE:** Exclusivo para el rol `service_role` ejecutado desde el backend autenticado de FastAPI, garantizando que ninguna inserción burle la validación de nota $\ge 6.0$.
+```sql
+-- Activar RLS en todas las tablas críticas
+ALTER TABLE public.proyectos_titulo ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.napi_chat_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.napi_usuarios ENABLE ROW LEVEL SECURITY;
 
-2. **Tabla `napi_chat_history`:**
-   - Acceso granular por correo institucional y rol de sesión para proteger la privacidad de las ideas de titulación de los alumnos.
+-- 1. Política de Lectura Pública en proyectos_titulo (Catálogo institucional)
+CREATE POLICY "Lectura pública de proyectos aprobados"
+  ON public.proyectos_titulo
+  FOR SELECT
+  USING (estado = 'Público' OR auth.role() = 'service_role');
+
+-- 2. Política de Modificación exclusiva para service_role (Backend FastAPI autenticado)
+CREATE POLICY "Escritura exclusiva para backend autorizado"
+  ON public.proyectos_titulo
+  FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+-- 3. Política de Aislamiento de Historial de Chat
+CREATE POLICY "Aislamiento de historial por usuario autenticado"
+  ON public.napi_chat_history
+  FOR ALL
+  USING (user_email = auth.jwt() ->> 'email' OR auth.role() = 'service_role')
+  WITH CHECK (user_email = auth.jwt() ->> 'email' OR auth.role() = 'service_role');
+```

@@ -1,7 +1,7 @@
 # 05 — Diagrama de Estructura y Clases (Composite Structure & Package Architecture)
 ### *N.A.P.I — Núcleo Académico de Proyectos e Innovación · INACAP Sede Maipú*
 
-El **Diagrama de Estructura** modela la organización estática interna del software, incluyendo la arquitectura de paquetes, el diagrama de clases UML con sus atributos, métodos y visibilidad, así como los **Objetos de Transferencia de Datos (DTOs)** implementados con **Pydantic**.
+El **Diagrama de Estructura** modela la organización estática interna del software, incluyendo la arquitectura de paquetes, el diagrama de clases UML con sus atributos, métodos y visibilidad, así como los **Objetos de Transferencia de Datos (DTOs)** implementados con **Pydantic V2**.
 
 ---
 
@@ -24,18 +24,18 @@ graph TB
         end
 
         subgraph Pkg_Engine ["📁 engine (Núcleo del Servidor)"]
-            File_Server["server.py (FastAPI Gateway & Endpoints)"]:::classStyle
+            File_Server["server.py (FastAPI Gateway, Seguridad & Inferencia Multi-LLM)"]:::classStyle
             File_MotorRAG["motor_rag.py (ArchivaIAEngine & Embeddings)"]:::classStyle
             File_Seed["seed_all_projects.py (Indexador en lote)"]:::classStyle
             File_Schema["archivaia_schema_gemini.sql (Esquema DDL & RPC)"]:::classStyle
         end
 
         subgraph Pkg_Docs ["📁 docs / arquitectura"]
-            File_ArchDocs["Documentación Enterprise EA / C4"]:::classStyle
+            File_ArchDocs["Suite Arquitectónica Enterprise EA / C4 (01 - 05)"]:::classStyle
         end
 
         File_RunServer["run_server.py (Lanzador ASGI Uvicorn)"]:::classStyle
-        File_Env[".env (Configuración segura de credenciales)"]:::classStyle
+        File_Env[".env (Bóveda de credenciales de infraestructura)"]:::classStyle
     end
 
     File_RunServer -->|"Ejecuta"| File_Server
@@ -43,6 +43,7 @@ graph TB
     File_Server -->|"Sirve contenido estático"| Pkg_Frontend
     File_MotorRAG -->|"Aplica esquema vectorial"| File_Schema
     File_Seed -->|"Puebla catálogo inicial"| File_Schema
+    File_Server -.->|"Carga secretos"| File_Env
 ```
 
 ---
@@ -53,17 +54,22 @@ graph TB
 classDiagram
     %% CLASE PRINCIPAL DEL MOTOR RAG
     class ArchivaIAEngine {
-        +OpenAI openai
+        +OpenAI groq_client
+        +OpenAI deepseek_client
+        +Client gemini_client
+        +OpenAI openai_client
         +Client db_admin
-        +Client db
+        +Client db_anon
+        +ThreadPoolExecutor executor
         +generar_embedding(texto: str) list
         +generar_embedding_consulta(texto: str) list
         +buscar_proyectos_similares(query_embedding: list, umbral: float, limite: int, carrera: str) list
         +buscar_por_texto(query: str, limite: int) list
         +analizar_propuesta(query: str, carrera: str, history: list) dict
+        +despachar_inferencia_cascada(messages: list) str
     }
 
-    %% DTOs PYDANTIC DE LA API
+    %% DTOs PYDANTIC DE LA API (VALIDACIÓN PERIMETRAL)
     class AnalyzeRequest {
         +str query
         +float umbral
@@ -112,27 +118,9 @@ classDiagram
         +str carrera
     }
 
-    class UserCreateAdminRequest {
-        +str nombre
-        +str email
-        +str rol
-        +str area
-        +str carrera
-        +str password
-    }
-
-    class UserUpdateRequest {
-        +str nombre
-        +str email
-        +str rol
-        +str area
-        +str carrera
-        +str password
-    }
-
     %% CONTROLADORES JAVASCRIPT FRONTEND
     class NapiClientController {
-        -Array~Project~ activeProjects
+        -Array activeProjects
         -Object currentAuthSession
         -AbortController currentAbort
         +init() void
@@ -167,22 +155,23 @@ classDiagram
 
 ## 🔍 Detalle de Componentes y Clases Backend
 
-### 1. Clase `ArchivaIAEngine` (`engine/motor_rag.py`)
-Encapsula la lógica de inteligencia artificial y recuperación semántica de la plataforma.
-- `generar_embedding(texto: str) -> list`: Limpia y envía el texto de una memoria a Google AI Studio (`gemini-embedding-2`) con la tarea `RETRIEVAL_DOCUMENT`, retornando el vector denso truncado a 1536 dimensiones.
+### 1. Clase `ArchivaIAEngine` (`engine/motor_rag.py` & `engine/server.py`)
+Encapsula la lógica de inteligencia artificial y recuperación semántica de la plataforma:
+- `generar_embedding(texto: str) -> list`: Limpia y envía el texto de una memoria a Google AI Studio (`gemini-embedding-2`) con la tarea `RETRIEVAL_DOCUMENT`, retornando el vector denso truncado a **1536 dimensiones**.
 - `generar_embedding_consulta(texto: str) -> list`: Vectoriza la duda o anteproyecto del estudiante con la tarea `RETRIEVAL_QUERY`.
-- `buscar_proyectos_similares(...) -> list`: Ejecuta la función RPC de PostgreSQL `buscar_proyectos_similares` en Supabase y retorna las coincidencias ordenadas por distancia coseno.
-- `buscar_por_texto(...) -> list`: Mecanismo de resiliencia (fallback) que aplica coincidencia léxica mediante cláusulas `ILIKE` cuando los servicios vectoriales no están disponibles.
+- `buscar_proyectos_similares(...) -> list`: Ejecuta la función RPC de PostgreSQL `buscar_proyectos_similares` en Supabase y retorna las coincidencias ordenadas por distancia coseno con `archivo_url` para descarga.
+- `buscar_por_texto(...) -> list`: Mecanismo de resiliencia (fallback léxico) que aplica coincidencia mediante cláusulas `ILIKE` cuando los servicios vectoriales no están disponibles.
+- `despachar_inferencia_cascada(messages) -> str`: Despacha secuencialmente las consultas entre **Groq LPU**, **DeepSeek**, **Google Gemini** y **OpenAI** mediante un `ThreadPoolExecutor` con límite de 15 segundos por intento.
 
 ---
 
 ### 2. Contratos de Datos (Modelos Pydantic en `engine/server.py`)
-Garantizan la tipificación estricta en tiempo de ejecución, impidiendo vulnerabilidades de inyección y asegurando la integridad de las peticiones HTTP.
+Garantizan la tipificación estricta en tiempo de ejecución, impidiendo vulnerabilidades de inyección y asegurando la integridad de las peticiones HTTP:
 
 - **`AnalyzeRequest`**: Encapsula la consulta del estudiante, el umbral de similitud mínima, el límite de proyectos afines a contrastar, la carrera disciplinar para enfocar la innovación, el historial de turnos previos y el contenido de archivos adjuntos (PDF / DOCX / TXT).
 - **`ProjectCreateRequest`**: Valida que cada memoria cargada incluya título, resumen, carrera, autores, año lectivo y la nota de titulación. La lógica del servidor verifica obligatoriamente que `nota >= 6.0`.
-- **`ChatMessageRequest`**: Estructura el almacenamiento del diálogo en la tabla `napi_chat_history`, asociando al emisor con su correo institucional.
-- **`LoginRequest` / `RegisterRequest`**: Modelan la autenticación y registro de docentes y estudiantes en **Supabase Auth**.
+- **`ChatMessageRequest`**: Estructura el almacenamiento del diálogo en la tabla `napi_chat_history`, asociando al emisor con su correo institucional y rol.
+- **`LoginRequest` / `RegisterRequest`**: Modelan la autenticación y registro de docentes y estudiantes en **Supabase Auth (GoTrue)**.
 
 ---
 
@@ -191,7 +180,7 @@ Garantizan la tipificación estricta en tiempo de ejecución, impidiendo vulnera
 ### 1. `NapiClientController` (`js/app.js`)
 Actúa como el cerebro del lado del cliente bajo un patrón Modelo-Vista-Controlador (MVC) reactivo ligero:
 - **Gestor de Sesión:** Administra el estado de autenticación en `localStorage` o `sessionStorage`, habilitando dinámicamente las vistas según el perfil (Estudiante, Docente o Administrador).
-- **Controlador Conversacional NAPI:** Maneja el ciclo de vida del chat, la renderización de Markdown, la inserción de tarjetas interactivas de proyectos similares y el control de cancelación por timeout mediante `AbortController`.
+- **Controlador Conversacional NAPI:** Maneja el ciclo de vida del chat, la renderización de Markdown, la inserción de tarjetas interactivas de proyectos similares y el control de cancelación por timeout mediante `AbortController` (20 segundos).
 - **Subsistema de Voz Bidireccional:** Integra `webkitSpeechRecognition` para dictado por voz y `window.speechSynthesis` con voces en español para locución asistida.
 - **Gestor de Accesibilidad CVD:** Aplica filtros CSS en tiempo real en la raíz del documento para usuarios con Deuteranopia, Protanopia, Tritanopia y Acromatopsia.
 
