@@ -249,115 +249,118 @@ graph TB
     classDef t5Style fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
     classDef extStyle fill:#701a75,stroke:#ec4899,stroke-width:2px,color:#ffffff;
 
-    %% ACTORES DEL SISTEMA
-    subgraph Actors ["👥 Actores del Negocio (Comunidad Académica INACAP Maipú)"]
-        Estudiante["👨‍🎓 Estudiante / Tesista\n(Consulta viabilidad, originalidad y RAG)"]:::actorStyle
-        Docente["👨‍🏫 Docente / Comisión Evaluadora\n(Valida e indexa proyectos con nota >= 6.0)"]:::actorStyle
-        Biblioteca["👩‍💼 Jefa de Biblioteca / Admin\n(Supervisión del acervo institucional y auditoría)"]:::actorStyle
+    %% 1. ACTORES DEL NEGOCIO (NOMENCLATURA EXACTA DE EA)
+    subgraph Actors ["👥 Actores del Negocio (Enterprise Architect)"]
+        Actor_Estudiante["👨‍🎓 Estudiante (Tesista)\n(Consulta viabilidad, originalidad y RAG)"]:::actorStyle
+        Actor_Docente["👨‍🏫 Docente (Comisión Evaluadora)\n(Carga de proyectos y revisión de evaluaciones)"]:::actorStyle
+        Actor_Admin["👩‍💼 Administrador/CRAI (Jefa de Biblioteca / Admin)\n(Gestión administrativa institucional y auditoría)"]:::actorStyle
     end
 
-    %% TIER 1: CAPA DE PRESENTACIÓN
+    %% 2. TIER 1: CAPA DE PRESENTACIÓN (SPA)
     subgraph Tier1 ["«layer» Tier 1: Capa de Presentación (Presentation Tier - SPA)"]
-        SPA_Portal["«container» Portal Web SPA\n(HTML5 Semántico + CSS3 Design System)"]:::t1Style
-        SPA_Nav["«component» PillNav Flotante\n(Navegación reactiva GSAP)"]:::t1Style
-        SPA_Voice["«component» Subsistema de Voz\n(Web Speech API: Micrófono & TTS)"]:::t1Style
-        SPA_Access["«component» Motor de Accesibilidad CVD\n(Filtros Daltonismo & Alto Contraste)"]:::t1Style
+        SPA_Portal["«container» Portal Web SPA\n(HTML5 Semántico + Accesibilidad CVD + Web Speech Voz)"]:::t1Style
+        Menu_Estudiante["«component» Menu_Estudiante\n(Chat de consulta semántica, viabilidad)"]:::t1Style
+        Menu_Docente["«component» Menu_Docente\n(Carga de proyectos, revisión de evaluaciones)"]:::t1Style
+        Menu_Gestion["«component» Menu_gestion de proyectos\n(Búsqueda y visualización de catálogo)"]:::t1Style
+        Menu_Usuarios["«component» Menu_Creacion de usuarios\n(Gestión administrativa institucional)"]:::t1Style
     end
 
-    %% TIER 2: CAPA DE SEGURIDAD PERIMETRAL Y ACCESO
+    %% 3. TIER 2: CAPA DE SEGURIDAD PERIMETRAL Y ACCESO
     subgraph Tier2 ["«layer» Tier 2: Capa de Seguridad Perimetral y Acceso (Security & Gateway Tier)"]
         GW_ReverseProxy["«container» Reverse Proxy / SSL Termination\n(HTTPS / TLS 1.3)"]:::t2Style
-        GW_SecurityMiddleware["«component» Middleware de Seguridad\n(CORS Policy, Rate Limiting, Sanitizador Anti-Prompt Injection)"]:::t2Style
-        GW_TokenValidator["«component» Validador Criptográfico de Tokens JWT\n(Decodificación claims y roles RBAC vinculados a Supabase GoTrue)"]:::t2Style
-        GW_SecretVault["«component» Gestor de Secretos en Memoria\n(Bóveda protegida de API Keys para LLMs externos)"]:::t2Style
+        GW_SolicitudAcceso["«component» SolicitudAcceso\n(Manejo de sesiones, validación criptográfica JWTs, control RBAC & Rate Limiting)"]:::t2Style
+        GW_SecretVault["«component» Gestor de Secretos en Memoria\n(Bóveda protegida de API Keys para LLMs)"]:::t2Style
     end
 
-    %% TIER 3: CAPA DE NEGOCIO Y APLICACIÓN
+    %% 4. TIER 3: CAPA DE NEGOCIO Y APLICACIÓN
     subgraph Tier3 ["«layer» Tier 3: Capa de Negocio y Aplicación (Application & Domain Tier - FastAPI)"]
-        APP_FastAPIController["«container» FastAPI Controller\n(Endpoints REST /api/analyze, /api/projects, Upload Multipart)"]:::t3Style
-        APP_BusinessValidator["«component» Validador de Reglas de Negocio Institucionales\n(Aprobación académica, validación Nota >= 6.0, formato de memoria)"]:::t3Style
-        APP_SessionManager["«component» Gestor de Sesiones e Historial Aislado por Rol\n(Estudiante, Docente, Jefa de Biblioteca)"]:::t3Style
+        COMP_Proyecto["«component» Proyecto\n(Lógica de gestión de memorias, metadatos y endpoints FastAPI /api/projects)"]:::t3Style
+        COMP_Evaluacion["«component» Evaluacion\n(Reglas institucionales de validación y filtro Nota >= 6.0)"]:::t3Style
     end
 
-    %% TIER 4: CAPA DE INTELIGENCIA Y MOTOR RAG
+    %% 5. TIER 4: CAPA DE INTELIGENCIA Y MOTOR RAG
     subgraph Tier4 ["«layer» Tier 4: Capa de Inteligencia y Motor RAG (RAG Engine Tier)"]
-        RAG_Orchestrator["«container» Orquestador RAG (ArchivaIAEngine)\n(Inyección de contexto, especialidad de carrera y turnos)"]:::t4Style
-        RAG_Embedder["«component» Generador de Embeddings Semánticos\n(Google gemini-embedding-2 / 1536 dimensiones)"]:::t4Style
-        RAG_ThreadPool["«component» ThreadPoolExecutor Concurrente (15s Timeout)\n(Patrón Cascada Fallback Multi-LLM)"]:::t4Style
+        COMP_AsistenteIA["«component» AsistenteIA\n(Orquestador RAG: atiende peticiones de Menu_Estudiante y Menu_Docente)"]:::t4Style
+        COMP_VectorEmbedding["«component» VectorEmbedding\n(Generación de vectores 1536d gemini-embedding-2 & Despacho concurrente 15s)"]:::t4Style
     end
 
-    %% TIER 5: CAPA DE PERSISTENCIA CLOUD
+    %% 6. TIER 5: CAPA DE PERSISTENCIA CLOUD
     subgraph Tier5 ["«layer» Tier 5: Capa de Persistencia Cloud (Data Tier - Supabase BaaS)"]
-        DB_PGVector[("«database» PostgreSQL 15+ & pgvector\n(Tabla proyectos_titulo con Índice HNSW Coseno)")]:::t5Style
-        DB_Storage[("«storage» Supabase Object Storage\n(Bucket seguro proyectos-docs para PDF/DOCX)")]:::t5Style
-        DB_AuthService["«service» Supabase Auth (GoTrue)\n(Gestor de Identidad Criptográfica y JWTs)"]:::t5Style
-        DB_RelationalStore[("«database» Almacén Relacional\n(napi_chat_history, napi_usuarios)")]:::t5Style
+        subgraph BaseDatos_Supabase ["«component» BaseDatos_Supabase"]
+            DB_PGVector[("«database» PostgreSQL 15+ & pgvector\n(Índice HNSW Coseno para VectorEmbedding)")]:::t5Style
+            DB_Storage[("«storage» Supabase Storage\n(Bucket proyectos-docs para componente Proyecto)")]:::t5Style
+            DB_AuthRelational[("«database» Supabase Auth & Tablas Relacionales\n(Para SolicitudAcceso e historial de chat)")]:::t5Style
+        end
     end
 
-    %% BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS
+    %% 7. BLOQUE TRANSVERSAL: SERVICIOS COGNITIVOS EXTERNOS
     subgraph ExternalTier ["«layer» Bloque Transversal: Servicios Cognitivos Externos (Multi-LLM Inference)"]
         EXT_DeepSeek["«external» DeepSeek API (deepseek-chat)\n(Motor Principal de Razonamiento - Intento 1)"]:::extStyle
         EXT_GeminiFlash["«external» Google Cloud Gemini Flash (2.0 / 1.5)\n(Motor Secundario de Alta Concurrencia - Intento 2)"]:::extStyle
         EXT_OpenAI["«external» OpenAI Platform API (gpt-4o-mini)\n(Fallback Final de Contingencia - Intento 3)"]:::extStyle
     end
 
-    %% RELACIONES DE USUARIO CON PRESENTACIÓN
-    Estudiante -->|"Interactúa vía web / voz"| SPA_Portal
-    Docente -->|"Carga memoria y evalúa nota"| SPA_Portal
-    Biblioteca -->|"Supervisa repositorio y audita"| SPA_Portal
+    %% INTERACCIÓN ACTORES -> INTERFACES DE PRESENTACIÓN
+    Actor_Estudiante -->|"Interactúa con consultas"| Menu_Estudiante
+    Actor_Estudiante -->|"Explora catálogo"| Menu_Gestion
+    Actor_Docente -->|"Carga y evalúa memorias"| Menu_Docente
+    Actor_Docente -->|"Consulta proyectos"| Menu_Gestion
+    Actor_Admin -->|"Administra usuarios y permisos"| Menu_Usuarios
+    Actor_Admin -->|"Auditoría de catálogo"| Menu_Gestion
 
-    SPA_Portal <--> SPA_Nav
-    SPA_Portal <--> SPA_Voice
-    SPA_Portal <--> SPA_Access
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Estudiante
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Docente
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Gestion
+    SPA_Portal -.->|"Contenedor base & soporte CVD / voz"| Menu_Usuarios
 
-    %% FLUJO 1: PRESENTACIÓN -> SEGURIDAD / GATEWAY
-    SPA_Portal -->|"Req: HTTPS POST/GET (Payload JSON / Multipart, Auth Header Bearer Token)"| GW_ReverseProxy
-    GW_ReverseProxy -->|"Res: JSON (Status HTTP, JWT firmado, respuesta texto/citas) [20s AbortController]"| SPA_Portal
+    %% FLUJO 1: PRESENTACIÓN (TIER 1) -> PERÍMETRO (TIER 2)
+    Menu_Estudiante -->|"Req: Consulta semántica (JSON + Bearer JWT)"| GW_ReverseProxy
+    Menu_Docente -->|"Req: Upload memoria / consulta (Multipart/JSON + Bearer JWT)"| GW_ReverseProxy
+    Menu_Gestion -->|"Req: Búsqueda / consulta catálogo (GET /api/projects)"| GW_ReverseProxy
+    Menu_Usuarios -->|"Req: Gestión administrativa (POST/GET /api/admin/users)"| GW_ReverseProxy
 
-    %% PIPELINE INTERNO DE SEGURIDAD
-    GW_ReverseProxy --> GW_SecurityMiddleware
-    GW_SecurityMiddleware --> GW_TokenValidator
-    GW_TokenValidator <-->|"Verifica firma criptográfica y claims"| DB_AuthService
-    GW_SecurityMiddleware -.-> GW_SecretVault
+    GW_ReverseProxy -->|"Tráfico TLS 1.3 / Enrutamiento perimetral"| GW_SolicitudAcceso
+    GW_SolicitudAcceso -.->|"Carga protegida de llaves maestras"| GW_SecretVault
+    GW_SolicitudAcceso <-->|"Validación de tokens JWT y sesiones criptográficas"| DB_AuthRelational
+    GW_ReverseProxy -->|"Res: JSON / diagnóstico sintetizado [AbortController 20s]"| SPA_Portal
 
-    %% FLUJO 2: SEGURIDAD -> DOMINIO / FASTAPI
-    GW_TokenValidator -->|"In-process / Localhost pass (Contexto saneado, UserContext verificado con roles)"| APP_FastAPIController
+    %% FLUJO 2: SEGURIDAD (TIER 2) -> COMUNICACIÓN CON ASISTENTEIA, PROYECTO Y USUARIOS
+    %% Requisito 8: Menu_Estudiante y Menu_Docente se comunican con AsistenteIA a través de SolicitudAcceso
+    GW_SolicitudAcceso -->|"Req: Peticiones de Menu_Estudiante y Menu_Docente (UserContext verificado)"| COMP_AsistenteIA
+    GW_SolicitudAcceso -->|"Req: Gestión de memorias y catálogo (/api/projects)"| COMP_Proyecto
+    GW_SolicitudAcceso -->|"Req: Registro y administración de usuarios"| DB_AuthRelational
 
-    %% COMPONENTES INTERNOS DE NEGOCIO
-    APP_FastAPIController <--> APP_BusinessValidator
-    APP_FastAPIController <--> APP_SessionManager
+    %% FLUJO 3: CAPA DE NEGOCIO Y APLICACIÓN (TIER 3)
+    COMP_Proyecto <-->|"Valida regla institucional (Nota >= 6.0)"| COMP_Evaluacion
+    COMP_Proyecto -->|"Req: Indexación de proyecto aprobado (Vectorización)"| COMP_VectorEmbedding
+    COMP_Proyecto -->|"Req: Subida binaria multipart de memoria PDF/DOCX"| DB_Storage
+    DB_Storage -->|"Res: Storage URL firmada del archivo"| COMP_Proyecto
+    COMP_Proyecto -->|"Req: Persistencia de registro y metadatos"| DB_PGVector
 
-    %% FLUJO 3: DOMINIO -> PERSISTENCIA (STORAGE Y RELACIONAL)
-    APP_FastAPIController -->|"Req: Subida multipart de memorias, inserción de logs/usuarios"| DB_Storage
-    DB_Storage -->|"Res: Storage URL firmada, IDs de registro"| APP_FastAPIController
+    %% FLUJO 4: CAPA DE INTELIGENCIA Y MOTOR RAG (TIER 4)
+    COMP_AsistenteIA -->|"1. Req: Generación de embedding de consulta (1536d)"| COMP_VectorEmbedding
+    COMP_VectorEmbedding -->|"Invocación gemini-embedding-2"| EXT_GeminiFlash
+    COMP_VectorEmbedding -->|"Res: Vector denso normalizado (1536d)"| COMP_AsistenteIA
 
-    APP_FastAPIController <-->|"Persistencia de turnos aislados por rol"| DB_RelationalStore
-    APP_BusinessValidator -->|"Validación de nota >= 6.0 e inserción aprobada"| DB_PGVector
+    COMP_AsistenteIA -->|"2. Req: RPC buscar_proyectos_similares (Filtro Coseno HNSW)"| DB_PGVector
+    DB_PGVector -->|"Res: Top-K fragmentos y metadatos relevantes"| COMP_AsistenteIA
 
-    %% FLUJO 4: DOMINIO -> CAPA RAG
-    APP_FastAPIController -->|"Req: Prompt de usuario saneado, query semántica, documento para indexar"| RAG_Orchestrator
-    RAG_Orchestrator -->|"Res: Contexto recuperado y respuesta sintetizada del LLM"| APP_FastAPIController
+    COMP_AsistenteIA -->|"3. Persistencia de turnos en historial de chat"| DB_AuthRelational
 
-    %% SUB-FLUJOS RAG Y EMBEDDINGS
-    RAG_Orchestrator -->|"1. Genera embedding (1536d)"| RAG_Embedder
-    RAG_Embedder -->|"Invocación gemini-embedding-2"| EXT_GeminiFlash
+    %% FLUJO 5: CASCADA MULTI-LLM EN FALLBACK SECUENCIAL
+    COMP_AsistenteIA -->|"4. Despacho inferencia con metaprompt aumentado (15s timeout)"| EXT_DeepSeek
+    EXT_DeepSeek -.->|"Fallback secuencial 1 (latencia > 15s / error)"| EXT_GeminiFlash
+    EXT_GeminiFlash -.->|"Fallback secuencial 2 (cuota saturada / error)"| EXT_OpenAI
 
-    %% FLUJO 5: CAPA RAG -> POSTGRESQL & PGVECTOR
-    RAG_Orchestrator -->|"Req: Vector 1536 dimensiones vía RPC buscar_proyectos_similares"| DB_PGVector
-    DB_PGVector -->|"Res: Top-K fragmentos/chunks con cosine similarity score"| RAG_Orchestrator
-
-    %% FLUJO 6: CAPA RAG -> SERVICIOS EXTERNOS MULTI-LLM
-    RAG_Orchestrator -->|"2. Despacho concurrente (Metaprompt aumentado)"| RAG_ThreadPool
-    RAG_ThreadPool -->|"Intento 1: Inferencia primaria (15s timeout)"| EXT_DeepSeek
-    EXT_DeepSeek -.->|"Fallback condicional por falla/timeout"| EXT_GeminiFlash
-    EXT_GeminiFlash -.->|"Fallback condicional por cuota/timeout"| EXT_OpenAI
+    COMP_AsistenteIA -->|"Res: Diagnóstico sintetizado + fuentes citadas"| GW_SolicitudAcceso
 ```
 
 **Aspectos Clave de la Arquitectura Refactorizada:**
-- **Separación Gateway / Lógica de Negocio:** El Tier 2 (`Security & Gateway Tier`) asume de manera exclusiva la terminación TLS, el control CORS, rate limiting, la sanitización anti-inyección y la validación de JWTs; el Tier 3 (`Application & Domain Tier`) se enfoca puramente en las reglas de negocio institucionales de INACAP.
-- **Definición Formal de Conectores:** Todas las interfaces provistas y requeridas están tipadas con los esquemas de transferencia Request/Response, protocolos (`HTTPS/TLS 1.3`, `In-process ASGI`, `S3 REST`, `pgvector RPC`) y políticas de resiliencia (`AbortController 20s`, `ThreadPool 15s`).
-- **Cascada de Inferencia con Fallback Secuencial:** Enrutamiento resiliente que prioriza **DeepSeek** por consistencia pedagógica y profundidad técnica, conmutando ordenadamente a **Google Gemini Flash** y **OpenAI** ante saturaciones o expiración de timeouts.
-- **Aislamiento de Identidad y Roles:** Soporte granular multi-inquilino para estudiantes, docentes y jefa de biblioteca mediante decodificación de claims en GoTrue y políticas RLS directas en PostgreSQL.
+- **Separación Gateway / Lógica de Negocio:** El Tier 2 (`Security & Gateway Tier`) a través de `SolicitudAcceso` asume de manera exclusiva la terminación TLS, el control RBAC, rate limiting, la sanitización anti-inyección y la validación criptográfica de JWTs; el Tier 3 (`Application & Domain Tier`) se enfoca puramente en las reglas de negocio institucionales con `Proyecto` y el filtro estricto de `Evaluacion` (Nota $\ge 6.0$).
+- **Definición Formal de Conectores:** Todas las interfaces provistas y requeridas están tipadas con esquemas Request/Response legibles (`HTTPS/TLS 1.3`, `In-process ASGI`, `S3 REST`, `pgvector RPC`) y políticas de resiliencia (`AbortController 20s`, `ThreadPool 15s`).
+- **Comunicación Directa a AsistenteIA:** Tanto `Menu_Estudiante` como `Menu_Docente` se comunican con `AsistenteIA` a través del Gateway (`SolicitudAcceso`) para consultas semánticas, viabilidad y evaluaciones.
+- **Cascada de Inferencia Multi-LLM en Fallback Secuencial:** Enrutamiento resiliente que prioriza **DeepSeek API** por consistencia pedagógica y profundidad técnica, conmutando ordenadamente a **Google Cloud Gemini Flash** y **OpenAI Platform API** ante saturaciones o expiración de timeouts.
+- **Persistencia Cloud Integral (BaseDatos_Supabase):** Subdividida formalmente en PostgreSQL 15+ & pgvector (índice HNSW Coseno), Supabase Storage (bucket `proyectos-docs`) y Supabase Auth & tablas relacionales.
 
 ---
 ## 🧩 2. Diagrama de Componentes (UML 2.5 Component Specification)
