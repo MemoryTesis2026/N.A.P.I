@@ -45,7 +45,7 @@ OPENAI_API_KEY       = os.environ.get("OPENAI_API_KEY", "")
 DEEPSEEK_API_KEY     = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_MODEL       = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 GROQ_API_KEY         = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODELS          = [m.strip() for m in (os.environ.get("GROQ_MODEL") or "llama-3.3-70b-versatile,openai/gpt-oss-120b").split(",") if m.strip()]
+GROQ_MODELS          = [m.strip() for m in (os.environ.get("GROQ_MODEL") or "openai/gpt-oss-120b,qwen/qwen3.6-27b").split(",") if m.strip()]
 SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
@@ -939,8 +939,8 @@ def analyze_project(req: AnalyzeRequest):
     is_followup = bool(req.history and len(req.history) > 0)
 
     try:
-        # 1. Intentar búsqueda semántica con Gemini Embeddings + Supabase pgvector
-        if gemini_client and db_anon and get_time_left() > 2.0:
+        # 1. Intentar búsqueda semántica con Gemini Embeddings + Supabase pgvector (solo en el primer mensaje)
+        if not is_followup and gemini_client and db_anon and get_time_left() > 2.0:
             try:
                 emb = get_query_embedding(req.query)
                 rpc_params = {
@@ -967,39 +967,43 @@ def analyze_project(req: AnalyzeRequest):
                     log.warning(f"Búsqueda por texto también falló: {txt_err}")
                     similares = []
 
-        for s in similares:
-            if "similitud" in s and s["similitud"] is not None:
-                s["porcentaje_similitud"] = round(s["similitud"] * 100, 1)
+        if not is_followup:
+            for s in similares:
+                if "similitud" in s and s["similitud"] is not None:
+                    s["porcentaje_similitud"] = round(s["similitud"] * 100, 1)
+                else:
+                    s["porcentaje_similitud"] = 60.0
+
+            # Determinar riesgo
+            top_similitud = similares[0]["porcentaje_similitud"] if similares else 0.0
+            if top_similitud >= 80:
+                nivel_riesgo = "CRÍTICO"
+            elif top_similitud >= 65:
+                nivel_riesgo = "ALTO"
+            elif top_similitud >= 45:
+                nivel_riesgo = "MODERADO"
             else:
-                s["porcentaje_similitud"] = 60.0
+                nivel_riesgo = "SIN RIESGO"
 
-        # Determinar riesgo
-        top_similitud = similares[0]["porcentaje_similitud"] if similares else 0.0
-        if top_similitud >= 80:
-            nivel_riesgo = "CRÍTICO"
-        elif top_similitud >= 65:
-            nivel_riesgo = "ALTO"
-        elif top_similitud >= 45:
-            nivel_riesgo = "MODERADO"
+            # Limitar a máximo 3 proyectos similares en el contexto
+            similares = similares[:3]
+
+            # Formatear contexto RAG
+            if not similares:
+                contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Resultado RAG\nNo se encontraron proyectos con similitud suficiente en el repositorio de INACAP Sede Maipú."
+            else:
+                items_txt = "\n\n".join([
+                    f"**Proyecto {i+1}** ({s.get('porcentaje_similitud', 60)}% similitud)\n"
+                    f"- Título: {s.get('titulo', '')}\n"
+                    f"- Carrera: {s.get('carrera', '')} ({s.get('anio', '')})\n"
+                    f"- Autores: {s.get('autores', '')}\n"
+                    f"- Resumen: {s.get('resumen', '')}"
+                    for i, s in enumerate(similares)
+                ])
+                contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
         else:
-            nivel_riesgo = "SIN RIESGO"
-
-        # Limitar a máximo 3 proyectos similares en el contexto (Req 5)
-        similares = similares[:3]
-
-        # Formatear contexto RAG
-        if not similares:
-            contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Resultado RAG\nNo se encontraron proyectos con similitud suficiente en el repositorio de INACAP Sede Maipú."
-        else:
-            items_txt = "\n\n".join([
-                f"**Proyecto {i+1}** ({s.get('porcentaje_similitud', 60)}% similitud)\n"
-                f"- Título: {s.get('titulo', '')}\n"
-                f"- Carrera: {s.get('carrera', '')} ({s.get('anio', '')})\n"
-                f"- Autores: {s.get('autores', '')}\n"
-                f"- Resumen: {s.get('resumen', '')}"
-                for i, s in enumerate(similares)
-            ])
-            contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
+            similares = []
+            contexto = ""
 
         # 2. Generar respuesta NAPI sintética y directa
         SYSTEM_PROMPT = """Eres NAPI, el asistente virtual de INACAP Sede Maipú que ayuda a estudiantes a validar y orientar ideas de proyecto de título. Conversas como un docente guía cercano, empático y constructivo (español de Chile, trato de "tú").
@@ -1020,13 +1024,14 @@ Tu respuesta DEBE constar únicamente de las siguientes 4 partes en orden:
 3. "¿Qué deberías enfocar para diferenciarte?" seguido de exactamente 2 viñetas cortas (de 1 a 2 líneas cada una), específicas para la idea y adaptadas a la carrera o área del estudiante (nada genérico).
 4. Una sola línea final recordando validar el alcance con su docente guía.
 
-FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
-- Responde directo y al grano a lo que el estudiante pregunta, en tono conversacional y cercano.
-- Aporta ideas NUEVAS que no se hayan mencionado antes en la conversación (no repetir).
+FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
+- ESTRICTAMENTE PROHIBIDO repetir la lista de proyectos similares, porcentajes o la introducción del primer mensaje.
+- Responde directo y al grano a lo que el estudiante pregunta o plantea en este mensaje, en tono conversacional y cercano.
+- Aporta ideas o recomendaciones NUEVAS que no se hayan mencionado antes en la conversación.
 - Si hay un documento adjunto, básate en su contenido real (objetivos, tecnologías, justificación).
 - Sin tablas, sin encabezados (#) y manteniendo estricta concisión."""
 
-        # Construir secuencia de contenidos para Gemini (últimos 4 mensajes, Req 5)
+        # Construir secuencia de contenidos para Gemini (últimos 4 mensajes)
         contents_list = []
         if req.history and len(req.history) > 0:
             for item in req.history[-4:]:
@@ -1043,7 +1048,12 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
         carrera_info = f"\n[Área/Carrera del estudiante: {req.carrera}]" if req.carrera else ""
 
         if is_followup:
-            user_prompt_content = f"{req.query}{file_info}{carrera_info}\n\n[Contexto del repositorio INACAP: {contexto}]"
+            user_prompt_content = (
+                f"{req.query}{file_info}{carrera_info}\n\n"
+                f"[NOTA DE CONTEXTO: Este es un mensaje de seguimiento en la conversación en curso. "
+                f"Responde directamente a la consulta del estudiante. "
+                f"NO repitas la lista de proyectos similares ni la introducción del primer mensaje]."
+            )
         else:
             user_prompt_content = f"{req.query}{file_info}{carrera_info}\n\n[Repositorio INACAP Maipú - Proyectos detectados]:\n{contexto}"
 
@@ -1052,7 +1062,13 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
             parts=[genai_types.Part.from_text(text=user_prompt_content)]
         ))
 
-        # 0. Groq (capa gratuita rápida, con reintento ante 429/5xx tras 1.5s)
+        def _texto_cortado(txt: str) -> bool:
+            if not txt:
+                return True
+            t = txt.rstrip()
+            return not any(t.endswith(c) for c in ('.', '!', '?', '"', '»', '”', '…', ')', '`'))
+
+        # 0. Groq (capa rápida con gpt-oss-120b de razonamiento, con reasoning_effort='low', max_tokens=1200 y reintentos)
         if groq_client:
             gq_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
             if req.history:
@@ -1064,25 +1080,68 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
             for gmod in GROQ_MODELS:
                 if get_time_left() <= 1.0 or analisis_texto:
                     break
-                try:
+
+                groq_extra = {}
+                if any(rm in gmod.lower() for rm in ["gpt-oss", "reason"]):
+                    groq_extra = {"extra_body": {"reasoning_effort": "low"}}
+
+                def _llamar_groq(modelo, max_tok, extra_kws):
                     t_out = min(6.0, get_time_left())
-                    resp_gq = groq_client.chat.completions.create(
-                        model=gmod,
+                    return groq_client.chat.completions.create(
+                        model=modelo,
                         messages=gq_messages,
                         temperature=0.7,
-                        max_tokens=450,
-                        timeout=t_out
+                        max_tokens=max_tok,
+                        timeout=t_out,
+                        **extra_kws
                     )
-                    if resp_gq.choices and resp_gq.choices[0].message.content:
-                        analisis_texto = resp_gq.choices[0].message.content.strip()
+
+                try:
+                    resp_gq = _llamar_groq(gmod, 1200, groq_extra)
+                    finish_reason = resp_gq.choices[0].finish_reason if resp_gq.choices else None
+                    raw_content = (resp_gq.choices[0].message.content or "").strip() if resp_gq.choices else ""
+                    log.info(f"Groq ({gmod}) finish_reason='{finish_reason}', len={len(raw_content)}")
+
+                    # Si finish_reason == 'length' o el texto termina sin signo de cierre, reintentar UNA vez con max_tokens mayor
+                    if (finish_reason == "length" or _texto_cortado(raw_content)) and get_time_left() > 2.0:
+                        log.warning(f"Groq ({gmod}) respuesta cortada (finish_reason='{finish_reason}'). Reintentando con max_tokens=2000...")
+                        try:
+                            resp_retry = _llamar_groq(gmod, 2000, groq_extra)
+                            f_reason_r = resp_retry.choices[0].finish_reason if resp_retry.choices else None
+                            raw_retry = (resp_retry.choices[0].message.content or "").strip() if resp_retry.choices else ""
+                            log.info(f"Groq ({gmod}) reintento corte finish_reason='{f_reason_r}', len={len(raw_retry)}")
+                            if raw_retry and (not _texto_cortado(raw_retry) or len(raw_retry) > len(raw_content)):
+                                raw_content = raw_retry
+                                finish_reason = f_reason_r
+                        except Exception as re_err:
+                            log.warning(f"Error en reintento por corte de Groq: {re_err}")
+
+                    if raw_content:
+                        analisis_texto = raw_content
                         fuente = "groq"
                         log.info(f"Respuesta generada exitosamente con Groq ({gmod})")
                         break
+
                 except Exception as gq_ex:
                     status_code = getattr(gq_ex, 'status_code', None) or getattr(getattr(gq_ex, 'response', None), 'status_code', None)
                     err_str = str(gq_ex)
                     log.warning(f"Groq ({gmod}) falló [status={status_code}]: {err_str}")
-                    
+
+                    # Si falló por reasoning_effort no soportado, reintentar sin extra_body
+                    if "reasoning_effort" in err_str.lower() and groq_extra:
+                        try:
+                            resp_no_extra = _llamar_groq(gmod, 1200, {})
+                            f_reason_ne = resp_no_extra.choices[0].finish_reason if resp_no_extra.choices else None
+                            raw_ne = (resp_no_extra.choices[0].message.content or "").strip() if resp_no_extra.choices else ""
+                            log.info(f"Groq ({gmod}) fallback sin reasoning_effort: finish_reason='{f_reason_ne}'")
+                            if raw_ne:
+                                analisis_texto = raw_ne
+                                fuente = "groq"
+                                log.info(f"Respuesta generada exitosamente con Groq ({gmod}) sin reasoning_effort")
+                                break
+                        except Exception as ne_err:
+                            log.warning(f"Groq ({gmod}) reintento sin reasoning falló: {ne_err}")
+
                     is_retryable = False
                     if status_code and (status_code == 429 or 500 <= status_code < 600):
                         is_retryable = True
@@ -1091,19 +1150,15 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
 
                     # Reintentar UNA vez tras ~1.5s si es 429 o 5xx y queda tiempo
                     if is_retryable and get_time_left() > 2.5:
-                        log.info(f"Reintentando Groq ({gmod}) tras espera de 1.5s...")
+                        log.info(f"Reintentando Groq ({gmod}) tras espera de 1.5s por rate limit/servidor...")
                         time.sleep(1.5)
                         try:
-                            t_out_retry = min(6.0, get_time_left())
-                            resp_gq = groq_client.chat.completions.create(
-                                model=gmod,
-                                messages=gq_messages,
-                                temperature=0.7,
-                                max_tokens=450,
-                                timeout=t_out_retry
-                            )
-                            if resp_gq.choices and resp_gq.choices[0].message.content:
-                                analisis_texto = resp_gq.choices[0].message.content.strip()
+                            resp_gq = _llamar_groq(gmod, 1200, groq_extra)
+                            finish_reason = resp_gq.choices[0].finish_reason if resp_gq.choices else None
+                            raw_content = (resp_gq.choices[0].message.content or "").strip() if resp_gq.choices else ""
+                            log.info(f"Groq ({gmod}) reintento 429/5xx finish_reason='{finish_reason}'")
+                            if raw_content:
+                                analisis_texto = raw_content
                                 fuente = "groq"
                                 log.info(f"Respuesta generada en reintento exitoso con Groq ({gmod})")
                                 break
@@ -1127,10 +1182,12 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
                     model=DEEPSEEK_MODEL,
                     messages=ds_messages,
                     temperature=0.7,
-                    max_tokens=450,
+                    max_tokens=1200,
                     timeout=t_out_ds
                 )
                 if resp_ds.choices and resp_ds.choices[0].message.content:
+                    ds_finish = resp_ds.choices[0].finish_reason
+                    log.info(f"DeepSeek ({DEEPSEEK_MODEL}) finish_reason='{ds_finish}'")
                     analisis_texto = resp_ds.choices[0].message.content.strip()
                     fuente = "deepseek"
                     log.info(f"Respuesta generada exitosamente con DeepSeek ({DEEPSEEK_MODEL})")
@@ -1153,7 +1210,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
                             config=genai_types.GenerateContentConfig(
                                 system_instruction=SYSTEM_PROMPT,
                                 temperature=0.7,
-                                max_output_tokens=450
+                                max_output_tokens=1200
                             )
                         )
                         return resp.text if resp and resp.text else ""
@@ -1187,10 +1244,12 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
                     model="gpt-4o-mini",
                     messages=oa_messages,
                     temperature=0.7,
-                    max_tokens=450,
+                    max_tokens=1200,
                     timeout=t_out_oa
                 )
                 if resp_oa.choices and resp_oa.choices[0].message.content:
+                    oa_finish = resp_oa.choices[0].finish_reason
+                    log.info(f"OpenAI finish_reason='{oa_finish}'")
                     analisis_texto = resp_oa.choices[0].message.content.strip()
                     fuente = "openai"
                     log.info("Respuesta generada exitosamente con OpenAI gpt-4o-mini")
