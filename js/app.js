@@ -2722,9 +2722,9 @@ function addSimCardSupabase(sim, save = true) {
   if (save) saveChatHistory();
 }
 
-async function sendMsg() {
-  const input = document.getElementById('napiInput'); if(!input) return;
-  const txt = input.value.trim();
+async function sendMsg(overrideTxt = null) {
+  const input = document.getElementById('napiInput');
+  const txt = (overrideTxt !== null && overrideTxt !== undefined) ? overrideTxt : (input?.value.trim() || '');
   const attached = currentAttachedFile;
 
   if (!txt && !attached) return;
@@ -2739,81 +2739,89 @@ async function sendMsg() {
   }
 
   addUser(userDisplayMsg);
-  input.value = '';
+  if (input) input.value = '';
   clearNapiFileAttachment();
   const typing = addTyping();
 
-  let responded = false;
-  try {
+  const payload = {
+    query: txt || `Analizar archivo: ${attached?.name}`,
+    history: history,
+    umbral: 0.35,
+    limite: 3,
+    file_name: attached?.name || null,
+    file_content: attached?.content || null
+  };
+
+  async function executeAnalyzeFetch(timeoutMs) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // Margen para cold start de Render + llamada a Gemini
-
-    const payload = {
-      query: txt || `Analizar archivo: ${attached?.name}`,
-      history: history,
-      umbral: 0.35,
-      limite: 3, // Máximo 2 o 3 proyectos
-      file_name: attached?.name || null,
-      file_content: attached?.content || null
-    };
-
-    const res = await fetch(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${API_BASE_URL}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        console.warn(`Fetch a /api/analyze respondió con status ${res.status}`);
+        return null;
+      }
       const data = await res.json();
-      if (typing) typing.remove();
-      responded = true;
-
-      if (data.analisis) {
-        addNapi(data.analisis);
-      } else {
-        addNapi(analyze(txt, history, attached));
+      if (!data || !data.analisis) {
+        console.warn('Respuesta de /api/analyze sin campo analisis:', data);
+        return null;
       }
-
-      // Mostrar tarjetas (máximo 2 o 3 proyectos)
-      if (data.similares && data.similares.length > 0 && history.length === 0 && !attached) {
-        data.similares.slice(0, 3).forEach((sim, idx) => {
-          setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
-        });
-      }
-      return;
+      return data;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn(`Error o timeout en /api/analyze (${err.name || err}):`, err);
+      return null;
     }
-  } catch (err) {
-    console.warn('Backend API /analyze con demora o no disponible:', err);
   }
 
-  if (!responded) {
-    setTimeout(() => {
-      if (typing) typing.remove();
-      addNapi(analyze(txt, history, attached));
+  // Intento 1 con timeout de 25s
+  let data = await executeAnalyzeFetch(25000);
 
-      const lower = txt.toLowerCase();
-      const isAltQuery = lower.includes('otra') || lower.includes('otro') || lower.includes('cambiar') || lower.includes('diferente');
-      
-      if (!isAltQuery && history.length === 0 && !attached) {
-        const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
-        const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
-        const matched = PROJECTS.map(p => {
-          const src = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
-          let hits = 0;
-          words.forEach(w => { if (src.includes(w)) hits += 1; });
-          const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
-          return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w))) ? Math.max(pct, 59.2) : pct };
-        }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct).slice(0, 2);
-
-        matched.forEach((top, idx) => {
-          setTimeout(() => addSimCard(top.p, top.pct), 180 * (idx + 1));
-        });
-      }
-    }, 300);
+  // Si el fetch falla, aborta, no es ok o no trae data.analisis: reintentar UNA vez automáticamente manteniendo "escribiendo"
+  if (!data) {
+    console.info('Reintentando /api/analyze automáticamente tras breve pausa...');
+    await new Promise(r => setTimeout(r, 1200));
+    data = await executeAnalyzeFetch(25000);
   }
+
+  if (typing) typing.remove();
+
+  if (data && data.analisis) {
+    addNapi(data.analisis);
+
+    // Mostrar tarjetas (máximo 2 o 3 proyectos)
+    if (data.similares && data.similares.length > 0 && history.length === 0 && !attached) {
+      data.similares.slice(0, 3).forEach((sim, idx) => {
+        setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
+      });
+    }
+    return;
+  }
+
+  // Si el reintento también falla: mensaje honesto con botón de reintentar (NUNCA texto genérico fijo)
+  const escapedQuery = (txt || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const retryHtml = `
+    <div class="space-y-2">
+      <p class="text-slate-700 dark:text-slate-200">Estoy con alta demanda, intenta de nuevo en unos segundos.</p>
+      <button onclick="retryNapiMsg('${escapedQuery}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-[#1A3D63] hover:bg-[#204E7D] text-white transition-all shadow-sm cursor-pointer">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span>Reintentar</span>
+      </button>
+    </div>
+  `;
+  addNapi(retryHtml);
 }
+
+function retryNapiMsg(query) {
+  sendMsg(query);
+}
+window.retryNapiMsg = retryNapiMsg;
 
 // ══════════════════════════════════════════
 //  UTILIDADES GLOBALES

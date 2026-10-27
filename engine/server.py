@@ -15,6 +15,8 @@ API Backend FastAPI – Motor RAG y Asistente NAPI
 
 import os
 import uuid
+import time
+import random
 import logging
 from typing import Optional, List
 from fastapi import FastAPI, HTTPException, status, Request
@@ -48,10 +50,14 @@ SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjd
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
 
+# Banderas globales para desactivar proveedores con fallos permanentes durante el ciclo de vida
+DEEPSEEK_DISABLED = False
+OPENAI_DISABLED   = False
+
 # Clientes
 gemini_client   = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-openai_client   = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com") if DEEPSEEK_API_KEY else None
+openai_client   = OpenAI(api_key=OPENAI_API_KEY, max_retries=0) if OPENAI_API_KEY else None
+deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com", max_retries=0) if DEEPSEEK_API_KEY else None
 groq_client     = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0) if GROQ_API_KEY else None
 db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
 db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
@@ -769,26 +775,178 @@ def delete_project(project_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ──────────────────────────────────────────
+# BANCO DE INNOVACIÓN LOCAL Y RESILIENTE (16 PROPUESTAS TÉCNICAS)
+# ──────────────────────────────────────────
+BANCO_INNOVACION = [
+    {
+        "id": "iot_edge",
+        "keywords": ["iot", "edge", "telemetria", "esp32", "arduino", "raspberry", "sensorica"],
+        "plantilla": "**Telemetría en el borde (Edge Computing):** Procesar señales de {tema} directamente en microcontroladores (ESP32 o Edge Gateway) antes de subir a la nube, reduciendo latencia y consumo de datos."
+    },
+    {
+        "id": "ia_predictiva",
+        "keywords": ["predictiv", "machine learning", "clasificacion", "patron", "redes neuronales", "anomalia"],
+        "plantilla": "**Modelos predictivos de fallas:** Implementar algoritmos de machine learning ligeros para anticipar averías o comportamientos anómalos en {tema} a partir de series temporales."
+    },
+    {
+        "id": "pwa_offline",
+        "keywords": ["pwa", "offline", "movil", "sincroniz", "cache", "service worker"],
+        "plantilla": "**PWA con soporte offline-first:** Diseñar una Progressive Web App instalable que permita registrar operaciones de {tema} en terreno sin conexión y sincronice al recuperar señal."
+    },
+    {
+        "id": "ciberseguridad",
+        "keywords": ["ciberseguridad", "cifrado", "tls", "hash", "rbac", "seguridad", "criptograf"],
+        "plantilla": "**Ciberseguridad y auditoría criptográfica:** Blindar la transmisión y almacenamiento de datos de {tema} mediante cifrado TLS 1.3, autenticación basada en roles y firmas hash para evitar alteraciones."
+    },
+    {
+        "id": "analitica_dashboards",
+        "keywords": ["dashboard", "kpi", "analitica", "tablero", "bi", "visualizacion"],
+        "plantilla": "**Analítica de datos y tableros interactivos:** Construir un dashboard en tiempo real con métricas operativas y umbrales preventivos de {tema} para toma de decisiones técnicas informadas."
+    },
+    {
+        "id": "vision_computacional",
+        "keywords": ["vision", "computacional", "opencv", "camara", "imagen", "deteccion", "reconocimiento"],
+        "plantilla": "**Inspección visual asistida por computadora:** Incorporar procesamiento de imágenes con OpenCV o MediaPipe para inspección visual automática o control de calidad en {tema}."
+    },
+    {
+        "id": "sostenibilidad_energia",
+        "keywords": ["energia", "consumo", "sostenibil", "eficiencia", "huella", "electr"],
+        "plantilla": "**Eficiencia energética y sustentabilidad:** Integrar algoritmos de optimización de consumo eléctrico y medición de huella de carbono en los ciclos de operación de {tema}."
+    },
+    {
+        "id": "accesibilidad_voz",
+        "keywords": ["accesibilidad", "voz", "asistiv", "audio", "wcag", "inclusi"],
+        "plantilla": "**Accesibilidad universal y control por voz:** Implementar interfaces adaptativas bajo estándar WCAG y comandos de voz para que operadores con distintas capacidades interactúen con {tema}."
+    },
+    {
+        "id": "automatizacion_actuadores",
+        "keywords": ["actuador", "rele", "corte", "valvula", "automatico", "mecanismo", "disyuntor"],
+        "plantilla": "**Automatización activa con actuadores:** Integrar corte de energía o conmutación mecánica inmediata con relés industriales cuando {tema} sobrepase los límites de seguridad."
+    },
+    {
+        "id": "apis_abiertas",
+        "keywords": ["api", "meteorolog", "clima", "geolocaliz", "opendata", "web service", "interoperab"],
+        "plantilla": "**Interoperabilidad con APIs abiertas:** Cruzar la información de {tema} con fuentes externas públicas (clima, tránsito, índices comunales de Maipú) para enriquecer el contexto operativo."
+    },
+    {
+        "id": "gemelo_digital",
+        "keywords": ["gemelo", "digital twin", "simulacion", "virtual", "modelo 3d"],
+        "plantilla": "**Gemelo digital y simulación virtual:** Desarrollar un modelo virtual interactivo en tiempo real que replique el comportamiento físico y dinámico de los componentes de {tema}."
+    },
+    {
+        "id": "agentes_llm",
+        "keywords": ["asistente", "chatbot", "agente", "llm", "conversacional", "soporte"],
+        "plantilla": "**Agente inteligente de soporte técnico:** Integrar un asistente conversacional contextual que ayude a técnicos o usuarios a resolver problemas y diagnósticos de {tema} paso a paso."
+    },
+    {
+        "id": "alta_disponibilidad",
+        "keywords": ["failover", "alta disponibilidad", "redundancia", "toleran", "resilien"],
+        "plantilla": "**Arquitectura resiliente y failover:** Diseñar redundancia a nivel de nodo o base de datos local para que {tema} no detenga sus funciones esenciales ante caídas de servidor."
+    },
+    {
+        "id": "georreferenciacion",
+        "keywords": ["gps", "mapa", "georrefer", "geolocal", "gis", "rutas"],
+        "plantilla": "**Georreferenciación y mapeo GIS:** Ubicar geográficamente eventos, activos o muestreos de {tema} en mapas interactivos para optimizar cobertura y tiempos de respuesta."
+    },
+    {
+        "id": "alertas_multicanal",
+        "keywords": ["notificacion", "push", "websocket", "telegram", "sms", "alerta"],
+        "plantilla": "**Alertas críticas multicanal en tiempo real:** Disparar notificaciones instantáneas de eventos anómalos de {tema} a través de WebSockets, bots de Telegram o correo electrónico."
+    },
+    {
+        "id": "mantenimiento_vibraciones",
+        "keywords": ["vibracion", "acustic", "frecuencia", "desgaste", "sonido", "mantenimiento"],
+        "plantilla": "**Diagnóstico por análisis de vibraciones/acústica:** Monitorear frecuencias y patrones sonoros para predecir desgaste de piezas o descalibraciones mecánicas en {tema}."
+    }
+]
+
+def extraer_tema(query: str) -> str:
+    limpio = (query or "").strip()
+    frases_quitar = [
+        "quiero hacer un proyecto de", "quiero hacer un proyecto sobre",
+        "quiero hacer una idea de", "tengo una idea de", "tengo una idea sobre",
+        "mi proyecto es de", "mi idea es sobre", "se trata de", "quisiera desarrollar",
+        "quiero desarrollar", "me gustaría hacer", "me gustaria hacer", "quiero hacer",
+        "tengo pensado", "proyecto de", "idea de", "sistema de", "quiero crear", "como hacer"
+    ]
+    low = limpio.lower()
+    for f in frases_quitar:
+        if low.startswith(f):
+            limpio = limpio[len(f):].strip()
+            low = limpio.lower()
+            break
+    limpio = limpio.rstrip(".!?:; ")
+    if len(limpio) >= 3 and len(limpio) <= 60:
+        return limpio
+    return "tu propuesta"
+
+def generar_respuesta_banco(query: str, history: list, similares: list, is_followup: bool) -> str:
+    tema = extraer_tema(query)
+    hist_text = " ".join([getattr(h, 'content', '') if hasattr(h, 'content') else str(h.get('content', '')) for h in (history or [])]).lower()
+    
+    # Filtrar candidatas que no hayan aparecido en el historial
+    candidatas = [item for item in BANCO_INNOVACION if not any(kw in hist_text for kw in item["keywords"])]
+    if len(candidatas) < 3:
+        candidatas = list(BANCO_INNOVACION)
+        
+    random.shuffle(candidatas)
+    elegidas = candidatas[:3]
+    
+    if not is_followup:
+        tema_display = tema.capitalize() if tema != "tu propuesta" else "Tu propuesta"
+        frase_inicio = f"¡Buena idea! {tema_display} ofrece gran potencial para innovar y resolver desafíos técnicos reales."
+        
+        if similares:
+            lista_projs = "\n".join([
+                f"• \"{s.get('titulo')}\" ({s.get('carrera', 'INACAP')} · {s.get('anio', 2025)}) — {int(s.get('porcentaje_similitud', 60))}% de similitud"
+                for s in similares[:3]
+            ])
+            bloque_sim = f"Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:\n{lista_projs}"
+        else:
+            bloque_sim = "Tu idea se ve original y no presenta coincidencias directas en el repositorio de INACAP Sede Maipú."
+            
+        sug1 = elegidas[0]["plantilla"].format(tema=tema)
+        sug2 = elegidas[1]["plantilla"].format(tema=tema)
+        bloque_dif = f"¿Qué deberías enfocar para diferenciarte?\n• {sug1}\n• {sug2}"
+        cierre = "Recuerda validar el alcance técnico y factibilidad con tu docente guía."
+        
+        return f"{frase_inicio}\n\n{bloque_sim}\n\n{bloque_dif}\n\n{cierre}"
+    else:
+        sug1 = elegidas[0]["plantilla"].format(tema=tema)
+        sug2 = elegidas[1]["plantilla"].format(tema=tema)
+        return f"Para profundizar y añadir nuevas capas técnicas a {tema}:\n\n• {sug1}\n• {sug2}\n\nComenta estas alternativas con tu docente guía para definir la viabilidad del anteproyecto."
+
 # ── Motor RAG y Asistente NAPI ──
 @app.post("/api/analyze")
 def analyze_project(req: AnalyzeRequest):
     """
     Motor RAG: Realiza búsqueda semántica vía RPC en Supabase
-    y genera el diagnóstico interactivo de NAPI con Gemini 3.6 Flash.
+    y genera el diagnóstico interactivo de NAPI con límite de 16s y banco resiliente.
     """
+    start_time = time.time()
+    TOTAL_TIMEOUT = 16.0
+    deadline = start_time + TOTAL_TIMEOUT
+
+    def get_time_left():
+        return max(0.0, deadline - time.time())
+
     similares = []
     top_similitud = 0.0
     nivel_riesgo = "SIN RIESGO"
+    analisis_texto = ""
+    fuente = "desconocido"
+    is_followup = bool(req.history and len(req.history) > 0)
 
     try:
         # 1. Intentar búsqueda semántica con Gemini Embeddings + Supabase pgvector
-        if gemini_client and db_anon:
+        if gemini_client and db_anon and get_time_left() > 2.0:
             try:
                 emb = get_query_embedding(req.query)
                 rpc_params = {
                     "query_embedding": emb,
                     "match_threshold": req.umbral or 0.35,
-                    "match_count": req.limite or 4,
+                    "match_count": req.limite or 3,
                     "filtro_carrera": req.carrera
                 }
                 res = db_anon.rpc("buscar_proyectos_similares", rpc_params).execute()
@@ -801,7 +959,7 @@ def analyze_project(req: AnalyzeRequest):
                         q = db_anon.table("proyectos_titulo").select("id, titulo, resumen, carrera, anio, autores")
                         for w in words:
                             q = q.ilike("titulo", f"%{w}%")
-                        res = q.limit(req.limite or 4).execute()
+                        res = q.limit(req.limite or 3).execute()
                         similares = res.data or []
                         for s in similares:
                             s["similitud"] = 0.65
@@ -826,6 +984,9 @@ def analyze_project(req: AnalyzeRequest):
         else:
             nivel_riesgo = "SIN RIESGO"
 
+        # Limitar a máximo 3 proyectos similares en el contexto (Req 5)
+        similares = similares[:3]
+
         # Formatear contexto RAG
         if not similares:
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Resultado RAG\nNo se encontraron proyectos con similitud suficiente en el repositorio de INACAP Sede Maipú."
@@ -839,9 +1000,6 @@ def analyze_project(req: AnalyzeRequest):
                 for i, s in enumerate(similares)
             ])
             contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
-
-        # Limitar a máximo 2 proyectos similares para síntesis óptima
-        similares = similares[:2]
 
         # 2. Generar respuesta NAPI sintética y directa
         SYSTEM_PROMPT = """Eres NAPI, el asistente virtual de INACAP Sede Maipú que ayuda a estudiantes a validar y orientar ideas de proyecto de título. Conversas como un docente guía cercano, empático y constructivo (español de Chile, trato de "tú").
@@ -868,18 +1026,16 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
 - Si hay un documento adjunto, básate en su contenido real (objetivos, tecnologías, justificación).
 - Sin tablas, sin encabezados (#) y manteniendo estricta concisión."""
 
-        # Construir secuencia de contenidos para Gemini
+        # Construir secuencia de contenidos para Gemini (últimos 4 mensajes, Req 5)
         contents_list = []
         if req.history and len(req.history) > 0:
-            for item in req.history[-6:]:
+            for item in req.history[-4:]:
                 r = "user" if item.role in ["user", "human"] else "model"
                 contents_list.append(genai_types.Content(
                     role=r,
                     parts=[genai_types.Part.from_text(text=item.content)]
                 ))
 
-        q_lower = req.query.lower()
-        is_followup = bool(req.history and len(req.history) > 0)
         file_info = ""
         if req.file_name:
             file_info = f"\n\n[DOCUMENTO ADJUNTO: {req.file_name}]\nContenido:\n{req.file_content or '(Documento cargado)'}\n"
@@ -896,205 +1052,194 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~80 PALABRAS:
             parts=[genai_types.Part.from_text(text=user_prompt_content)]
         ))
 
-        analisis_texto = ""
-
-        # 0. Groq (capa gratuita, compatible con OpenAI, muy rápido)
+        # 0. Groq (capa gratuita rápida, con reintento ante 429/5xx tras 1.5s)
         if groq_client:
             gq_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
             if req.history:
-                for h in req.history[-6:]:
+                for h in req.history[-4:]:
                     role_name = "user" if h.role in ["user", "human"] else "assistant"
                     gq_messages.append({"role": role_name, "content": h.content})
             gq_messages.append({"role": "user", "content": user_prompt_content})
+
             for gmod in GROQ_MODELS:
+                if get_time_left() <= 1.0 or analisis_texto:
+                    break
                 try:
+                    t_out = min(6.0, get_time_left())
                     resp_gq = groq_client.chat.completions.create(
                         model=gmod,
                         messages=gq_messages,
                         temperature=0.7,
                         max_tokens=450,
-                        timeout=15.0
+                        timeout=t_out
                     )
                     if resp_gq.choices and resp_gq.choices[0].message.content:
                         analisis_texto = resp_gq.choices[0].message.content.strip()
+                        fuente = "groq"
                         log.info(f"Respuesta generada exitosamente con Groq ({gmod})")
                         break
                 except Exception as gq_ex:
-                    log.warning(f"Groq ({gmod}) falló: {gq_ex}")
+                    status_code = getattr(gq_ex, 'status_code', None) or getattr(getattr(gq_ex, 'response', None), 'status_code', None)
+                    err_str = str(gq_ex)
+                    log.warning(f"Groq ({gmod}) falló [status={status_code}]: {err_str}")
+                    
+                    is_retryable = False
+                    if status_code and (status_code == 429 or 500 <= status_code < 600):
+                        is_retryable = True
+                    elif any(k in err_str for k in ["429", "500", "502", "503", "504", "rate_limit", "Rate limit"]):
+                        is_retryable = True
 
-        # 1. DeepSeek (solo si Groq no respondió y hay saldo)
-        if not analisis_texto and deepseek_client:
+                    # Reintentar UNA vez tras ~1.5s si es 429 o 5xx y queda tiempo
+                    if is_retryable and get_time_left() > 2.5:
+                        log.info(f"Reintentando Groq ({gmod}) tras espera de 1.5s...")
+                        time.sleep(1.5)
+                        try:
+                            t_out_retry = min(6.0, get_time_left())
+                            resp_gq = groq_client.chat.completions.create(
+                                model=gmod,
+                                messages=gq_messages,
+                                temperature=0.7,
+                                max_tokens=450,
+                                timeout=t_out_retry
+                            )
+                            if resp_gq.choices and resp_gq.choices[0].message.content:
+                                analisis_texto = resp_gq.choices[0].message.content.strip()
+                                fuente = "groq"
+                                log.info(f"Respuesta generada en reintento exitoso con Groq ({gmod})")
+                                break
+                        except Exception as gq_retry_ex:
+                            status_code_r = getattr(gq_retry_ex, 'status_code', None)
+                            log.warning(f"Reintento Groq ({gmod}) falló [status={status_code_r}]: {gq_retry_ex}")
+
+        # 1. DeepSeek (solo si Groq no respondió y no está deshabilitado permanentemente)
+        global DEEPSEEK_DISABLED
+        if not analisis_texto and deepseek_client and not DEEPSEEK_DISABLED and get_time_left() > 1.2:
             try:
                 ds_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
                 if req.history:
-                    for h in req.history[-6:]:
+                    for h in req.history[-4:]:
                         role_name = "user" if h.role in ["user", "human"] else "assistant"
                         ds_messages.append({"role": role_name, "content": h.content})
                 ds_messages.append({"role": "user", "content": user_prompt_content})
 
+                t_out_ds = min(6.0, get_time_left())
                 resp_ds = deepseek_client.chat.completions.create(
                     model=DEEPSEEK_MODEL,
                     messages=ds_messages,
                     temperature=0.7,
                     max_tokens=450,
-                    timeout=18.0
+                    timeout=t_out_ds
                 )
                 if resp_ds.choices and resp_ds.choices[0].message.content:
                     analisis_texto = resp_ds.choices[0].message.content.strip()
+                    fuente = "deepseek"
                     log.info(f"Respuesta generada exitosamente con DeepSeek ({DEEPSEEK_MODEL})")
             except Exception as ds_ex:
-                log.warning(f"DeepSeek ({DEEPSEEK_MODEL}) falló: {ds_ex} -> pasando a Gemini")
+                status_code = getattr(ds_ex, 'status_code', None) or getattr(getattr(ds_ex, 'response', None), 'status_code', None)
+                err_str = str(ds_ex)
+                log.warning(f"DeepSeek ({DEEPSEEK_MODEL}) falló [status={status_code}]: {err_str}")
+                if status_code == 402 or "402" in err_str or "insufficient" in err_str.lower() or "balance" in err_str.lower() or "payment" in err_str.lower():
+                    DEEPSEEK_DISABLED = True
+                    log.warning("⛔ DeepSeek marcado como DESHABILITADO permanentemente por falta de saldo (402/insufficient balance)")
 
-        # 2. Intentar con Gemini si DeepSeek no respondió o no está configurado
-        if not analisis_texto and gemini_client:
-            def _llamar_gemini(mod_name):
-                try:
-                    resp = gemini_client.models.generate_content(
-                        model=mod_name,
-                        contents=contents_list,
-                        config=genai_types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT,
-                            temperature=0.7,
-                            max_output_tokens=450
+        # 2. Intentar con Gemini si DeepSeek no respondió y queda tiempo (un solo intento con timeout ~8s)
+        if not analisis_texto and gemini_client and get_time_left() > 1.5:
+            try:
+                def _llamar_gemini(mod_name):
+                    try:
+                        resp = gemini_client.models.generate_content(
+                            model=mod_name,
+                            contents=contents_list,
+                            config=genai_types.GenerateContentConfig(
+                                system_instruction=SYSTEM_PROMPT,
+                                temperature=0.7,
+                                max_output_tokens=450
+                            )
                         )
-                    )
-                    return resp.text if resp and resp.text else ""
-                except Exception as e:
-                    log.warning(f"Error llamando {mod_name}: {e}")
-                    return ""
+                        return resp.text if resp and resp.text else ""
+                    except Exception as e:
+                        log.warning(f"Error llamando {mod_name}: {e}")
+                        return ""
 
-            for mod in ["gemini-3.8-flash", "gemini-3.8-flash"]:
-                try:
-                    fut = gemini_executor.submit(_llamar_gemini, mod)
-                    analisis_texto = fut.result(timeout=12.0)
-                    if analisis_texto:
-                        log.info(f"Respuesta generada exitosamente con {mod}")
-                        break
-                except Exception as ex:
-                    log.warning(f"Modelo {mod} timeout/fallo: {ex}")
+                t_out_gem = min(8.0, get_time_left())
+                fut = gemini_executor.submit(_llamar_gemini, "gemini-3.8-flash")
+                gem_res = fut.result(timeout=t_out_gem)
+                if gem_res and gem_res.strip():
+                    analisis_texto = gem_res.strip()
+                    fuente = "gemini"
+                    log.info("Respuesta generada exitosamente con Gemini (gemini-3.8-flash)")
+            except Exception as ex:
+                log.warning(f"Gemini falló o timeout tras {t_out_gem:.1f}s: {ex}")
 
-        # Intentar con OpenAI si Gemini no respondió
-        if not analisis_texto and openai_client:
+        # 3. Intentar con OpenAI si Gemini no respondió y no está deshabilitado por cuota
+        global OPENAI_DISABLED
+        if not analisis_texto and openai_client and not OPENAI_DISABLED and get_time_left() > 1.2:
             try:
                 oa_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
                 if req.history:
-                    for h in req.history[-6:]:
+                    for h in req.history[-4:]:
                         role_name = "user" if h.role in ["user", "human"] else "assistant"
                         oa_messages.append({"role": role_name, "content": h.content})
                 oa_messages.append({"role": "user", "content": user_prompt_content})
-                
+
+                t_out_oa = min(5.0, get_time_left())
                 resp_oa = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=oa_messages,
                     temperature=0.7,
                     max_tokens=450,
-                    timeout=12.0
+                    timeout=t_out_oa
                 )
                 if resp_oa.choices and resp_oa.choices[0].message.content:
                     analisis_texto = resp_oa.choices[0].message.content.strip()
+                    fuente = "openai"
                     log.info("Respuesta generada exitosamente con OpenAI gpt-4o-mini")
             except Exception as oax:
-                log.warning(f"OpenAI fallback error: {oax}")
+                status_code = getattr(oax, 'status_code', None) or getattr(getattr(oax, 'response', None), 'status_code', None)
+                err_str = str(oax)
+                log.warning(f"OpenAI error [status={status_code}]: {err_str}")
+                if "insufficient_quota" in err_str.lower() or (status_code == 429 and "quota" in err_str.lower()) or status_code == 402:
+                    OPENAI_DISABLED = True
+                    log.warning("⛔ OpenAI marcado como DESHABILITADO permanentemente por cuota insuficiente (insufficient_quota)")
 
-        # Fallback analítico sintético, conciso y adaptativo
+        # 4. Último recurso: Banco local con 16 ideas variadas (evita repeticiones y texto genérico)
         if not analisis_texto:
-            history_str = " ".join([h.content.lower() for h in (req.history or [])]) + " " + q_lower
-            
-            if is_followup:
-                if any(w in q_lower for w in ["juego", "videojuego", "unity", "godot", "unreal"]) or "juego" in history_str:
-                    analisis_texto = """Para diferenciar e innovar en tu proyecto de **juegos con IA**, te recomiendo:
+            fuente = "banco_local"
+            analisis_texto = generar_respuesta_banco(
+                query=req.query,
+                history=req.history or [],
+                similares=similares,
+                is_followup=is_followup
+            )
+            log.info("Respuesta generada exitosamente desde el banco local de innovación")
 
-1. **Comportamiento adaptativo de NPCs:** Diseñar agentes con árboles de comportamiento o redes neuronales simples que aprendan del estilo de juego del usuario en tiempo real.
-2. **Generación procedural con IA:** Generar mapas, misiones o dificultades dinámicas según la habilidad del jugador.
-3. **Control no convencional:** Integrar visión computacional (ej. MediaPipe/OpenCV) para interacción gestual con el juego.
-
-Coméntalo con tu docente guía para definir el motor y alcance."""
-
-                elif any(w in q_lower for w in ["sensor", "arduino", "esp32", "iot", "hardware", "gas"]) or "sensor" in history_str or "gas" in history_str:
-                    analisis_texto = """Para innovar en tu propuesta con **sensores y hardware**:
-
-1. **Actuación y respuesta automática:** Integrar un actuador de corte físico o relé ante eventos críticos con tiempo de respuesta inferior a 200 ms.
-2. **Filtrado local en el borde (Edge):** Calibración cruzada en el microcontrolador (ESP32/Arduino) para evitar falsas alarmas por temperatura o humedad.
-3. **Modo resiliente offline:** Asegurar que el dispositivo siga operando y protegiendo la instalación aun si se corta la conexión a internet.
-
-Lleva este enfoque a tu docente guía para definir el anteproyecto."""
-
-                elif any(w in q_lower for w in ["stack", "tecnologia", "arquitectura"]):
-                    analisis_texto = """Para estructurar técnicamente tu anteproyecto:
-
-• **Frontend:** Vanilla JS / Vite para máxima velocidad y ligereza.
-• **Backend:** FastAPI (Python 3.11) con endpoints REST asíncronos.
-• **Persistencia & Auth:** PostgreSQL en Supabase con roles de usuario.
-
-Valida esta arquitectura con tu docente guía según los requerimientos de tu carrera."""
-
-                else:
-                    analisis_texto = f"""Para diferenciar tu propuesta y darle mayor valor de titulación:
-
-1. **Automatización activa:** Que el sistema no solo muestre datos, sino que ejecute acciones o alertas en tiempo real.
-2. **Aplicación local verificable:** Enfocar la solución en una necesidad concreta de una empresa, taller o comunidad de Maipú.
-3. **Modo offline-first:** Operación autónoma tolerante a fallas de conectividad.
-
-Presenta estos puntos a tu docente guía para validar el enfoque."""
-
-            elif similares:
-                top_projs = similares[:2]
-                lista_projs = "\n".join([
-                    f"• *{s.get('titulo')}* ({s.get('carrera', 'INACAP')} · {s.get('anio', 2025)}) — **{int(s.get('porcentaje_similitud', 60))}% de similitud**"
-                    for s in top_projs
-                ])
-                
-                if "juego" in q_lower or "videojuego" in q_lower:
-                    sug1 = "**Mecánicas adaptativas con IA:** NPCs con toma de decisiones dinámica y ajuste de dificultad en tiempo real."
-                    sug2 = "**Generación procedural o control por visión:** Crear niveles dinámicos o control por cámara/gestos."
-                elif "gas" in q_lower or "sensor" in q_lower or "arduino" in q_lower:
-                    sug1 = "**Corte automático en tiempo real:** Añadir actuador de corte electromecánico y calibración ambiental multigas."
-                    sug2 = "**Modo autónomo offline:** Operación continua sin dependencia de internet."
-                else:
-                    sug1 = "**Automatización activa:** Diseñar mecanismos de respuesta inmediata ante eventos críticos."
-                    sug2 = "**Validación experimental:** Evaluar el prototipo con métricas reales en una PyME o taller de Maipú."
-
-                analisis_texto = f"""Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:
-
-{lista_projs}
-
-### ¿Qué deberías enfocar para diferenciarte?
-1. {sug1}
-2. {sug2}
-
-Valida este enfoque con tu docente guía para definir el alcance."""
-
-            else:
-                analisis_texto = f"""No se registran proyectos similares en INACAP Sede Maipú para la propuesta: *"{req.query}"* (0% de coincidencia · Idea Original).
-
-### ¿Cómo enfocarla con éxito?
-1. **Alcance acotado:** Define un prototipo funcional que puedas construir y evaluar en el semestre de titulación.
-2. **Métricas cuantitativas:** Mide tiempos de respuesta, precisión o impacto operativo real.
-
-Presenta este resumen inicial a tu docente guía para avanzar."""
-
+        elapsed = time.time() - start_time
+        log.info(f"Finalizando /api/analyze en {elapsed:.2f}s con fuente='{fuente}'")
         return {
             "query": req.query,
             "top_similitud": top_similitud,
             "nivel_riesgo": nivel_riesgo,
             "similares": similares,
-            "analisis": analisis_texto
+            "analisis": analisis_texto,
+            "fuente": fuente
         }
 
     except Exception as e:
-        log.error(f"Error en /api/analyze: {e}")
+        log.error(f"Error general en /api/analyze: {e}")
+        fuente = "banco_local"
+        analisis_texto = generar_respuesta_banco(
+            query=req.query,
+            history=req.history or [],
+            similares=similares,
+            is_followup=is_followup
+        )
         return {
             "query": req.query,
             "top_similitud": 40.0,
             "nivel_riesgo": "MODERADO",
-            "similares": [],
-            "analisis": f"""Tu propuesta ha sido recibida por NAPI.
-
-### Recomendaciones para innovar:
-1. **Enfoque técnico:** Integra procesamiento en tiempo real o automatización activa.
-2. **Validación:** Evalúa el sistema con datos prácticos en un entorno real de Maipú.
-
-Valida estos puntos con tu docente guía para el anteproyecto."""
+            "similares": similares,
+            "analisis": analisis_texto,
+            "fuente": fuente
         }
 
 if __name__ == "__main__":
