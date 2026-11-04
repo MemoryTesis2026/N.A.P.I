@@ -917,6 +917,164 @@ def generar_respuesta_banco(query: str, history: list, similares: list, is_follo
         sug2 = elegidas[1]["plantilla"].format(tema=tema)
         return f"Para profundizar y añadir nuevas capas técnicas a {tema}:\n\n• {sug1}\n• {sug2}\n\nComenta estas alternativas con tu docente guía para definir la viabilidad del anteproyecto."
 
+# ── Voz para dispositivos ESP32 (audio PCM -> texto -> NAPI -> voz PCM) ──
+import re as _re
+import wave as _wave
+import array as _array
+import io as _io
+from starlette.concurrency import run_in_threadpool
+from fastapi.responses import Response
+
+VOICE_DEVICE_KEY  = os.environ.get("VOICE_DEVICE_KEY", "")
+GEMINI_STT_MODEL  = os.environ.get("GEMINI_STT_MODEL", "gemini-3.8-flash")
+GEMINI_TTS_MODEL  = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
+GEMINI_TTS_VOICE  = os.environ.get("GEMINI_TTS_VOICE", "Kore")
+VOICE_RATE        = 16000   # Hz, mono 16 bits (igual que el ESP32)
+VOICE_MAX_CHARS   = 450
+voice_history: list = []
+
+
+def _voice_pcm_to_wav(pcm: bytes) -> bytes:
+    buf = _io.BytesIO()
+    with _wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(VOICE_RATE)
+        w.writeframes(pcm)
+    return buf.getvalue()
+
+
+def _voice_normalize(samples: "_array.array", target: float = 30000.0, max_gain: float = 60.0) -> "_array.array":
+    if not samples:
+        return samples
+    dc = sum(samples) / len(samples)
+    peak = max(abs(s - dc) for s in samples) or 1.0
+    gain = min(target / peak, max_gain)
+    return _array.array("h", (max(-32767, min(32767, int((s - dc) * gain))) for s in samples))
+
+
+def _voice_retry(fn, intentos: int = 3):
+    """Reintenta si Gemini responde 503/429 (alta demanda)."""
+    for i in range(intentos):
+        try:
+            return fn()
+        except Exception as e:
+            if i == intentos - 1:
+                raise
+            log.warning(f"[VOZ] Gemini fallo ({e}); reintentando...")
+            time.sleep(1.5)
+
+
+def _voice_transcribe(pcm: bytes) -> str:
+    samples = _array.array("h")
+    samples.frombytes(pcm[: len(pcm) - (len(pcm) % 2)])
+    wav = _voice_pcm_to_wav(_voice_normalize(samples).tobytes())
+    if groq_client:
+        try:
+            tr = groq_client.audio.transcriptions.create(file=("voz.wav", wav, "audio/wav"), model="whisper-large-v3-turbo", language="es", response_format="text")
+            texto_gq = (tr if isinstance(tr, str) else getattr(tr, "text", "") or "").strip()
+            if texto_gq:
+                return texto_gq
+        except Exception as gq_err:
+            log.warning(f"[VOZ] Groq Whisper fallo ({gq_err}), pasando a Gemini STT...")
+    resp = _voice_retry(lambda: gemini_client.models.generate_content(
+        model=GEMINI_STT_MODEL,
+        contents=[
+            genai_types.Part.from_bytes(data=wav, mime_type="audio/wav"),
+            "Transcribe literalmente este audio en español de Chile. Responde SOLO con la transcripción, "
+            "sin comillas ni comentarios. Si no hay voz entendible responde exactamente: [SILENCIO]",
+        ],
+    ))
+    texto = (resp.text or "").strip()
+    return "" if (not texto or "[SILENCIO]" in texto.upper()) else texto
+
+
+def _voice_clean_for_speech(texto: str) -> str:
+    t = _re.sub(r"https?://\S+", "", texto)
+    t = _re.sub(r"[`*_#>|~\[\]{}]", "", t)
+    t = _re.sub(r"^\s*[-•·\d]+[.)]?\s+", "", t, flags=_re.M)
+    t = _re.sub(r"[^\w\s.,;:¿?¡!()%/\-áéíóúüñÁÉÍÓÚÜÑ]", "", t)
+    t = _re.sub(r"\s+", " ", t).strip()
+    if len(t) > VOICE_MAX_CHARS:
+        corte = t[:VOICE_MAX_CHARS]
+        ultimo = max(corte.rfind("."), corte.rfind("?"), corte.rfind("!"))
+        t = corte[: ultimo + 1] if ultimo > 120 else corte
+    return t
+
+
+def _voice_tts(texto: str) -> bytes:
+    """Texto -> PCM 16 kHz mono 16 bits (Gemini TTS entrega 24 kHz y se remuestrea)."""
+    resp = _voice_retry(lambda: gemini_client.models.generate_content(
+        model=GEMINI_TTS_MODEL,
+        contents=texto,
+        config=genai_types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=genai_types.SpeechConfig(
+                voice_config=genai_types.VoiceConfig(
+                    prebuilt_voice_config=genai_types.PrebuiltVoiceConfig(voice_name=GEMINI_TTS_VOICE)
+                )
+            ),
+        ),
+    ))
+    raw = resp.candidates[0].content.parts[0].inline_data.data
+    src = _array.array("h")
+    src.frombytes(raw[: len(raw) - (len(raw) % 2)])
+    ratio = 24000 / VOICE_RATE
+    n_out = int(len(src) / ratio)
+    out = _array.array("h", bytes(2 * n_out))
+    for i in range(n_out):
+        pos = i * ratio
+        idx = int(pos)
+        frac = pos - idx
+        a = src[idx]
+        b = src[idx + 1] if idx + 1 < len(src) else a
+        out[i] = int(a + (b - a) * frac)
+    peak = max((abs(s) for s in out), default=1) or 1
+    gain = min(31000.0 / peak, 20.0)
+    return _array.array("h", (max(-32767, min(32767, int(s * gain))) for s in out)).tobytes()
+
+
+def _voice_pipeline(pcm: bytes) -> bytes:
+    if not gemini_client:
+        raise RuntimeError("GEMINI_API_KEY no configurada")
+    texto = _voice_transcribe(pcm)
+    log.info(f"[VOZ] Usuario dijo: {texto!r}")
+    if not texto:
+        return _voice_tts("No te escuché bien. Inténtalo de nuevo.")
+
+    req = AnalyzeRequest(
+        query=texto + "\n\n(Responde para ser hablado en voz alta: maximo 3 frases cortas, sin listas ni formato.)",
+        history=[ChatHistoryItem(role=h["role"], content=h["content"]) for h in voice_history[-6:]] or None,
+    )
+    respuesta = (analyze_project(req).get("analisis") or "").strip()
+    voice_history.append({"role": "user", "content": texto})
+    voice_history.append({"role": "assistant", "content": respuesta})
+    del voice_history[:-12]
+
+    hablado = _voice_clean_for_speech(respuesta) or "No tengo una respuesta para eso."
+    log.info(f"[VOZ] NAPI responde: {hablado!r}")
+    return _voice_tts(hablado)
+
+
+@app.post("/api/voice")
+async def voice_endpoint(request: Request):
+    """
+    Recibe audio crudo (PCM 16-bit mono 16 kHz) desde el ESP32 y devuelve la respuesta de NAPI
+    como audio crudo (mismo formato) para reproducirlo directo por el parlante.
+    """
+    if VOICE_DEVICE_KEY and request.headers.get("x-device-key") != VOICE_DEVICE_KEY:
+        raise HTTPException(status_code=401, detail="Clave de dispositivo invalida")
+    pcm = await request.body()
+    if len(pcm) < VOICE_RATE * 2 // 2:  # menos de 0.5 s
+        raise HTTPException(status_code=400, detail="Audio demasiado corto")
+    try:
+        audio = await run_in_threadpool(_voice_pipeline, pcm)
+    except Exception as e:
+        log.error(f"Error en /api/voice: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    return Response(content=audio, media_type="application/octet-stream")
+
+
 # ── Motor RAG y Asistente NAPI ──
 @app.post("/api/analyze")
 def analyze_project(req: AnalyzeRequest):
