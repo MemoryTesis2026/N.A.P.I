@@ -100,9 +100,9 @@ const AREAS_CARRERAS = {
 };
 
 // ──────────────────────────────────────────
-//  DATASET — 12 Proyectos Sede Maipú
+//  DATASET DE RESPALDO (FALLBACK OFFLINE) — 12 Proyectos Sede Maipú
 // ──────────────────────────────────────────
-const PROJECTS = [
+const INITIAL_PROJECTS = [
   { id:1, nombre:"Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", area:"Automatización, Electrónica y Robótica", carrera:"Ingeniería en Electrónica y Sistemas Inteligentes", anio:2025, autores:"Diego Álvarez, Valentina Cruz", desc:"Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack:["ESP32","MQTT","Node.js","React","MongoDB","TensorFlow Lite"], estado:"Público", nota:6.7, archivo:"anteproyecto_iot_maipu.pdf", archivo_url:"assets/docs/anteproyecto_iot_maipu.pdf" },
   { id:2, nombre:"App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2025, autores:"Camila Herrera, Francisco Sepúlveda", desc:"App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack:["React Native","FastAPI","PostgreSQL","Docker","AWS S3"], estado:"Público", nota:6.8, archivo:"app_stock_trazabilidad.docx", archivo_url:"assets/docs/app_stock_trazabilidad.docx" },
   { id:3, nombre:"Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Matías Rojas, Sofía Morales, Ignacio Vega", desc:"E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack:["Next.js","Python","Scikit-learn","Redis","Transbank API","MySQL"], estado:"Público", nota:6.9, archivo:"ecommerce_recomendacion_ia.pdf", archivo_url:"assets/docs/ecommerce_recomendacion_ia.pdf" },
@@ -116,6 +116,8 @@ const PROJECTS = [
   { id:11, nombre:"Rover Teleoperado para Minería Subterránea con Sensores de Gas", area:"Minería", carrera:"Ingeniería en Minas", anio:2025, autores:"Gonzalo Parra, Tamara Henríquez", desc:"Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack:["Arduino","ROS 2","Python","React","WebSockets"], estado:"Público", nota:6.9, archivo:"rover_teleoperado_mineria.pdf", archivo_url:"assets/docs/rover_teleoperado_mineria.pdf" },
   { id:12, nombre:"Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", area:"Agroindustria y Medioambiente", carrera:"Ingeniería en Medioambiente y Sustentabilidad", anio:2023, autores:"Bastián Morales, Camila Silva", desc:"Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack:["React","Express.js","PostgreSQL","Chart.js","Node.js"], estado:"Público", nota:6.5, archivo:"auditoria_ambiental_huella_carbono.docx", archivo_url:"assets/docs/software_bim_presupuestos.docx" }
 ];
+
+let PROJECTS = [...INITIAL_PROJECTS];
 
 function getFileInfo(urlOrName) {
   if (!urlOrName) return { isDoc: false, isPdf: false, label: 'Documento', fullLabel: 'Documento', badge: '📎 Archivo', ext: '' };
@@ -134,20 +136,20 @@ function getFileInfo(urlOrName) {
 const shortC = c => c ? c.split('/')[0].trim() : '';
 
 // ──────────────────────────────────────────
-//  CONFIGURACIÓN DE API Y ESTADO GLOBAL
+//  CONFIGURACIÓN DE API (RENDER) Y ESTADO GLOBAL
 // ──────────────────────────────────────────
-const API_BASE_URL = (() => {
-  if (typeof window !== 'undefined') {
-    if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
-      if (window.location.port !== '8000') {
-        return 'http://127.0.0.1:8000/api';
-      }
-    }
-  }
-  return '/api';
-})();
+const RENDER_BASE_URL = (
+  (typeof window !== 'undefined' && window.VITE_API_URL) ||
+  'https://n-a-p-i.onrender.com'
+).replace(/\/+$/, '');
+const API_BASE_URL = `${RENDER_BASE_URL}/api`;
 
-let currentRole = 'estudiante'; // 'estudiante', 'docente', 'administrador'
+// Fetch silencioso a /api/health para despertar la instancia de Render si estaba inactiva
+function wakeUpRenderBackend() {
+  fetch(`${API_BASE_URL}/health`, { method: 'GET' }).catch(() => {});
+}
+
+let currentRole = 'guest'; // 'guest', 'estudiante', 'docente', 'administrador'
 let napiOpen = false;
 let editingId = null;
 let visPublic = true;
@@ -155,8 +157,9 @@ let currentModal = null;
 let currentUser = null;
 
 function canDownloadDocuments() {
-  if (currentUser && currentUser.rol) {
-    return currentUser.rol === 'docente' || currentUser.rol === 'administrador';
+  const rol = currentUser?.rol || currentUser?.role;
+  if (rol) {
+    return rol === 'docente' || rol === 'administrador';
   }
   const studentScreen = document.getElementById('studentScreen');
   if (studentScreen && !studentScreen.classList.contains('hidden')) {
@@ -378,39 +381,10 @@ function updateUserDisplay(user) {
   }
 }
 
-// ── Estado Inicial de Usuarios ──
-const DEFAULT_USERS = [
-  { id: "usr-1", nombre: "Flavio Escobar Mendoza", email: "flavio.escobar@inacapmail.cl", password: "InacapPassword123!", rol: "estudiante", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2026-03-01" },
-  { id: "usr-2", nombre: "Francisca González", email: "francisca.gonzalez@inacapmail.cl", password: "InacapPassword123!", rol: "estudiante", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2026-03-02" },
-  { id: "usr-3", nombre: "Prof. Marcela Rojas", email: "docente.maipu@inacap.cl", password: "InacapPassword123!", rol: "docente", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2025-10-20" },
-  { id: "usr-4", nombre: "Prof. Carlos Mendoza", email: "carlos.mendoza@inacap.cl", password: "InacapPassword123!", rol: "docente", area: "Automatización, Electrónica y Robótica", carrera: "Ingeniería en Automatización y Robótica", created_at: "2025-11-15" },
-  { id: "usr-5", nombre: "Admin Sede Maipú", email: "admin.maipu@inacap.cl", password: "InacapPassword123!", rol: "administrador", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", created_at: "2025-08-01" }
-];
+// ── Estado de Usuarios (Sincronizado desde Supabase) ──
+let ADMIN_USERS = [];
 
-let ADMIN_USERS = (() => {
-  try {
-    const saved = localStorage.getItem('napi_stored_users');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const emails = new Set(parsed.map(u => (u.email || '').toLowerCase()));
-        DEFAULT_USERS.forEach(du => {
-          if (!emails.has(du.email.toLowerCase())) parsed.push(du);
-        });
-        return parsed;
-      }
-    }
-  } catch(e) {}
-  return [...DEFAULT_USERS];
-})();
-
-function saveAdminUsersToStorage() {
-  try {
-    localStorage.setItem('napi_stored_users', JSON.stringify(ADMIN_USERS));
-  } catch(e) {}
-}
-
-// ── Modales de Login & Registro ──
+// ── Modales de Login & Registro (100% Render + Supabase Auth) ──
 function toggleRegisterForm(role, show = null) {
   const regId = role === 'docente' ? 'regFormDocente' : 'regFormEstudiante';
   const logId = role === 'docente' ? 'loginFormDocente' : 'loginFormEstudiante';
@@ -422,7 +396,6 @@ function toggleRegisterForm(role, show = null) {
   if (shouldShow) {
     regEl.classList.remove('hidden');
     logEl.classList.add('hidden');
-    // Inicializar dropdowns de carrera
     if (role === 'docente') onRegDocenteAreaChange();
     else onRegEstudianteAreaChange();
   } else {
@@ -453,34 +426,28 @@ async function doModalRegister(role) {
     return;
   }
 
-  // Guardar inmediatamente en almacén local y memoria
-  const newRegUser = {
-    id: 'usr-' + Date.now(),
-    nombre,
-    email,
-    password: pass,
-    rol: role,
-    area,
-    carrera,
-    created_at: new Date().toISOString().split('T')[0]
-  };
-  const exIdx = ADMIN_USERS.findIndex(u => (u.email || '').toLowerCase() === email.toLowerCase());
-  if (exIdx >= 0) {
-    ADMIN_USERS[exIdx] = newRegUser;
-  } else {
-    ADMIN_USERS.unshift(newRegUser);
-  }
-  saveAdminUsersToStorage();
+  errEl?.classList.add('hidden');
 
   try {
-    fetch(`${API_BASE_URL}/auth/register`, {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass, nombre, rol: role, area, carrera })
-    }).catch(() => {});
-  } catch (err) {}
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = data.detail || 'No se pudo registrar el usuario en Supabase.';
+      return;
+    }
+  } catch (err) {
+    console.error('Error en registro:', err);
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Error de conexión con el servidor en Render. Intenta nuevamente.';
+    return;
+  }
 
-  toast(`✅ Cuenta de ${role} registrada exitosamente`);
+  toast(`✅ Cuenta de ${role} registrada en Supabase exitosamente`);
   const emailInput = document.getElementById(isDoc ? 'dEmail' : 'eEmail');
   const passInput  = document.getElementById(isDoc ? 'dPass' : 'ePass');
   if (emailInput) emailInput.value = email;
@@ -489,110 +456,17 @@ async function doModalRegister(role) {
   await doModalLogin(role);
 }
 
-async function doModalLogin(role, isDemo = false) {
-  let emailId = 'eEmail';
-  let passId  = 'ePass';
-  let errId   = 'loginError-e';
-  let errMsgId = 'loginErrMsg-e';
+function enterAuthenticatedSession(user, showToastMsg = true) {
+  if (!user) return;
+  const normalizedRole = user.rol || user.role || 'estudiante';
+  user.rol = normalizedRole;
+  user.role = normalizedRole;
 
-  if (role === 'docente') {
-    emailId = 'dEmail'; passId = 'dPass'; errId = 'loginError-d'; errMsgId = 'loginErrMsg-d';
-  } else if (role === 'administrador') {
-    emailId = 'aEmail'; passId = 'aPass'; errId = 'loginError-a'; errMsgId = 'loginErrMsg-a';
-  }
-
-  if (isDemo) {
-    const emailEl = document.getElementById(emailId);
-    const passEl = document.getElementById(passId);
-    if (role === 'administrador') {
-      if (emailEl) emailEl.value = 'admin.maipu@inacap.cl';
-    } else if (role === 'docente') {
-      if (emailEl) emailEl.value = 'docente.maipu@inacap.cl';
-    } else {
-      if (emailEl) emailEl.value = 'alumno.maipu@inacap.cl';
-    }
-    if (passEl) passEl.value = 'InacapPassword123!';
-  }
-
-  const email = document.getElementById(emailId)?.value.trim();
-  const pass  = document.getElementById(passId)?.value.trim();
-  const errEl = document.getElementById(errId);
-  const errMsg = document.getElementById(errMsgId);
-
-  if (!email) { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu correo institucional.'; return; }
-  if (!pass)  { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu contraseña.'; return; }
-
-  let user = null;
-
-  // Buscar coincidencia local
-  const localMatch = ADMIN_USERS.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass, role })
-    });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      user = data.user;
-      if (localMatch) {
-        if (localMatch.nombre) user.nombre = localMatch.nombre;
-        if (localMatch.carrera) user.carrera = localMatch.carrera;
-        if (localMatch.area) user.area = localMatch.area;
-      }
-    }
-  } catch (err) {
-    console.warn('Backend offline o error auth:', err);
-  }
-
-  if (!user) {
-    const isMasterPass = (pass === '1234' || pass === 'InacapPassword123!');
-    const passMatches = localMatch && (localMatch.password === pass || isMasterPass);
-
-    if (passMatches || isMasterPass) {
-      if (localMatch) {
-        user = { ...localMatch };
-      } else {
-        const isAdmin = email.toLowerCase().includes('admin');
-        const isDoc = email.toLowerCase().includes('docente') || role === 'docente';
-        
-        let customName = '';
-        if (isAdmin) {
-          customName = 'Admin Sede Maipú';
-        } else if (isDoc) {
-          customName = 'Prof. Marcela Rojas';
-        } else if (email.toLowerCase().includes('flavio')) {
-          customName = 'Flavio Escobar Mendoza';
-        } else if (email.toLowerCase().includes('francisca')) {
-          customName = 'Francisca González';
-        } else {
-          const raw = email.split('@')[0].replace(/[._-]/g, ' ');
-          customName = raw.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ').trim() || 'Estudiante INACAP';
-        }
-
-        user = {
-          nombre: customName,
-          email: email,
-          rol: isAdmin ? 'administrador' : isDoc ? 'docente' : 'estudiante',
-          area: 'Informática, Ciberseguridad y Telecomunicaciones',
-          carrera: 'Ingeniería en Informática'
-        };
-      }
-    } else {
-      errEl?.classList.remove('hidden');
-      if (errMsg) errMsg.textContent = 'Credenciales inválidas. Verifica tu correo y contraseña.';
-      return;
-    }
-  }
-
-  errEl?.classList.add('hidden');
-  currentRole = user.rol || role;
+  currentRole = normalizedRole;
   currentUser = user;
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
   updateUserDisplay(currentUser);
 
-  // Limpiar chatbox para aislamiento de sesión
   const box = document.getElementById('chatBox');
   if (box) box.innerHTML = '';
 
@@ -604,11 +478,15 @@ async function doModalLogin(role, isDemo = false) {
   const legacyLogin = document.getElementById('loginScreen');
   if (legacyLogin) legacyLogin.style.display = 'none';
 
+  const adminScreen = document.getElementById('adminScreen');
+  const studentScreen = document.getElementById('studentScreen');
+  if (adminScreen) adminScreen.classList.add('hidden');
+  if (studentScreen) studentScreen.classList.add('hidden');
+
   setTimeout(() => {
     if (currentRole === 'administrador') {
       document.getElementById('adminScreen')?.classList.remove('hidden');
       initAdmin('users');
-      // El administrador NO utiliza NAPI (se oculta botón y panel)
       const napiWidget = document.getElementById('napiWidget');
       if (napiWidget) napiWidget.style.display = 'none';
       const chatPanel = document.getElementById('chatPanel');
@@ -627,8 +505,117 @@ async function doModalLogin(role, isDemo = false) {
       if (napiWidget) napiWidget.style.display = 'flex';
       initNapi();
     }
-    toast(`🔑 Sesión iniciada: ${currentUser.nombre}`);
-  }, 300);
+    if (showToastMsg) {
+      toast(`🔑 Sesión iniciada: ${currentUser.nombre || currentUser.email}`);
+    }
+  }, 150);
+}
+
+async function doModalLogin(role) {
+  let emailId = 'eEmail';
+  let passId  = 'ePass';
+  let errId   = 'loginError-e';
+  let errMsgId = 'loginErrMsg-e';
+
+  if (role === 'docente') {
+    emailId = 'dEmail'; passId = 'dPass'; errId = 'loginError-d'; errMsgId = 'loginErrMsg-d';
+  } else if (role === 'administrador') {
+    emailId = 'aEmail'; passId = 'aPass'; errId = 'loginError-a'; errMsgId = 'loginErrMsg-a';
+  }
+
+  const email = document.getElementById(emailId)?.value.trim();
+  const pass  = document.getElementById(passId)?.value.trim();
+  const errEl = document.getElementById(errId);
+  const errMsg = document.getElementById(errMsgId);
+
+  if (!email) { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu correo institucional.'; return; }
+  if (!pass)  { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu contraseña.'; return; }
+
+  errEl?.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success || !data.user) {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = data.detail || 'Credenciales inválidas. Verifica tu correo y contraseña.';
+      return;
+    }
+
+    const user = {
+      ...data.user,
+      rol: data.user.rol || data.user.role || role || 'estudiante',
+      role: data.user.role || data.user.rol || role || 'estudiante'
+    };
+    if (data.access_token) {
+      localStorage.setItem('napi_access_token', data.access_token);
+    }
+
+    enterAuthenticatedSession(user, true);
+  } catch (err) {
+    console.error('Error conectando a Render /api/auth/login:', err);
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'No se pudo conectar al servidor de autenticación en Render. Intenta nuevamente en unos segundos.';
+  }
+}
+
+// Soporte para pantalla de login secundaria (#loginScreen)
+let selectedLegacyRole = 'estudiante';
+function selectRole(role) {
+  selectedLegacyRole = role;
+  document.getElementById('role-estudiante')?.classList.toggle('active', role === 'estudiante');
+  document.getElementById('role-docente')?.classList.toggle('active', role === 'docente');
+}
+
+function togglePass() {
+  const input = document.getElementById('loginPass');
+  if (input) input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail')?.value.trim();
+  const pass  = document.getElementById('loginPass')?.value.trim();
+  const errEl = document.getElementById('loginError');
+  const errMsg = document.getElementById('loginErrorMsg');
+
+  if (!email || !pass) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Ingresa tu correo institucional y contraseña.';
+    return;
+  }
+
+  errEl?.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success || !data.user) {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = data.detail || 'Credenciales inválidas. Verifica tu correo y contraseña.';
+      return;
+    }
+
+    const user = {
+      ...data.user,
+      rol: data.user.rol || data.user.role || selectedLegacyRole || 'estudiante',
+      role: data.user.role || data.user.rol || selectedLegacyRole || 'estudiante'
+    };
+    if (data.access_token) {
+      localStorage.setItem('napi_access_token', data.access_token);
+    }
+    enterAuthenticatedSession(user, true);
+  } catch (err) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Error de conexión con el servidor en Render.';
+  }
 }
 
 // ── Navegación suave ──
@@ -661,12 +648,18 @@ function updateNavActive() {
 
 // ── Inicialización General ──
 document.addEventListener('DOMContentLoaded', () => {
+  // Despertar instancia de Render silenciosamente al cargar la app
+  wakeUpRenderBackend();
+
   const adminScreen = document.getElementById('adminScreen');
   const studentScreen = document.getElementById('studentScreen');
   const loginScreen = document.getElementById('loginScreen');
   if (adminScreen) adminScreen.classList.add('hidden');
   if (studentScreen) studentScreen.classList.add('hidden');
   if (loginScreen) loginScreen.style.display = 'none';
+
+  // Limpiar cualquier resto antiguo de usuarios simulados en localStorage
+  localStorage.removeItem('napi_stored_users');
 
   // Iniciar carrusel
   startCarouselTimer();
@@ -677,10 +670,25 @@ document.addEventListener('DOMContentLoaded', () => {
   populateCarreraDropdown('fArea', 'fCarrera', false);
   populateCarreraDropdown('editArea', 'editCarrera', false);
   populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
+  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
   populateCarreraDropdown('crudArea', 'crudCarrera', false);
 
   // Inicializar Drag & Drop para documentos de tesis
   initDragAndDrop();
+
+  // Restaurar sesión autenticada desde localStorage si existe
+  try {
+    const savedSession = localStorage.getItem('napi_user');
+    if (savedSession) {
+      const parsedUser = JSON.parse(savedSession);
+      const userRole = parsedUser?.rol || parsedUser?.role;
+      if (parsedUser && parsedUser.email && userRole && userRole !== 'guest') {
+        enterAuthenticatedSession(parsedUser, false);
+      }
+    }
+  } catch (e) {
+    localStorage.removeItem('napi_user');
+  }
 
   // Sincronizar catálogo inicial desde Supabase
   syncProjectsFromSupabase();
@@ -693,8 +701,23 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════════
 
 function logout() {
+  const prevKey = getChatStorageKey();
   currentUser = null;
+  currentRole = 'guest';
+
   localStorage.removeItem('napi_user');
+  localStorage.removeItem('napi_access_token');
+  localStorage.removeItem('napi_stored_users');
+  if (prevKey) localStorage.removeItem(prevKey);
+
+  // Limpiar claves de caché de chat previas en localStorage
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('napi_chat_')) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch (e) {}
 
   const adminScreen = document.getElementById('adminScreen');
   const studentScreen = document.getElementById('studentScreen');
@@ -776,24 +799,18 @@ function initAdmin(defaultTab = 'dashboard') {
   }
 }
 
-// ── CRUD de Usuarios ──
+// ── CRUD de Usuarios (Conectado a Supabase vía Render) ──
 async function loadAdminUsers() {
   try {
     const res = await fetch(`${API_BASE_URL}/admin/users`);
     if (res.ok) {
       const data = await res.json();
-      if (data.users && data.users.length > 0) {
-        // Combinar o actualizar con usuarios de la base de datos
-        const existingEmails = new Set(ADMIN_USERS.map(u => u.email.toLowerCase()));
-        data.users.forEach(u => {
-          if (!existingEmails.has(u.email.toLowerCase())) {
-            ADMIN_USERS.push(u);
-          }
-        });
+      if (Array.isArray(data.users)) {
+        ADMIN_USERS = data.users;
       }
     }
   } catch (err) {
-    console.warn('Usando catálogo local de usuarios:', err);
+    console.warn('No se pudo cargar el listado de usuarios desde Render:', err);
   }
   renderAdminUsersTable(ADMIN_USERS);
   updateUserKpis();
@@ -887,7 +904,7 @@ function openCreateUserModal() {
   document.getElementById('crudNombre').value = '';
   document.getElementById('crudEmail').value = '';
   document.getElementById('crudRol').value = 'estudiante';
-  document.getElementById('crudPassword').value = 'InacapPassword123!';
+  document.getElementById('crudPassword').value = '';
   document.getElementById('crudArea').value = 'Informática, Ciberseguridad y Telecomunicaciones';
   onCrudAreaChange();
 
@@ -896,7 +913,7 @@ function openCreateUserModal() {
 }
 
 function openEditUserModal(userId) {
-  const u = ADMIN_USERS.find(x => x.id === userId);
+  const u = ADMIN_USERS.find(x => String(x.id) === String(userId));
   if (!u) return;
 
   document.getElementById('userCrudModalTitle').textContent = 'Editar Usuario';
@@ -904,7 +921,7 @@ function openEditUserModal(userId) {
   document.getElementById('crudNombre').value = u.nombre || '';
   document.getElementById('crudEmail').value = u.email || '';
   document.getElementById('crudRol').value = u.rol || 'estudiante';
-  document.getElementById('crudPassword').value = u.password || '';
+  document.getElementById('crudPassword').value = '';
   document.getElementById('crudArea').value = u.area || 'Informática, Ciberseguridad y Telecomunicaciones';
   
   onCrudAreaChange();
@@ -937,53 +954,53 @@ async function submitUserCrud() {
     return;
   }
 
-  if (!userId) {
-    // Modo CREACIÓN
-    const newId = 'usr-' + Date.now();
-    const newUser = {
-      id: newId,
-      nombre,
-      email,
-      password: pass || 'InacapPassword123!',
-      rol,
-      area,
-      carrera,
-      created_at: new Date().toISOString().split('T')[0]
-    };
-    ADMIN_USERS.unshift(newUser);
-    saveAdminUsersToStorage();
+  if (!userId && (!pass || pass.length < 6)) {
+    errEl?.classList.remove('hidden');
+    if (errMsg) errMsg.textContent = 'Ingresa una contraseña de al menos 6 caracteres para el nuevo usuario.';
+    return;
+  }
 
-    // Sincronizar en background con FastAPI
+  errEl?.classList.add('hidden');
+
+  if (!userId) {
     try {
-      fetch(`${API_BASE_URL}/admin/users`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, email, rol, area, carrera, password: pass || 'InacapPassword123!' })
-      }).catch(() => {});
-    } catch(e) {}
-
-    toast(`✅ Usuario ${nombre} creado exitosamente`);
+        body: JSON.stringify({ nombre, email, rol, area, carrera, password: pass })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        errEl?.classList.remove('hidden');
+        if (errMsg) errMsg.textContent = data.detail || 'Error al crear usuario en Supabase.';
+        return;
+      }
+      toast(`✅ Usuario ${nombre} creado en Supabase`);
+      await loadAdminUsers();
+    } catch (e) {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = 'No se pudo conectar al servidor en Render.';
+      return;
+    }
   } else {
-    // Modo EDICIÓN
-    const u = ADMIN_USERS.find(x => x.id === userId);
-    if (u) {
-      u.nombre = nombre;
-      u.email = email;
-      u.rol = rol;
-      u.area = area;
-      u.carrera = carrera;
-      if (pass) u.password = pass;
-      saveAdminUsersToStorage();
-
-      try {
-        fetch(`${API_BASE_URL}/admin/users/${userId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, email, rol, area, carrera, password: pass || undefined })
-        }).catch(() => {});
-      } catch(e) {}
-
-      toast(`✅ Usuario ${nombre} actualizado`);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, rol, area, carrera, password: pass || undefined })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        errEl?.classList.remove('hidden');
+        if (errMsg) errMsg.textContent = data.detail || 'Error al actualizar usuario.';
+        return;
+      }
+      toast(`✅ Usuario ${nombre} actualizado en Supabase`);
+      await loadAdminUsers();
+    } catch (e) {
+      errEl?.classList.remove('hidden');
+      if (errMsg) errMsg.textContent = 'No se pudo conectar al servidor en Render.';
+      return;
     }
   }
 
@@ -1035,21 +1052,25 @@ async function confirmDeleteUser() {
   if (btn) btn.disabled = true;
   if (btnText) btnText.textContent = 'Eliminando...';
 
-  const idx = ADMIN_USERS.findIndex(x => String(x.id) === String(userId));
-  if (idx >= 0) {
-    const deletedUser = ADMIN_USERS[idx];
-    ADMIN_USERS.splice(idx, 1);
-    saveAdminUsersToStorage();
-    logActivity('🗑️', `Usuario eliminado: ${deletedUser.nombre}`);
-  }
-
   try {
-    await fetch(`${API_BASE_URL}/admin/users/${userId}`, { method: 'DELETE' }).catch(() => {});
-  } catch(e) {}
+    const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { method: 'DELETE' });
+    if (res.ok) {
+      const idx = ADMIN_USERS.findIndex(x => String(x.id) === String(userId));
+      if (idx >= 0) {
+        const deletedUser = ADMIN_USERS[idx];
+        ADMIN_USERS.splice(idx, 1);
+        logActivity('🗑️', `Usuario eliminado: ${deletedUser.nombre}`);
+      }
+      toast('🗑️ Usuario eliminado de Supabase.');
+    } else {
+      toast('⚠️ No se pudo eliminar el usuario en el servidor.');
+    }
+  } catch (e) {
+    toast('⚠️ Error de red al intentar eliminar el usuario.');
+  }
 
   filterAdminUsersTable();
   updateUserKpis();
-  toast('🗑️ Usuario eliminado del sistema.');
   closeDeleteUserModal();
 }
 
@@ -1403,7 +1424,7 @@ function openEdit(id) {
 
 function closeEdit() { document.getElementById('editModal').classList.add('hidden'); }
 
-function saveEdit() {
+async function saveEdit() {
   const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
@@ -1430,13 +1451,41 @@ function saveEdit() {
     return;
   }
 
+  const stackArr = stackStr ? stackStr.split(',').map(s=>s.trim()).filter(Boolean) : ['General'];
+
+  try {
+    const resp = await fetch(`${API_BASE_URL}/projects/${p.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: nombre,
+        area: area,
+        carrera: carrera,
+        autores: autores,
+        anio: anio,
+        nota: nota,
+        stack: stackArr.join(', '),
+        resumen: desc || p.desc,
+        estado: estado
+      })
+    });
+    if (!resp.ok) {
+      const errJson = await resp.json().catch(() => ({}));
+      toast(`⚠️ Error al guardar en Supabase: ${errJson.detail || 'Error del servidor'}`);
+      return;
+    }
+  } catch (e) {
+    toast('⚠️ No se pudo conectar a Render para guardar los cambios en Supabase.');
+    return;
+  }
+
   p.nombre  = nombre;
   p.area    = area;
   p.carrera = carrera;
   p.autores = autores;
   p.anio    = anio;
   p.nota    = nota;
-  p.stack   = stackStr ? stackStr.split(',').map(s=>s.trim()).filter(Boolean) : ['General'];
+  p.stack   = stackArr;
   p.desc    = desc || p.desc;
   p.estado  = estado;
 
@@ -1450,34 +1499,11 @@ function saveEdit() {
   filterTable(); 
   renderKpis();
   renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
-  logActivity('✏️', `Metadatos editados: "${p.nombre}" (Nota: ${p.nota})`);
-  toast('✅ Metadatos actualizados.');
-
-  // Sincronizar en Supabase
-  try {
-    fetch(`${API_BASE_URL}/projects/${p.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        titulo: nombre,
-        area: area,
-        carrera: carrera,
-        autores: autores,
-        anio: anio,
-        nota: nota,
-        stack: Array.isArray(p.stack) ? p.stack.join(', ') : p.stack,
-        resumen: p.desc,
-        estado: estado
-      })
-    })
-    .then(r => {
-      if (r.ok) toast('☁️ Cambios guardados en Supabase.');
-    })
-    .catch(() => {});
-  } catch(e) {}
+  logActivity('✏️', `Metadatos editados en Supabase: "${p.nombre}" (Nota: ${p.nota})`);
+  toast('☁️ Metadatos actualizados en Supabase.');
 }
 
-function toggleStatus(id) {
+async function toggleStatus(id) {
   const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
@@ -1485,19 +1511,28 @@ function toggleStatus(id) {
   }
   const p = PROJECTS.find(x => String(x.id) === String(id));
   if (!p) return;
-  p.estado = p.estado === 'Público' ? 'Oculto' : 'Público';
+  const newStatus = p.estado === 'Público' ? 'Oculto' : 'Público';
+
+  try {
+    const resp = await fetch(`${API_BASE_URL}/projects/${p.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: newStatus })
+    });
+    if (!resp.ok) {
+      toast('⚠️ No se pudo actualizar la visibilidad en Supabase.');
+      return;
+    }
+  } catch (e) {
+    toast('⚠️ Error de red al actualizar visibilidad en Render.');
+    return;
+  }
+
+  p.estado = newStatus;
   filterTable(); 
   renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
   logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
   toast(`${p.estado === 'Público' ? '👁️ Proyecto Visible en catálogo' : '🙈 Proyecto Oculto en catálogo'}`);
-
-  try {
-    fetch(`${API_BASE_URL}/projects/${p.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: p.estado })
-    }).catch(() => {});
-  } catch(e) {}
 }
 
 let pendingDeleteProjectId = null;
@@ -1556,20 +1591,23 @@ async function confirmDeleteProject() {
   const i = PROJECTS.findIndex(x => String(x.id) === String(id));
   if (i >= 0) {
     const deleted = PROJECTS[i];
-    PROJECTS.splice(i, 1);
-    logActivity('🗑️', `Proyecto eliminado: "${deleted.nombre}"`);
-    filterTable(); 
-    renderKpis(); 
-    renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
-    toast('🗑️ Proyecto eliminado del catálogo.');
-
     try {
-      fetch(`${API_BASE_URL}/projects/${deleted.id}`, {
+      const resp = await fetch(`${API_BASE_URL}/projects/${deleted.id}`, {
         method: 'DELETE'
-      }).then(r => {
-        if (r.ok) toast('🗑️ Proyecto eliminado permanentemente de Supabase.');
-      }).catch(() => {});
-    } catch(e) {}
+      });
+      if (resp.ok) {
+        PROJECTS.splice(i, 1);
+        logActivity('🗑️', `Proyecto eliminado de Supabase: "${deleted.nombre}"`);
+        filterTable(); 
+        renderKpis(); 
+        renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
+        toast('🗑️ Proyecto eliminado permanentemente de Supabase.');
+      } else {
+        toast('⚠️ No se pudo eliminar el proyecto en Supabase.');
+      }
+    } catch (e) {
+      toast('⚠️ Error de conexión con Render al intentar eliminar el proyecto.');
+    }
   }
 
   closeDeleteModal();
@@ -1749,7 +1787,7 @@ async function submitProject() {
   let serverSuccess = false;
   let serverProjectData = null;
 
-  // Sincronizar en Supabase con soporte de subida a Storage
+  // Sincronizar en Supabase vía Render con soporte de subida a Storage
   try {
     const formData = new FormData();
     formData.append('titulo', nombre);
@@ -1778,37 +1816,37 @@ async function submitProject() {
       toast(`⚠️ El servidor no pudo registrar el proyecto: ${errJson.detail || 'Error en Supabase'}`);
     }
   } catch (err) {
-    console.warn('Backend API no disponible al guardar:', err);
-    toast('⚠️ No se pudo conectar al servidor backend. Por favor inicia "iniciar_servidor.bat" en tu PC.');
+    console.warn('Backend API en Render no disponible al guardar:', err);
+    toast('⚠️ No se pudo conectar al servidor backend en Render. Intenta de nuevo en unos segundos.');
   }
 
-  const newProjectItem = { 
-    id: serverProjectData?.project?.id || (PROJECTS.length + 1), 
-    nombre, 
-    area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
-    carrera, 
-    anio, 
-    autores, 
-    desc, 
-    stack, 
-    estado: visPublic ? 'Público' : 'Oculto', 
-    nota: nota,
-    archivo: fileToUpload ? fileToUpload.name : null,
-    archivo_url: serverProjectData?.project?.archivo_url || (fileToUpload ? URL.createObjectURL(fileToUpload) : null)
-  };
-  PROJECTS.unshift(newProjectItem);
-
   if (serverSuccess) {
+    const newProjectItem = { 
+      id: serverProjectData?.project?.id || Date.now(), 
+      nombre, 
+      area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
+      carrera, 
+      anio, 
+      autores, 
+      desc, 
+      stack, 
+      estado: visPublic ? 'Público' : 'Oculto', 
+      nota: nota,
+      archivo: fileToUpload ? fileToUpload.name : null,
+      archivo_url: serverProjectData?.project?.archivo_url || null
+    };
+    PROJECTS.unshift(newProjectItem);
+
     const sb = document.getElementById('uploadSuccess');
     if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'), 4000); }
     clearForm(); 
     logActivity('🚀', `Nuevo proyecto indexado en Supabase: "${nombre}" (Nota: ${nota})`);
     toast(`🚀 Proyecto "${nombre}" guardado y disponible para todos en Supabase.`);
-  }
 
-  filterTable(); 
-  renderKpis();
-  renderCards(PROJECTS.filter(p => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? p.estado === 'Público' : true));
+    filterTable(); 
+    renderKpis();
+    renderCards(PROJECTS.filter(p => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? p.estado === 'Público' : true));
+  }
 
   if (btnSubmit) {
     btnSubmit.disabled = false;
@@ -1817,48 +1855,56 @@ async function submitProject() {
 }
 
 // ══════════════════════════════════════════
-//  MÓDULO 3: PANEL ESTUDIANTE & CATÁLOGO
+//  MÓDULO 3: PANEL ESTUDIANTE & CATÁLOGO (SINCRONIZADO CON SUPABASE)
 // ══════════════════════════════════════════
+function mapSupabaseProjectToFrontend(sp, idx = 0) {
+  return {
+    id: sp.id || (idx + 1),
+    nombre: sp.titulo || sp.nombre || 'Proyecto sin título',
+    area: sp.area || 'Informática, Ciberseguridad y Telecomunicaciones',
+    carrera: sp.carrera || 'Ingeniería en Informática',
+    anio: sp.anio || 2025,
+    autores: sp.autores || 'Autor Institucional',
+    desc: sp.resumen || sp.desc || '',
+    stack: sp.stack
+      ? (Array.isArray(sp.stack) ? sp.stack : String(sp.stack).split(',').map(s => s.trim()).filter(Boolean))
+      : ['General'],
+    estado: sp.estado || 'Público',
+    nota: sp.nota || 6.5,
+    archivo: sp.archivo || (sp.archivo_url ? sp.archivo_url.split('/').pop() : null),
+    archivo_url: sp.archivo_url || null
+  };
+}
+
 async function syncProjectsFromSupabase() {
+  const isStudent = (currentUser?.rol === 'estudiante' || currentRole === 'estudiante');
+  const roleParam = isStudent ? '?role=estudiante' : '';
   try {
-    const isStudent = (currentUser?.rol === 'estudiante' || currentRole === 'estudiante');
-    const roleParam = isStudent ? '?role=estudiante' : '';
     const res = await fetch(`${API_BASE_URL}/projects${roleParam}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.projects && Array.isArray(data.projects)) {
-        data.projects.forEach(sp => {
-          const exists = PROJECTS.find(p => p.id === sp.id || (p.nombre.toLowerCase() === (sp.titulo || '').toLowerCase()));
-          if (exists) {
-            if (sp.archivo_url) exists.archivo_url = sp.archivo_url;
-            if (sp.estado) exists.estado = sp.estado;
-            if (sp.area) exists.area = sp.area;
-            if (sp.stack) exists.stack = Array.isArray(sp.stack) ? sp.stack : sp.stack.split(',').map(s=>s.trim());
-            if (sp.nota) exists.nota = sp.nota;
-          } else {
-            PROJECTS.unshift({
-              id: sp.id || (PROJECTS.length + 1),
-              nombre: sp.titulo,
-              area: sp.area || 'Informática, Ciberseguridad y Telecomunicaciones',
-              carrera: sp.carrera || 'Ingeniería en Informática',
-              anio: sp.anio || 2025,
-              autores: sp.autores || 'Autor Desconocido',
-              desc: sp.resumen || '',
-              stack: sp.stack ? (Array.isArray(sp.stack) ? sp.stack : sp.stack.split(',').map(s=>s.trim())) : ['General'],
-              estado: sp.estado || 'Público',
-              nota: sp.nota || 6.5,
-              archivo_url: sp.archivo_url || null
-            });
-          }
-        });
+      if (data && Array.isArray(data.projects)) {
+        if (data.projects.length > 0) {
+          PROJECTS = data.projects.map((sp, idx) => mapSupabaseProjectToFrontend(sp, idx));
+        } else {
+          PROJECTS = [...INITIAL_PROJECTS];
+        }
         renderCards(PROJECTS.filter(p => isStudent ? p.estado === 'Público' : true));
         filterTable();
         renderKpis();
+        return;
       }
     }
-  } catch(e) {
-    console.warn('Sincronización de proyectos desde Supabase:', e);
+  } catch (e) {
+    console.warn('Error de red al cargar proyectos desde Supabase, usando INITIAL_PROJECTS como fallback:', e);
   }
+  // Fallback únicamente si falla la red o el backend no responde
+  if (!PROJECTS || PROJECTS.length === 0) {
+    PROJECTS = [...INITIAL_PROJECTS];
+  }
+  renderCards(PROJECTS.filter(p => isStudent ? p.estado === 'Público' : true));
+  filterTable();
+  renderKpis();
 }
 
 function initStudent() { 
@@ -2153,28 +2199,31 @@ function sendToNapi() {
 //  MÓDULO 4: ASISTENTE NAPI CON CHATS EN BASE DE DATOS
 // ══════════════════════════════════════════
 
+function isAuthenticatedUser() {
+  const userRole = currentUser?.rol || currentUser?.role;
+  return Boolean(currentUser && currentUser.email && userRole && userRole !== 'guest');
+}
+
 function getChatStorageKey() {
-  if (currentUser && currentUser.email) {
-    const rolePrefix = currentUser.rol || 'guest';
+  if (isAuthenticatedUser()) {
+    const rolePrefix = currentUser.rol || currentUser.role || 'estudiante';
     return `napi_chat_${rolePrefix}_${currentUser.email.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
-  }
-  if (currentRole) {
-    return `napi_chat_${currentRole}`;
   }
   return 'napi_chat_guest';
 }
 
 async function saveChatMessageToDb(sender, message, metadata = null) {
-  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl');
-  const role = currentUser?.rol || currentRole || 'estudiante';
+  if (!isAuthenticatedUser()) return;
+  const email = currentUser.email;
+  const role = currentUser.rol || currentUser.role || 'estudiante';
   try {
-    fetch(`${API_BASE_URL}/chat/message`, {
+    await fetch(`${API_BASE_URL}/chat/message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, role, sender, message, metadata })
-    }).catch(e => console.warn('Sync chat DB aviso:', e));
+    });
   } catch (e) {
-    console.warn('Error guardando en BD:', e);
+    console.warn('Error guardando mensaje en Supabase:', e);
   }
 }
 
@@ -2190,15 +2239,16 @@ function saveChatHistory() {
 }
 
 async function clearUserChat() {
-  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl');
-  const role = currentUser?.rol || currentRole || 'estudiante';
-  
-  try {
-    await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`, {
-      method: 'DELETE'
-    });
-  } catch (e) {
-    console.warn('Error borrando chat en BD:', e);
+  if (isAuthenticatedUser()) {
+    const email = currentUser.email;
+    const role = currentUser.rol || currentUser.role || 'estudiante';
+    try {
+      await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`, {
+        method: 'DELETE'
+      });
+    } catch (e) {
+      console.warn('Error borrando chat en BD:', e);
+    }
   }
 
   const key = getChatStorageKey();
@@ -2215,9 +2265,11 @@ async function initNapi(forceGreeting = false) {
 
   const privacyBadge = document.getElementById('chatPrivacyBadge');
   if (privacyBadge) {
-    if (currentUser) {
-      const rolName = currentUser.rol === 'administrador' ? 'Admin' : currentUser.rol === 'docente' ? 'Docente' : 'Estudiante';
-      privacyBadge.textContent = `☁️ Base de Datos · ${currentUser.nombre.split(' ')[0]} (${rolName})`;
+    if (isAuthenticatedUser()) {
+      const userRole = currentUser.rol || currentUser.role;
+      const rolName = userRole === 'administrador' ? 'Admin' : userRole === 'docente' ? 'Docente' : 'Estudiante';
+      const firstName = (currentUser.nombre || currentUser.email).split(' ')[0];
+      privacyBadge.textContent = `☁️ Base de Datos · ${firstName} (${rolName})`;
     } else {
       privacyBadge.textContent = `☁️ Chat Seguro · INACAP Maipú`;
     }
@@ -2229,31 +2281,36 @@ async function initNapi(forceGreeting = false) {
     return;
   }
 
-  const email = currentUser?.email || (currentRole === 'docente' ? 'docente.maipu@inacap.cl' : 'alumno.maipu@inacap.cl');
-  const role = currentUser?.rol || currentRole || 'estudiante';
+  if (isAuthenticatedUser()) {
+    const email = currentUser.email;
+    const role = currentUser.rol || currentUser.role || 'estudiante';
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.messages && data.messages.length > 0) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/history?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`);
+      if (res.ok) {
+        const data = await res.json();
         box.innerHTML = '';
-        data.messages.forEach(m => {
-          if (m.sender === 'user') {
-            addUser(m.message, false);
-          } else if (m.sender === 'napi') {
-            addNapi(m.message, false);
-          } else if (m.sender === 'card' && m.metadata) {
-            addSimCardSupabase(m.metadata, false);
-          }
-        });
-        box.scrollTop = box.scrollHeight;
-        saveChatHistory();
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          data.messages.forEach(m => {
+            if (m.sender === 'user') {
+              addUser(m.message, false);
+            } else if (m.sender === 'napi') {
+              addNapi(m.message, false);
+            } else if (m.sender === 'card' && m.metadata) {
+              addSimCardSupabase(m.metadata, false);
+            }
+          });
+          box.scrollTop = box.scrollHeight;
+          saveChatHistory();
+        } else {
+          localStorage.removeItem(getChatStorageKey());
+          renderDefaultGreeting();
+        }
         return;
       }
+    } catch (err) {
+      console.warn('No se pudo conectar con BD de chat en Render, probando caché local:', err);
     }
-  } catch (err) {
-    console.warn('No se pudo conectar con BD de chat, probando caché local:', err);
   }
 
   const key = getChatStorageKey();
@@ -2270,10 +2327,11 @@ async function initNapi(forceGreeting = false) {
 }
 
 function renderDefaultGreeting() {
-  if (currentUser && currentUser.rol === 'estudiante') {
-    addNapi(`¡Hola **${currentUser.nombre}**! Soy **NAPI**, tu Asistente de Proyectos de Título para **${currentUser.carrera}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te indicaré el porcentaje de coincidencia con proyectos previos y recomendaciones técnicas para diferenciarlo e innovar.`, false);
-  } else if (currentUser && (currentUser.rol === 'docente' || currentUser.rol === 'administrador')) {
-    addNapi(`¡Hola **${currentUser.nombre}**! Soy **NAPI** en **Modo ${currentUser.rol === 'administrador' ? 'Administrador' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
+  const userRole = currentUser?.rol || currentUser?.role;
+  if (currentUser && userRole === 'estudiante') {
+    addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI**, tu Asistente de Proyectos de Título para **${currentUser.carrera || 'Ingeniería en Informática'}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te indicaré el porcentaje de coincidencia con proyectos previos y recomendaciones técnicas para diferenciarlo e innovar.`, false);
+  } else if (currentUser && (userRole === 'docente' || userRole === 'administrador')) {
+    addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI** en **Modo ${userRole === 'administrador' ? 'Administrador' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
   } else {
     addNapi(`¡Hola! Soy **NAPI**, el Asistente Institucional de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te indicaré qué porcentaje de coincidencia tiene con el repositorio y cómo potenciar su propuesta técnica.`, false);
   }
@@ -2436,7 +2494,7 @@ function addNapi(txt, save = true) {
   speakNapi(txt);
 }
 
-function addUser(txt, save = true) {
+function addUser(txt, save = true, cleanTextForDb = null) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
   d.className = 'flex gap-2.5 items-start justify-end anim-fade mb-3.5';
@@ -2450,7 +2508,7 @@ function addUser(txt, save = true) {
   setTimeout(() => { box.scrollTop = box.scrollHeight; }, 80);
   if (save) {
     saveChatHistory();
-    saveChatMessageToDb('user', txt);
+    saveChatMessageToDb('user', cleanTextForDb || txt);
   }
 }
 
@@ -2551,7 +2609,7 @@ function clearNapiFileAttachment() {
 }
 
 // ══════════════════════════════════════════
-//  ANÁLISIS SEMÁNTICO Y CONVERSACIÓN NAPI
+//  ANÁLISIS SEMÁNTICO Y CONVERSACIÓN NAPI (SUPABASE + RENDER)
 // ══════════════════════════════════════════
 function getChatHistoryArray() {
   const box = document.getElementById('chatBox');
@@ -2574,131 +2632,6 @@ function getChatHistoryArray() {
   return items.slice(-8);
 }
 
-function analyze(txt, history = [], attachedFile = null) {
-  const lower = txt.toLowerCase();
-  const historyText = history.map(h => h.content.toLowerCase()).join(' ') + ' ' + lower;
-  const isFollowup = history.length > 0;
-
-  // CASO ARCHIVO ADJUNTO
-  if (attachedFile) {
-    return `He analizado el archivo adjunto *"${attachedFile.name}"* (${attachedFile.sizeStr}).
-
-### Diagnóstico Rápido:
-• **Alineación:** Coincide con temáticas del área de INACAP Sede Maipú (~45% de similitud referencial).
-• **Qué deberías fortalecer:** Define métricas de evaluación de desempeño y un protocolo de operación offline.
-
-Valida el alcance con tu docente guía para el anteproyecto.`;
-  }
-
-  // CONSULTA DE SEGUIMIENTO / ACLARACIÓN
-  if (isFollowup) {
-    if (lower.includes('juego') || lower.includes('videojuego') || historyText.includes('juego')) {
-      return `Para diferenciar e innovar en tu proyecto de **juegos con IA**:
-
-1. **Comportamiento adaptativo de NPCs:** Implementa árboles de comportamiento o redes neuronales que adapten los personajes al estilo de juego del usuario.
-2. **Generación procedural con IA:** Diseña mapas, acertijos o dificultad dinámica generada en tiempo real.
-3. **Control gestual o por visión:** Agrega control por cámara (OpenCV/MediaPipe) para mecánicas no convencionales.
-
-Coméntalo con tu docente guía para definir el motor y alcance.`;
-    }
-
-    if (lower.includes('sensor') || lower.includes('arduino') || lower.includes('esp32') || lower.includes('gas') || historyText.includes('gas')) {
-      return `Para innovar en tu propuesta con **sensores y hardware**:
-
-1. **Actuación física automática:** Agrega un relé o válvula de corte ante eventos críticos con respuesta menor a 200 ms.
-2. **Filtrado en el borde (Edge):** Calibración cruzada multigas/temperatura en el microcontrolador para evitar falsas alarmas.
-3. **Modo resiliente offline:** Asegura operación continua aun sin conexión a internet.
-
-Valida estos puntos con tu docente guía para el anteproyecto.`;
-    }
-
-    if (lower.includes('stack') || lower.includes('tecnologia') || lower.includes('arquitectura')) {
-      return `Arquitectura recomendada para tu anteproyecto:
-
-• **Frontend:** Vanilla JS / Vite para máxima velocidad y ligereza.
-• **Backend:** FastAPI (Python 3.11) con endpoints REST asíncronos.
-• **Persistencia & Auth:** Supabase (PostgreSQL) con roles y RLS.
-
-Valida este stack con tu docente guía según los requerimientos de tu carrera.`;
-    }
-
-    return `Para diferenciar tu propuesta y darle mayor valor académico:
-
-1. **Automatización activa:** Que el sistema no sea solo informativo, sino que ejecute acciones o alertas en tiempo real.
-2. **Validación local:** Evalúa el prototipo con datos y pruebas en un escenario práctico de la comuna de Maipú.
-3. **Modo offline-first:** Garantiza operación tolerante a pérdidas de red.
-
-Lleva este enfoque a tu docente guía para acotar el alcance final.`;
-  }
-
-  // DIAGNÓSTICO INICIAL (MÁXIMO 2 PROYECTOS COINCIDENTES)
-  const stopWords = ['para', 'como', 'sobre', 'este', 'esta', 'unos', 'unas', 'pero', 'donde', 'desde', 'hacer', 'quiero', 'tengo', 'idea', 'tesis', 'algo', 'con', 'ver', 'las', 'los', 'que', 'una', 'uno'];
-  const words = lower.split(/[\s,.;:!?()]+/).filter(w => w.length > 2 && !stopWords.includes(w));
-  
-  const matched = PROJECTS.map(p => {
-    const haystack = (p.nombre + ' ' + p.desc + ' ' + p.carrera + ' ' + p.stack.join(' ')).toLowerCase();
-    let hits = 0;
-    words.forEach(w => { if (haystack.includes(w)) hits += 1; });
-    const pct = words.length > 0 ? Math.min(Math.round((hits / words.length) * 100 * 1.5), 94) : 0;
-    return { p, pct: (words.some(w => ['eficiencia','energia','energetica','aduana','sensor','iot','stock','inventario','vibraciones','bi','rover','facial','bim','gas','arduino'].includes(w))) ? Math.max(pct, 59.2) : pct };
-  }).filter(x => x.pct >= 25).sort((a, b) => b.pct - a.pct).slice(0, 2);
-
-  if (matched.length > 0) {
-    const listaBlock = matched.map(m => `• *"${m.p.nombre}"* (${shortC(m.p.carrera)} · ${m.p.anio}) — **${Math.round(m.pct)}% de similitud**`).join('\n');
-
-    let sug1 = "Automatización activa: Integra mecanismos de respuesta inmediata ante eventos críticos.";
-    let sug2 = "Validación experimental: Evalúa el prototipo con métricas reales en una PyME o taller de Maipú.";
-
-    if (lower.includes('juego') || lower.includes('videojuego')) {
-      sug1 = "Mecánicas adaptativas con IA: NPCs inteligentes con comportamiento no predecible y ajuste dinámico de dificultad.";
-      sug2 = "Generación procedural: Creación de niveles o acertijos dinámicos en tiempo real según el rendimiento del jugador.";
-    } else if (lower.includes('gas') || lower.includes('sensor') || lower.includes('arduino')) {
-      sug1 = "Corte automático en tiempo real: Interrupción física electromecánica en < 200 ms y calibración ambiental.";
-      sug2 = "Operación offline-first: Monitoreo continuo autónomo sin dependencia de internet.";
-    }
-
-    return `Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:
-
-${listaBlock}
-
-### ¿Qué deberías enfocar para diferenciarte?
-1. **${sug1.split(':')[0]}:** ${sug1.split(':')[1] || sug1}
-2. **${sug2.split(':')[0]}:** ${sug2.split(':')[1] || sug2}
-
-Valida este enfoque con tu docente guía para definir el alcance del anteproyecto.`;
-  }
-
-  return `No se registran proyectos similares en INACAP Sede Maipú para tu propuesta (0% de coincidencia · Idea Original).
-
-### ¿Cómo enfocarla con éxito?
-1. **Alcance acotado:** Diseña un prototipo funcional medible durante el semestre de titulación.
-2. **Métricas cuantitativas:** Mide tiempos de respuesta, precisión o reducción de costos reales.
-
-Presenta el resumen inicial a tu docente guía para avanzar.`;
-}
-
-function addSimCard(p, pct, save = true) {
-  const box = document.getElementById('chatBox'); if(!box) return;
-  const d = document.createElement('div');
-  d.className = 'anim-fade mb-3 ml-8 cursor-pointer';
-  const col = pct >= 75 ? 'bg-red-500' : pct >= 55 ? 'bg-amber-500' : 'bg-cyan-500';
-  d.innerHTML = `
-    <div onclick="openProjModal('${p.id}')" class="sim-card p-3 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-cyan-400 transition-all">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl ${col} text-white text-xs font-black flex items-center justify-center shrink-0 shadow">
-          ${pct}%
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold text-slate-800 leading-tight">${p.nombre}</p>
-          <p class="text-[10px] text-cyan-700 mt-1 font-semibold">${shortC(p.carrera)} · ${p.anio}</p>
-        </div>
-      </div>
-    </div>`;
-  box.appendChild(d);
-  box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
-  if (save) saveChatHistory();
-}
-
 function addSimCardSupabase(sim, save = true) {
   const box = document.getElementById('chatBox'); if(!box) return;
   const d = document.createElement('div');
@@ -2719,7 +2652,10 @@ function addSimCardSupabase(sim, save = true) {
     </div>`;
   box.appendChild(d);
   box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
-  if (save) saveChatHistory();
+  if (save) {
+    saveChatHistory();
+    saveChatMessageToDb('card', sim.titulo || 'Proyecto similar', sim);
+  }
 }
 
 async function sendMsg(overrideTxt = null) {
@@ -2732,19 +2668,23 @@ async function sendMsg(overrideTxt = null) {
   const history = getChatHistoryArray();
   
   let userDisplayMsg = txt;
+  let cleanDbMsg = txt;
   if (attached) {
+    const promptBody = txt || 'Por favor analiza este documento adjunto con el repositorio de títulos.';
     userDisplayMsg = `<div class="mb-1 p-2 rounded-lg bg-slate-800/80 border border-slate-600 text-cyan-300 text-[11px] flex items-center gap-2 font-mono">
       <span>📎</span><span class="truncate font-bold">${attached.name}</span> <span class="text-slate-400 text-[10px]">(${attached.sizeStr})</span>
-    </div>${txt || 'Por favor analiza este documento adjunto con el repositorio de títulos.'}`;
+    </div>${promptBody}`;
+    cleanDbMsg = `[Archivo adjunto: ${attached.name} (${attached.sizeStr})] ${promptBody}`;
   }
 
-  addUser(userDisplayMsg);
+  addUser(userDisplayMsg, true, cleanDbMsg);
   if (input) input.value = '';
   clearNapiFileAttachment();
   const typing = addTyping();
 
   const payload = {
     query: txt || `Analizar archivo: ${attached?.name}`,
+    carrera: currentUser?.carrera || null,
     history: history,
     umbral: 0.35,
     limite: 3,
@@ -2793,18 +2733,18 @@ async function sendMsg(overrideTxt = null) {
   if (typing) typing.remove();
 
   if (data && data.analisis) {
-    addNapi(data.analisis);
+    addNapi(data.analisis, true);
 
     // Mostrar tarjetas (máximo 2 o 3 proyectos)
     if (data.similares && data.similares.length > 0 && history.length === 0 && !attached) {
       data.similares.slice(0, 3).forEach((sim, idx) => {
-        setTimeout(() => addSimCardSupabase(sim), 150 * (idx + 1));
+        setTimeout(() => addSimCardSupabase(sim, true), 150 * (idx + 1));
       });
     }
     return;
   }
 
-  // Si el reintento también falla: mensaje honesto con botón de reintentar (NUNCA texto genérico fijo)
+  // Si el reintento también falla: mensaje honesto con botón de reintentar (sin persistir el error temporal en la base de datos)
   const escapedQuery = (txt || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
   const retryHtml = `
     <div class="space-y-2">
@@ -2815,7 +2755,7 @@ async function sendMsg(overrideTxt = null) {
       </button>
     </div>
   `;
-  addNapi(retryHtml);
+  addNapi(retryHtml, false);
 }
 
 function retryNapiMsg(query) {

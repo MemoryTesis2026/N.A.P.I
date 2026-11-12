@@ -122,7 +122,8 @@ class RegisterRequest(BaseModel):
     password: str
     nombre: str
     rol: str = "estudiante"
-    carrera: Optional[str] = "Informática / Ing. en Computación"
+    area: Optional[str] = "Informática, Ciberseguridad y Telecomunicaciones"
+    carrera: Optional[str] = "Ingeniería en Informática"
 
 # ──────────────────────────────────────────
 # HELPER FUNCTIONS
@@ -150,6 +151,45 @@ def get_doc_embedding(texto: str) -> list:
         )
     )
     return list(res.embeddings[0].values)
+# ──────────────────────────────────────────
+# DIRECTRICES EN LA NUBE (SUPABASE + CACHÉ)
+# ──────────────────────────────────────────
+_GUIDELINES_CACHE = {}
+CACHE_TTL_SECONDS = 300  # 5 minutos
+
+FALLBACK_NAPI_PROMPT = """Eres NAPI, el asistente virtual de INACAP Sede Maipú que ayuda a estudiantes a validar y orientar ideas de proyecto de título. Conversas como un docente guía cercano, empático y constructivo (español de Chile, trato de "tú").
+Responde de forma concisa, sin tablas ni encabezados markdown, indicando proyectos similares si existen y 2 recomendaciones concretas para diferenciarse."""
+
+def get_cloud_guideline(slug: str = "napi_chat_principal") -> tuple[str, float]:
+    now = time.time()
+    if slug in _GUIDELINES_CACHE:
+        prompt, temp, ts = _GUIDELINES_CACHE[slug]
+        if (now - ts) < CACHE_TTL_SECONDS:
+            return prompt, temp
+
+    client_sb = db_anon or db_admin
+    if client_sb:
+        try:
+            res = (
+                client_sb.table("ai_guidelines")
+                .select("system_prompt, temperature")
+                .eq("slug", slug)
+                .eq("is_active", True)
+                .single()
+                .execute()
+            )
+            if res.data:
+                prompt = res.data["system_prompt"]
+                temp = float(res.data.get("temperature") or 0.7)
+                _GUIDELINES_CACHE[slug] = (prompt, temp, now)
+                log.info(f"Directriz '{slug}' cargada desde Supabase [OK]")
+                return prompt, temp
+        except Exception as e:
+            log.warning(f"No se pudo leer directriz '{slug}' desde Supabase ({e}). Usando respaldo.")
+
+    if slug in _GUIDELINES_CACHE:
+        return _GUIDELINES_CACHE[slug][0], _GUIDELINES_CACHE[slug][1]
+    return FALLBACK_NAPI_PROMPT, 0.7
 
 # ──────────────────────────────────────────
 # RUTAS ESTÁTICAS Y FRONTEND
@@ -216,16 +256,33 @@ def health():
 @app.post("/api/auth/login")
 def login(req: LoginRequest):
     """Inicia sesión autenticando con Supabase Auth."""
+    if not db_anon:
+        raise HTTPException(status_code=503, detail="Servicio de autenticación Supabase no configurado.")
     try:
+        clean_email = req.email.strip()
         res = db_anon.auth.sign_in_with_password({
-            "email": req.email.strip(),
+            "email": clean_email,
             "password": req.password.strip()
         })
         user = res.user
         meta = user.user_metadata or {}
         nombre = meta.get("nombre", user.email.split("@")[0])
         rol = meta.get("rol", req.role or "estudiante")
-        carrera = meta.get("carrera", "Informática / Ing. en Computación")
+        area = meta.get("area", "Informática, Ciberseguridad y Telecomunicaciones")
+        carrera = meta.get("carrera", "Ingeniería en Informática")
+
+        # Enriquecer desde tabla pública napi_usuarios si existe registro
+        if db_admin:
+            try:
+                prof = db_admin.table("napi_usuarios").select("*").eq("email", clean_email).limit(1).execute()
+                if prof.data and len(prof.data) > 0:
+                    row = prof.data[0]
+                    nombre = row.get("nombre") or nombre
+                    rol = row.get("rol") or rol
+                    area = row.get("area") or area
+                    carrera = row.get("carrera") or carrera
+            except Exception:
+                pass
 
         return {
             "success": True,
@@ -234,6 +291,8 @@ def login(req: LoginRequest):
                 "email": user.email,
                 "nombre": nombre,
                 "rol": rol,
+                "role": rol,
+                "area": area,
                 "carrera": carrera
             },
             "access_token": res.session.access_token if res.session else None
@@ -241,73 +300,56 @@ def login(req: LoginRequest):
     except Exception as e:
         err_msg = str(e)
         log.warning(f"Error login Supabase para {req.email}: {err_msg}")
-        
-        # Modo fallback para credenciales institucionales estándar
-        pass_clean = req.password.strip()
-        if pass_clean in ["1234", "InacapPassword123!"] or len(pass_clean) >= 4:
-            email_lower = req.email.lower()
-            is_admin = "admin" in email_lower or req.role == "administrador"
-            is_docente = "docente" in email_lower or "carlos.mendoza" in email_lower or "marcela.rojas" in email_lower or req.role == "docente"
-            rol = "administrador" if is_admin else ("docente" if is_docente else "estudiante")
-            
-            # Nombre inteligente según el correo o usuario
-            if is_admin:
-                nombre = "Admin Sede Maipú"
-            elif is_docente:
-                if "carlos" in email_lower:
-                    nombre = "Prof. Carlos Mendoza"
-                else:
-                    nombre = "Prof. Marcela Rojas"
-            elif "flavio" in email_lower:
-                nombre = "Flavio Escobar Mendoza"
-            elif "francisca" in email_lower:
-                nombre = "Francisca González"
-            elif "alumno" in email_lower or "estudiante" in email_lower:
-                nombre = "Estudiante Sede Maipú"
-            else:
-                # Extraer nombre limpio a partir del correo: juan.perez@inacapmail.cl -> Juan Perez
-                raw_name = email_lower.split("@")[0].replace(".", " ").replace("_", " ").replace("-", " ")
-                nombre = " ".join([w.capitalize() for w in raw_name.split() if w])
-            
-            return {
-                "success": True,
-                "user": {
-                    "id": f"usr-{os.urandom(4).hex()}",
-                    "email": req.email,
-                    "nombre": nombre,
-                    "rol": rol,
-                    "area": "Informática, Ciberseguridad y Telecomunicaciones",
-                    "carrera": "Ingeniería en Informática"
-                },
-                "is_demo": True
-            }
-        
         raise HTTPException(status_code=401, detail="Correo institucional o contraseña incorrectos.")
 
 @app.post("/api/auth/register")
 def register(req: RegisterRequest):
-    """Registra un nuevo docente o estudiante en Supabase Auth."""
+    """Registra un nuevo docente o estudiante en Supabase Auth y en napi_usuarios."""
+    if not db_admin:
+        raise HTTPException(status_code=503, detail="Servicio de administración Supabase no configurado.")
     try:
+        clean_email = req.email.strip()
+        clean_nombre = req.nombre.strip()
+        clean_rol = req.rol.strip() if req.rol else "estudiante"
+        clean_area = req.area.strip() if req.area else "Informática, Ciberseguridad y Telecomunicaciones"
+        clean_carrera = req.carrera.strip() if req.carrera else "Ingeniería en Informática"
+
         res = db_admin.auth.admin.create_user({
-            "email": req.email.strip(),
+            "email": clean_email,
             "password": req.password.strip(),
             "email_confirm": True,
             "user_metadata": {
-                "nombre": req.nombre.strip(),
-                "rol": req.rol.strip(),
-                "carrera": req.carrera.strip() if req.carrera else "Informática / Ing. en Computación"
+                "nombre": clean_nombre,
+                "rol": clean_rol,
+                "area": clean_area,
+                "carrera": clean_carrera
             }
         })
         user = res.user
+
+        try:
+            db_admin.table("napi_usuarios").upsert({
+                "id": user.id,
+                "email": clean_email,
+                "nombre": clean_nombre,
+                "rol": clean_rol,
+                "area": clean_area,
+                "carrera": clean_carrera
+            }).execute()
+        except Exception as t_err:
+            log.info(f"Aviso al sincronizar tabla napi_usuarios en registro: {t_err}")
+
         return {
             "success": True,
-            "message": f"Usuario {req.nombre} ({req.rol}) creado exitosamente.",
+            "message": f"Usuario {clean_nombre} ({clean_rol}) creado exitosamente.",
             "user": {
                 "id": user.id,
                 "email": user.email,
-                "nombre": req.nombre,
-                "rol": req.rol,
-                "carrera": req.carrera
+                "nombre": clean_nombre,
+                "rol": clean_rol,
+                "role": clean_rol,
+                "area": clean_area,
+                "carrera": clean_carrera
             }
         }
     except Exception as e:
@@ -731,49 +773,6 @@ def delete_project(project_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/api/projects/{project_id}")
-def update_project(project_id: str, data: ProjectCreateRequest):
-    """Actualiza los metadatos de un proyecto y recalcula sus embeddings."""
-    try:
-        if data.nota is not None and (data.nota < 6.0 or data.nota > 7.0):
-            raise HTTPException(status_code=400, detail="La nota final debe estar entre 6.0 y 7.0.")
-
-        texto_completo = f"{data.titulo}. {data.resumen}"
-        embedding = get_doc_embedding(texto_completo)
-
-        payload = {
-            "titulo": data.titulo,
-            "resumen": data.resumen,
-            "carrera": data.carrera,
-            "anio": data.anio,
-            "autores": data.autores,
-            "embedding": embedding
-        }
-
-        if db_admin:
-            try:
-                db_admin.table("proyectos_titulo").update(payload).eq("id", project_id).execute()
-            except Exception as db_e:
-                log.warning(f"Aviso actualizando en Supabase: {db_e}")
-
-        return {"success": True, "project": payload}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/projects/{project_id}")
-def delete_project(project_id: str):
-    """Elimina un proyecto del repositorio institucional."""
-    try:
-        if db_admin:
-            try:
-                db_admin.table("proyectos_titulo").delete().eq("id", project_id).execute()
-            except Exception as db_e:
-                log.warning(f"Aviso eliminando proyecto en Supabase: {db_e}")
-        return {"success": True, "message": "Proyecto eliminado correctamente."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # ──────────────────────────────────────────
 # BANCO DE INNOVACIÓN LOCAL Y RESILIENTE (16 PROPUESTAS TÉCNICAS)
@@ -1163,31 +1162,8 @@ def analyze_project(req: AnalyzeRequest):
             similares = []
             contexto = ""
 
-        # 2. Generar respuesta NAPI sintética y directa
-        SYSTEM_PROMPT = """Eres NAPI, el asistente virtual de INACAP Sede Maipú que ayuda a estudiantes a validar y orientar ideas de proyecto de título. Conversas como un docente guía cercano, empático y constructivo (español de Chile, trato de "tú").
-
-REGLAS DE FORMATO OBLIGATORIAS (CUMPLE ESTRICTAMENTE):
-- PROHIBIDO usar tablas markdown (nunca incluyas columnas ni filas con '|').
-- PROHIBIDO usar encabezados markdown (#, ##, ###). Usa texto normal y viñetas.
-- PROHIBIDO usar listas largas o párrafos introductorios de relleno.
-- NUNCA repitas descripciones, resúmenes ni detalles largos de los proyectos similares; el frontend ya despliega tarjetas interactivas debajo con toda esa información. Limítate a nombrarlos en las viñetas según el formato indicado.
-- No inventes proyectos que no figuren en el contexto recibido.
-
-FORMATO PARA EL PRIMER MENSAJE (IDEA NUEVA) — MÁXIMO ~110 PALABRAS EN TOTAL:
-Tu respuesta DEBE constar únicamente de las siguientes 4 partes en orden:
-1. Una frase corta y natural comentando la idea (ej: "¡Buena idea! Los motores diésel dan harto espacio para innovar.").
-2. "Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:" seguido de máximo 3 viñetas con el formato exacto:
-   • "Título del proyecto" (Carrera · Año) — XX% de similitud
-   (Usa SOLO proyectos presentes en el contexto recibido. Si no hay proyectos similares en el contexto, pon una sola frase indicando que la idea se ve original).
-3. "¿Qué deberías enfocar para diferenciarte?" seguido de exactamente 2 viñetas cortas (de 1 a 2 líneas cada una), específicas para la idea y adaptadas a la carrera o área del estudiante (nada genérico).
-4. Una sola línea final recordando validar el alcance con su docente guía.
-
-FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
-- ESTRICTAMENTE PROHIBIDO repetir la lista de proyectos similares, porcentajes o la introducción del primer mensaje.
-- Responde directo y al grano a lo que el estudiante pregunta o plantea en este mensaje, en tono conversacional y cercano.
-- Aporta ideas o recomendaciones NUEVAS que no se hayan mencionado antes en la conversación.
-- Si hay un documento adjunto, básate en su contenido real (objetivos, tecnologías, justificación).
-- Sin tablas, sin encabezados (#) y manteniendo estricta concisión."""
+        # 2. Obtener directriz desde Supabase (con caché y respaldo local)
+        SYSTEM_PROMPT, ai_temperature = get_cloud_guideline("napi_chat_principal")
 
         # Construir secuencia de contenidos para Gemini (últimos 4 mensajes)
         contents_list = []
@@ -1248,7 +1224,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                     return groq_client.chat.completions.create(
                         model=modelo,
                         messages=gq_messages,
-                        temperature=0.7,
+                        temperature=ai_temperature,
                         max_tokens=max_tok,
                         timeout=t_out,
                         **extra_kws
@@ -1260,7 +1236,6 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                     raw_content = (resp_gq.choices[0].message.content or "").strip() if resp_gq.choices else ""
                     log.info(f"Groq ({gmod}) finish_reason='{finish_reason}', len={len(raw_content)}")
 
-                    # Si finish_reason == 'length' o el texto termina sin signo de cierre, reintentar UNA vez con max_tokens mayor
                     if (finish_reason == "length" or _texto_cortado(raw_content)) and get_time_left() > 2.0:
                         log.warning(f"Groq ({gmod}) respuesta cortada (finish_reason='{finish_reason}'). Reintentando con max_tokens=2000...")
                         try:
@@ -1285,7 +1260,6 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                     err_str = str(gq_ex)
                     log.warning(f"Groq ({gmod}) falló [status={status_code}]: {err_str}")
 
-                    # Si falló por reasoning_effort no soportado, reintentar sin extra_body
                     if "reasoning_effort" in err_str.lower() and groq_extra:
                         try:
                             resp_no_extra = _llamar_groq(gmod, 1200, {})
@@ -1306,7 +1280,6 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                     elif any(k in err_str for k in ["429", "500", "502", "503", "504", "rate_limit", "Rate limit"]):
                         is_retryable = True
 
-                    # Reintentar UNA vez tras ~1.5s si es 429 o 5xx y queda tiempo
                     if is_retryable and get_time_left() > 2.5:
                         log.info(f"Reintentando Groq ({gmod}) tras espera de 1.5s por rate limit/servidor...")
                         time.sleep(1.5)
@@ -1339,7 +1312,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                 resp_ds = deepseek_client.chat.completions.create(
                     model=DEEPSEEK_MODEL,
                     messages=ds_messages,
-                    temperature=0.7,
+                    temperature=ai_temperature,
                     max_tokens=1200,
                     timeout=t_out_ds
                 )
@@ -1357,7 +1330,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                     DEEPSEEK_DISABLED = True
                     log.warning("⛔ DeepSeek marcado como DESHABILITADO permanentemente por falta de saldo (402/insufficient balance)")
 
-        # 2. Intentar con Gemini si DeepSeek no respondió y queda tiempo (un solo intento con timeout ~8s)
+        # 2. Intentar con Gemini si DeepSeek no respondió y queda tiempo
         if not analisis_texto and gemini_client and get_time_left() > 1.5:
             try:
                 def _llamar_gemini(mod_name):
@@ -1367,7 +1340,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                             contents=contents_list,
                             config=genai_types.GenerateContentConfig(
                                 system_instruction=SYSTEM_PROMPT,
-                                temperature=0.7,
+                                temperature=ai_temperature,
                                 max_output_tokens=1200
                             )
                         )
@@ -1401,7 +1374,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                 resp_oa = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=oa_messages,
-                    temperature=0.7,
+                    temperature=ai_temperature,
                     max_tokens=1200,
                     timeout=t_out_oa
                 )
@@ -1419,7 +1392,7 @@ FORMATO PARA SEGUIMIENTOS — MÁXIMO ~90 PALABRAS:
                     OPENAI_DISABLED = True
                     log.warning("⛔ OpenAI marcado como DESHABILITADO permanentemente por cuota insuficiente (insufficient_quota)")
 
-        # 4. Último recurso: Banco local con 16 ideas variadas (evita repeticiones y texto genérico)
+        # 4. Último recurso: Banco local con 16 ideas variadas
         if not analisis_texto:
             fuente = "banco_local"
             analisis_texto = generar_respuesta_banco(
@@ -1463,4 +1436,3 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)
-

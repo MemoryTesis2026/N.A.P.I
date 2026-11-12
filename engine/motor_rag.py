@@ -6,26 +6,15 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='repla
 
 """
 ArchivaIA - INACAP Sede Maipu
-Motor RAG - Fase 1 v3: Google Gemini SDK nuevo (google-genai)
-=============================================================
-Dependencias:
-    pip install google-genai supabase python-dotenv openai
-
-Variables de entorno (.env):
-    GEMINI_API_KEY=AQ...          <- Google AI Studio (gratis)
-    OPENAI_API_KEY=sk-...         <- Solo para NAPI chat (fallback a Gemini si no hay creditos)
-    SUPABASE_URL=https://xxx.supabase.co
-    SUPABASE_SERVICE_KEY=eyJ...
-    SUPABASE_ANON_KEY=eyJ...
+Motor RAG - Fase 1 v3.1: Directrices centralizadas en Supabase + google-genai
 """
 
 import os
 import logging
 import time
-from typing import Optional
+from typing import Optional, Tuple
 from dotenv import load_dotenv
 
-# Nuevo SDK de Google Gemini (reemplaza google-generativeai)
 from google import genai
 from google.genai import types as genai_types
 
@@ -57,21 +46,59 @@ deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepsee
 EMBEDDING_MODEL = "gemini-embedding-2"   # truncado a 1536 dims (max HNSW = 2000)
 EMBEDDING_DIMS  = 1536
 
+# Cache en memoria para directrices de Supabase (TTL: 5 minutos)
+_GUIDELINES_CACHE: dict[str, Tuple[str, float, float]] = {}
+CACHE_TTL_SECONDS = 300
+
+FALLBACK_SYSTEM_PROMPT = """Eres NAPI (Navegador de Antecedentes de Proyectos Innovadores), el asistente de ArchivaIA de INACAP Sede Maipu.
+Analiza la similitud del proyecto del estudiante frente a proyectos anteriores y entrega recomendaciones concretas de innovacion en espanol."""
+
 
 class ArchivaIAEngine:
     """Motor RAG para busqueda semantica de proyectos de titulo INACAP."""
 
     def __init__(self):
-        self.openai: OpenAI   = OpenAI(api_key=OPENAI_API_KEY)
+        self.openai: OpenAI   = OpenAI(api_key=OPENAI_API_KEY, timeout=30.0)
         self.db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
         self.db: Client       = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-        log.info("ArchivaIA Engine v3 (Gemini google-genai) inicializado.")
+        log.info("ArchivaIA Engine v3.1 (Directrices en nube) inicializado.")
+
+    # ─────────────────────────────────────────
+    # Obtener directrices desde Supabase (con cache)
+    # ─────────────────────────────────────────
+    def obtener_directriz(self, slug: str = "analisis_originalidad") -> Tuple[str, float]:
+        ahora = time.time()
+        if slug in _GUIDELINES_CACHE:
+            prompt_cache, temp_cache, timestamp = _GUIDELINES_CACHE[slug]
+            if (ahora - timestamp) < CACHE_TTL_SECONDS:
+                return prompt_cache, temp_cache
+
+        try:
+            resp = (
+                self.db.table("ai_guidelines")
+                .select("system_prompt, temperature")
+                .eq("slug", slug)
+                .eq("is_active", True)
+                .single()
+                .execute()
+            )
+            if resp.data:
+                prompt = resp.data["system_prompt"]
+                temp = float(resp.data.get("temperature") or 0.4)
+                _GUIDELINES_CACHE[slug] = (prompt, temp, ahora)
+                log.info(f"Directriz '{slug}' cargada desde Supabase [OK]")
+                return prompt, temp
+        except Exception as e:
+            log.warning(f"No se pudo leer directriz '{slug}' de Supabase ({e}). Usando respaldo.")
+
+        if slug in _GUIDELINES_CACHE:
+            return _GUIDELINES_CACHE[slug][0], _GUIDELINES_CACHE[slug][1]
+        return FALLBACK_SYSTEM_PROMPT, 0.4
 
     # ─────────────────────────────────────────
     # A. Embedding con nuevo SDK google-genai
     # ─────────────────────────────────────────
     def generar_embedding(self, texto: str) -> list:
-        """Genera vector de 768 dims con Google text-embedding-004 (gratis)."""
         texto_limpio = texto.strip().replace("\n", " ")
         log.info(f"Generando embedding para: '{texto_limpio[:60]}...'")
 
@@ -80,7 +107,7 @@ class ArchivaIAEngine:
             contents=texto_limpio,
             config=genai_types.EmbedContentConfig(
                 task_type="RETRIEVAL_DOCUMENT",
-                output_dimensionality=EMBEDDING_DIMS   # truncar a 1536 (bajo el limite HNSW)
+                output_dimensionality=EMBEDDING_DIMS
             )
         )
 
@@ -89,7 +116,6 @@ class ArchivaIAEngine:
         return list(embedding)
 
     def generar_embedding_consulta(self, texto: str) -> list:
-        """Genera embedding para texto de consulta (RETRIEVAL_QUERY)."""
         texto_limpio = texto.strip().replace("\n", " ")
         log.info(f"Generando embedding de consulta: '{texto_limpio[:60]}...'")
 
@@ -98,7 +124,7 @@ class ArchivaIAEngine:
             contents=texto_limpio,
             config=genai_types.EmbedContentConfig(
                 task_type="RETRIEVAL_QUERY",
-                output_dimensionality=EMBEDDING_DIMS   # truncar a 1536
+                output_dimensionality=EMBEDDING_DIMS
             )
         )
 
@@ -129,7 +155,6 @@ class ArchivaIAEngine:
     # C. Generar embeddings para seed data
     # ─────────────────────────────────────────
     def actualizar_embeddings_faltantes(self) -> int:
-        """Busca proyectos sin embedding y genera con Gemini."""
         log.info("Buscando proyectos sin embedding...")
         sin_embedding = (
             self.db_admin
@@ -189,22 +214,16 @@ class ArchivaIAEngine:
 
 
 # ─────────────────────────────────────────────────────────────
-# Analisis NAPI (GPT-4o con fallback a Gemini Flash gratis)
+# Analisis NAPI (DeepSeek con fallback a Gemini Flash)
 # ─────────────────────────────────────────────────────────────
-def analizar_con_napi(texto_nuevo: str, similares: list, engine: ArchivaIAEngine) -> str:
-    SYSTEM_PROMPT = """Eres NAPI (Navegador de Antecedentes de Proyectos Innovadores), el asistente de ArchivaIA de INACAP Sede Maipu.
-
-Tu mision: analizar si el proyecto de un estudiante se parece a proyectos anteriores y dar recomendaciones de innovacion.
-
-Estructura tu respuesta en:
-1. DIAGNOSTICO DE ORIGINALIDAD (nivel de riesgo: CRITICO/ALTO/MODERADO/SIN RIESGO con porcentajes)
-2. ANALISIS DE PROYECTOS SIMILARES (que elementos comparten)
-3. ZONAS DE CHOQUE DE IDEAS (que partes estan en riesgo de duplicacion)
-4. RECOMENDACIONES DE INNOVACION (3-5 concretas con tecnologias especificas)
-5. MENSAJE DE CIERRE (motivador + proximo paso concreto)
-
-Escala de riesgo: 85-100%=CRITICO, 70-84%=ALTO, 50-69%=MODERADO, 0-49%=SIN RIESGO
-Usa markdown. Responde en espanol, tono profesional y cercano."""
+def analizar_con_napi(
+    texto_nuevo: str,
+    similares: list,
+    engine: ArchivaIAEngine,
+    slug_directriz: str = "analisis_originalidad"
+) -> str:
+    # Obtener directriz y temperatura dinamicamente desde Supabase
+    system_prompt, temp_config = engine.obtener_directriz(slug_directriz)
 
     if not similares:
         contexto = (
@@ -225,16 +244,16 @@ Usa markdown. Responde en espanol, tono profesional y cercano."""
             f"## Proyectos similares encontrados por RAG\n{similares_txt}"
         )
 
-    # 1. Generación con DeepSeek (si está configurada DEEPSEEK_API_KEY)
+    # 1. Generacion con DeepSeek (si esta configurada DEEPSEEK_API_KEY)
     if deepseek_client:
         try:
             resp_ds = deepseek_client.chat.completions.create(
                 model="deepseek-chat",
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": contexto}
                 ],
-                temperature=0.4,
+                temperature=temp_config,
                 max_tokens=1500
             )
             if resp_ds.choices and resp_ds.choices[0].message.content:
@@ -243,30 +262,49 @@ Usa markdown. Responde en espanol, tono profesional y cercano."""
         except Exception as e_ds:
             log.warning(f"Error generando con DeepSeek ({e_ds}), pasando a Gemini...")
 
-    # 2. Generación con Gemini como respaldo
+    # 2. Generacion con Gemini (max 10s, salto inmediato si hay 503)
     if gemini_client:
         try:
             response = gemini_client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=f"{SYSTEM_PROMPT}\n\n---\n\n{contexto}",
+                model="gemini-3.8-flash",
+                contents=contexto,
                 config=genai_types.GenerateContentConfig(
-                    temperature=0.4,
+                    system_instruction=system_prompt,
+                    temperature=temp_config,
                     max_output_tokens=1500
                 )
             )
-            log.info("Analisis generado con Gemini Flash.")
+            log.info("Analisis generado con Gemini (gemini-3.8-flash).")
             return response.text
         except Exception as e:
-            log.error(f"Error generando con Gemini: {e}")
-            return f"Error al generar analisis: {e}"
+            log.warning(f"Gemini no disponible ({e}), pasando a OpenAI...")
 
+    # 3. Generacion con OpenAI como ultimo respaldo (si esta configurada OPENAI_API_KEY)
+    if OPENAI_API_KEY and engine.openai:
+        try:
+            resp_oai = engine.openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": contexto}
+                ],
+                temperature=temp_config,
+                max_tokens=1500
+            )
+            if resp_oai.choices and resp_oai.choices[0].message.content:
+                log.info("Analisis generado con OpenAI (gpt-4o-mini).")
+                return resp_oai.choices[0].message.content.strip()
+        except Exception as e_oai:
+            log.error(f"Error generando con OpenAI: {e_oai}")
+
+    return "Error: No se pudo generar respuesta con los proveedores LLM disponibles."
 
 # ─────────────────────────────────────────────────────────────
 # DEMO
 # ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 60)
-    print("  ArchivaIA - Motor RAG v3 (Google Gemini GRATIS)")
+    print("  ArchivaIA - Motor RAG v3.1 (Directrices en Supabase)")
     print("  INACAP Sede Maipu")
     print("=" * 60)
 
@@ -284,7 +322,7 @@ if __name__ == "__main__":
         "cuando los valores esten fuera de rango."
     )
 
-    print(f"\n[*] Paso 2: Buscando proyectos similares...")
+    print("\n[*] Paso 2: Buscando proyectos similares...")
     print(f"    Idea: {tesis_estudiante[:80]}...")
     similares = motor.buscar_similares(texto_consulta=tesis_estudiante, umbral=0.50, limite=5)
 
@@ -292,7 +330,7 @@ if __name__ == "__main__":
         print(f"\n[OK] Se encontraron {len(similares)} proyectos similares:\n")
         for i, p in enumerate(similares, 1):
             print(f"  {i}. [{p['porcentaje_similitud']}%] {p['titulo']}")
-            print(f"     {p['carrera']} - {p['anio']}")
+            print(f"     {p['carrera']} ({p['anio']})")
     else:
         print("\n[OK] No se encontraron proyectos similares. Idea original!")
 
