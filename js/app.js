@@ -1754,6 +1754,22 @@ function processUploadedFile(file) {
     return;
   }
 
+  if (file.size > 100 * 1024 * 1024) {
+    toast('⚠️ El archivo supera el límite máximo permitido de 100 MB.');
+    return;
+  }
+
+  currentUploadedFile = file;
+  document.getElementById('uploadDefault')?.classList.add('hidden');
+  document.getElementById('uploadSelected')?.classList.remove('hidden');
+  const sizeMb = (file.size / 1048576).toFixed(1);
+  const isWord = nameLower.endsWith('.docx') || nameLower.endsWith('.doc');
+  const extBadge = isWord ? '📝 Word (.docx)' : '📄 PDF';
+  const fnEl = document.getElementById('fileName');
+  if (fnEl) fnEl.textContent = `${extBadge}: ${file.name} (${sizeMb} MB)`;
+  toast(`📎 Documento "${file.name}" (${extBadge}) cargado para indexación.`);
+}
+
   currentUploadedFile = file;
   document.getElementById('uploadDefault')?.classList.add('hidden');
   document.getElementById('uploadSelected')?.classList.remove('hidden');
