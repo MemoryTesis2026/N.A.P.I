@@ -499,9 +499,69 @@ def admin_create_user(req: UserCreateAdminRequest):
             except Exception as list_e:
                 log.warning(f"No se pudo recuperar usuario existente en Auth: {list_e}")
 
-        if not user_id:
-            raise HTTPException(status_code=400, detail="No se pudo registrar el usuario en Supabase Auth.")
+        user_id = None
+        last_auth_err = ""
+        # 1. Crear en Supabase Auth (Admin API)
+        try:
+            res = db_admin.auth.admin.create_user({
+                "email": clean_email,
+                "password": req.password.strip(),
+                "email_confirm": True,
+                "user_metadata": {
+                    "nombre": clean_nombre,
+                    "rol": auth_rol,
+                    "area": clean_area,
+                    "carrera": clean_carrera
+                }
+            })
+            if res and hasattr(res, 'user') and res.user:
+                user_id = res.user.id
+        except Exception as auth_e:
+            last_auth_err = str(auth_e)
+            log.warning(f"Aviso al crear en Supabase Auth ({last_auth_err}). Buscando si ya existe...")
+            try:
+                users_res = db_admin.auth.admin.list_users(page=1, per_page=1000)
+                users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
+                for u in users:
+                    if getattr(u, 'email', '').lower() == clean_email:
+                        user_id = getattr(u, 'id', None)
+                        db_admin.auth.admin.update_user_by_id(user_id, {
+                            "password": req.password.strip(),
+                            "email_confirm": True,
+                            "user_metadata": {
+                                "nombre": clean_nombre,
+                                "rol": auth_rol,
+                                "area": clean_area,
+                                "carrera": clean_carrera
+                            }
+                        })
+                        break
+            except Exception as list_e:
+                last_auth_err += f" | list: {list_e}"
 
+        # Respaldo con sign_up público si admin API no tiene permisos service_role
+        if not user_id and db_anon:
+            try:
+                su_res = db_anon.auth.sign_up({
+                    "email": clean_email,
+                    "password": req.password.strip(),
+                    "options": {
+                        "data": {
+                            "nombre": clean_nombre,
+                            "rol": auth_rol,
+                            "area": clean_area,
+                            "carrera": clean_carrera
+                        }
+                    }
+                })
+                if su_res and getattr(su_res, "user", None):
+                    user_id = su_res.user.id
+            except Exception as su_e:
+                last_auth_err += f" | sign_up: {su_e}"
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail=f"Supabase Auth rechazó el registro: {last_auth_err}")
+            
         # 2. Guardar perfil en tabla pública napi_usuarios con el rol en español ('estudiante', 'docente', 'administrador')
         row_payload = {
             "id": str(user_id),
@@ -587,7 +647,7 @@ def admin_delete_user(user_id: str):
     except Exception as e:
         log.error(f"Error al eliminar usuario: {e}")
         raise HTTPException(status_code=400, detail=str(e))
-        
+
 # ── Historial de Chat NAPI en Supabase (Aislamiento por Usuario y Rol) ──
 @app.get("/api/chat/history")
 def get_chat_history(email: str, role: Optional[str] = None):
