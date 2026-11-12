@@ -307,7 +307,7 @@
             <p class="carousel-subtitle">Analiza similitudes en tiempo real, sugiere innovaciones tecnológicas y guía tu
               proyecto de título hacia la excelencia.</p>
             <div class="flex flex-wrap gap-3.5 justify-center">
-              <button onclick="openLoginModal('estudiante')" class="btn-carousel-secondary">Comenzar Ahora</button>
+              <button onclick="openLoginModal('student')" class="btn-carousel-secondary">Comenzar Ahora</button>
             </div>
           </div>
         </div>
@@ -339,7 +339,8 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center max-w-3xl mx-auto mb-12">
           <h2 class="text-3xl md:text-4xl font-black text-[#02122F] dark:text-white tracking-tight">Nuestras Sedes y
-            <span class="text-[#495B7D] dark:text-[#8BA3C5]">Espacios Académicos</span></h2>
+            <span class="text-[#495B7D] dark:text-[#8BA3C5]">Espacios Académicos</span>
+          </h2>
           <p class="text-slate-600 dark:text-[#B0ADA4] text-sm mt-3 leading-relaxed">Instalaciones de vanguardia donde
             estudiantes y docentes desarrollan proyectos tecnológicos de impacto nacional.</p>
         </div>
@@ -609,7 +610,8 @@
       <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
         <div class="text-center mb-14">
           <h2 class="text-3xl md:text-4xl font-black text-[#02122F] dark:text-white tracking-tight">¿Cómo surgió la
-            <span class="text-[#495B7D] dark:text-[#8BA3C5]">idea</span>?</h2>
+            <span class="text-[#495B7D] dark:text-[#8BA3C5]">idea</span>?
+          </h2>
           <p class="text-slate-600 dark:text-[#CBD5E1] mt-3 max-w-2xl mx-auto text-sm leading-relaxed">Detrás de N.A.P.I
             hay una historia de observación, necesidad real y vocación por la excelencia académica en INACAP.</p>
         </div>
@@ -674,7 +676,8 @@
           <!-- Contenido izquierdo -->
           <div>
             <h2 class="text-3xl md:text-4xl font-black text-[#02122F] dark:text-white tracking-tight mb-4">Conoce a
-              <span class="text-[#495B7D] dark:text-[#8BA3C5]">NAPI</span></h2>
+              <span class="text-[#495B7D] dark:text-[#8BA3C5]">NAPI</span>
+            </h2>
             <p class="text-slate-700 dark:text-[#CBD5E1] text-sm leading-relaxed mb-4"><strong
                 class="text-[#02122F] dark:text-white">NAPI (Neural Academic Project Intelligence)</strong> es el
               asistente virtual integrado, diseñado específicamente para la comunidad académica de INACAP Sede Maipú.
@@ -732,7 +735,7 @@
               </div>
             </div>
 
-            <button onclick="openLoginModal('estudiante')" class="btn-carousel-primary flex items-center gap-2">
+            <button onclick="openLoginModal('student')" class="btn-carousel-primary flex items-center gap-2">
               <svg class="w-4 h-4 text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -1366,9 +1369,9 @@
                 <select id="userRoleFilter" onchange="filterAdminUsersTable()"
                   class="input-field px-3 py-2 rounded-xl text-xs font-medium">
                   <option value="">Todos los Roles</option>
-                  <option value="estudiante">Estudiantes (Alumnos)</option>
-                  <option value="docente">Docentes (Profesores)</option>
-                  <option value="administrador">Administradores</option>
+                  <option value="student">Estudiantes (Alumnos)</option>
+                  <option value="teacher">Docentes (Profesores)</option>
+                  <option value="admin">Administradores</option>
                 </select>
                 <select id="userAreaFilter" onchange="filterAdminUsersTable()"
                   class="input-field px-3 py-2 rounded-xl text-xs font-medium">
@@ -1770,11 +1773,10 @@
 
       <main class="p-6 md:p-8 max-w-7xl mx-auto w-full">
 
-        <!-- Banner Superior de Usuario (Gradiente Borgoña a Slate - Image 2) -->
+        <!-- Banner Superior de Usuario -->
         <div
           class="portal-user-banner px-5 md:px-7 py-4 rounded-2xl flex items-center justify-between gap-4 mb-8 shadow-sm">
           <div class="flex items-center gap-3 min-w-0">
-            <!-- Botón de colores -->
             <button id="btnThemeStudent" type="button" onclick="toggleThemeDropdown(this, event)"
               class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 border border-white/40 text-white flex items-center justify-center text-sm shadow-xs transition-all cursor-pointer shrink-0"
               title="Cambiar color y accesibilidad" aria-label="Cambiar color y accesibilidad">
@@ -1878,7 +1880,7 @@
           </div>
         </div>
 
-        <!-- Grilla de Tarjetas Pastel INACAP (Image 2) -->
+        <!-- Grilla de Tarjetas Pastel INACAP -->
         <div id="studentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
         <div id="studentEmpty"
@@ -2647,7 +2649,6 @@
   <svg id="svg-colorblind-filters" style="position: absolute; width: 0; height: 0; overflow: hidden;"
     aria-hidden="true">
     <defs>
-      <!-- Protanopia: dificultad o ausencia con tonos rojos -->
       <filter id="protanopia-filter">
         <feColorMatrix type="matrix" values="
         0.567, 0.433, 0.000, 0, 0
@@ -2656,7 +2657,6 @@
         0.000, 0.000, 0.000, 1, 0" />
       </filter>
 
-      <!-- Deuteranopia: dificultad o ausencia con tonos verdes -->
       <filter id="deuteranopia-filter">
         <feColorMatrix type="matrix" values="
         0.625, 0.375, 0.000, 0, 0
@@ -2665,7 +2665,6 @@
         0.000, 0.000, 0.000, 1, 0" />
       </filter>
 
-      <!-- Tritanopia: dificultad o ausencia con tonos azules -->
       <filter id="tritanopia-filter">
         <feColorMatrix type="matrix" values="
         0.950, 0.050, 0.000, 0, 0
@@ -2680,7 +2679,6 @@
   <div id="themeDropdownMenu"
     class="hidden fixed z-[99999] w-80 bg-white dark:bg-[#23354D] rounded-2xl shadow-2xl border border-slate-200 dark:border-[rgba(139,163,197,0.3)] overflow-hidden anim-fade text-slate-800 dark:text-white"
     role="dialog" aria-label="Selector de Tema y Accesibilidad">
-    <!-- Cabecera -->
     <div
       class="px-4 py-3 bg-gradient-to-r from-slate-50 to-sky-50 dark:from-[#02122F] dark:to-[#223355] border-b border-slate-200 dark:border-[rgba(139,163,197,0.2)] flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -2701,7 +2699,6 @@
     </div>
 
     <div class="p-3.5 space-y-3.5 max-h-[82vh] overflow-y-auto">
-      <!-- SECCIÓN 1: TEMA GENERAL (CLARO / OSCURO) -->
       <div>
         <div class="flex items-center justify-between mb-2">
           <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#B0ADA4]">Modo de
@@ -2711,7 +2708,6 @@
         </div>
 
         <div class="grid grid-cols-2 gap-2">
-          <!-- Modo Claro -->
           <button type="button" id="btnModeLight" onclick="setThemeMode('light')"
             class="theme-choice-card active p-2.5 rounded-xl border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-[#495B7D] dark:hover:border-[#8BA3C5] flex flex-col items-center gap-1.5 transition-all text-center group cursor-pointer bg-white dark:bg-[#1E2E44]">
             <div
@@ -2732,7 +2728,6 @@
             <span class="text-[9px] text-slate-500 dark:text-[#B0ADA4]">Luminoso oficial</span>
           </button>
 
-          <!-- Modo Oscuro -->
           <button type="button" id="btnModeDark" onclick="setThemeMode('dark')"
             class="theme-choice-card p-2.5 rounded-xl border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-[#495B7D] dark:hover:border-[#8BA3C5] flex flex-col items-center gap-1.5 transition-all text-center group cursor-pointer bg-white dark:bg-[#1E2E44]">
             <div
@@ -2749,7 +2744,6 @@
 
       <div class="border-t border-slate-200 dark:border-[rgba(139,163,197,0.2)]"></div>
 
-      <!-- SECCIÓN 2: DALTONISMO CON MINI-DESPLIEGUE (PROTANOPIA, DEUTERANOPIA, TRITANOPIA) -->
       <div>
         <div class="flex items-center justify-between mb-1.5">
           <div class="flex items-center gap-1.5">
@@ -2768,7 +2762,6 @@
         <p class="text-[10px] text-slate-500 dark:text-[#B0ADA4] mb-2 leading-relaxed">Filtros cromáticos adaptados a la
           percepción visual según el tipo de daltonismo.</p>
 
-        <!-- Botón para desplegar / contraer el mini-despliegue -->
         <button type="button" id="btnToggleDaltonismo" onclick="toggleDaltonismoAccordion()"
           class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#1E2E44] hover:bg-slate-100 dark:hover:bg-[#223355] border border-slate-200 dark:border-[rgba(139,163,197,0.2)] flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer">
           <span class="flex items-center gap-2">
@@ -2781,9 +2774,7 @@
           </svg>
         </button>
 
-        <!-- MINI-DESPLIEGUE CON 3 OPCIONES: PROTANOPIA, DEUTERANOPIA, TRITANOPIA -->
         <div id="daltonismoSubmenu" class="space-y-1.5 mt-2 transition-all">
-          <!-- 1. PROTANOPIA -->
           <button type="button" id="btnCvdProtanopia" onclick="setColorblindFilter('protanopia')"
             class="cvd-option-card w-full p-2.5 rounded-xl border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-red-400 hover:bg-red-50/40 dark:hover:bg-red-950/20 flex items-center justify-between text-left transition-all cursor-pointer bg-white dark:bg-[#1E2E44]">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -2802,7 +2793,6 @@
             <span class="cvd-check text-red-600 font-black text-sm hidden">✓</span>
           </button>
 
-          <!-- 2. DEUTERANOPIA -->
           <button type="button" id="btnCvdDeuteranopia" onclick="setColorblindFilter('deuteranopia')"
             class="cvd-option-card w-full p-2.5 rounded-xl border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 flex items-center justify-between text-left transition-all cursor-pointer bg-white dark:bg-[#1E2E44]">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -2821,7 +2811,6 @@
             <span class="cvd-check text-emerald-600 font-black text-sm hidden">✓</span>
           </button>
 
-          <!-- 3. TRITANOPIA -->
           <button type="button" id="btnCvdTritanopia" onclick="setColorblindFilter('tritanopia')"
             class="cvd-option-card w-full p-2.5 rounded-xl border border-slate-200 dark:border-[rgba(139,163,197,0.2)] hover:border-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 flex items-center justify-between text-left transition-all cursor-pointer bg-white dark:bg-[#1E2E44]">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -2840,7 +2829,6 @@
             <span class="cvd-check text-blue-600 font-black text-sm hidden">✓</span>
           </button>
 
-          <!-- Botón para quitar el filtro de daltonismo / normal -->
           <button type="button" id="btnCvdNone" onclick="setColorblindFilter('none')"
             class="w-full mt-1.5 px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-[#B0ADA4] hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-semibold text-center transition-colors cursor-pointer">
             ✕ Desactivar filtro de daltonismo (Normal)

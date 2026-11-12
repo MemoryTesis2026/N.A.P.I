@@ -103,18 +103,18 @@ const AREAS_CARRERAS = {
 //  DATASET DE RESPALDO (FALLBACK OFFLINE) — 12 Proyectos Sede Maipú
 // ──────────────────────────────────────────
 const INITIAL_PROJECTS = [
-  { id:1, nombre:"Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", area:"Automatización, Electrónica y Robótica", carrera:"Ingeniería en Electrónica y Sistemas Inteligentes", anio:2025, autores:"Diego Álvarez, Valentina Cruz", desc:"Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack:["ESP32","MQTT","Node.js","React","MongoDB","TensorFlow Lite"], estado:"Público", nota:6.7, archivo:"anteproyecto_iot_maipu.pdf", archivo_url:"assets/docs/anteproyecto_iot_maipu.pdf" },
-  { id:2, nombre:"App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2025, autores:"Camila Herrera, Francisco Sepúlveda", desc:"App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack:["React Native","FastAPI","PostgreSQL","Docker","AWS S3"], estado:"Público", nota:6.8, archivo:"app_stock_trazabilidad.docx", archivo_url:"assets/docs/app_stock_trazabilidad.docx" },
-  { id:3, nombre:"Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Matías Rojas, Sofía Morales, Ignacio Vega", desc:"E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack:["Next.js","Python","Scikit-learn","Redis","Transbank API","MySQL"], estado:"Público", nota:6.9, archivo:"ecommerce_recomendacion_ia.pdf", archivo_url:"assets/docs/ecommerce_recomendacion_ia.pdf" },
-  { id:4, nombre:"Diagnóstico Predictivo de Vibraciones en Motores Diésel", area:"Mecánica", carrera:"Ingeniería en Mantenimiento Industrial", anio:2025, autores:"Pablo Fuentes, Andrés Muñoz", desc:"Telemetría mecánica con FFT y acelerómetros MEMS para prevención de desalineaciones y desbalances en maquinaria pesada industrial.", stack:["Python","SciPy","InfluxDB","Grafana","Raspberry Pi 4","Twilio API"], estado:"Público", nota:6.7, archivo:"diagnostico_vibraciones_motores.docx", archivo_url:"assets/docs/diagnostico_vibraciones_motores.docx" },
-  { id:5, nombre:"Dashboard BI y Predicción RFM para Retail Maipú", area:"Administración", carrera:"Ingeniería en Administración de Empresas", anio:2024, autores:"Javiera Contreras, Rodrigo Sánchez", desc:"Inteligencia de negocios para retail local: consolida ERP, segmenta clientes por RFM y proyecta ventas estacionales con modelos predictivos.", stack:["Power BI","SQL Server","Python","Excel VBA","Azure Synapse"], estado:"Público", nota:6.5, archivo:"dashboard_bi_retail_maipu.docx", archivo_url:"assets/docs/dashboard_bi_retail_maipu.docx" },
-  { id:6, nombre:"Simulador Inmersivo WebGL de Circuitos Eléctricos Trifásicos", area:"Energía", carrera:"Ingeniería Eléctrica", anio:2023, autores:"Nicolás Torres, Ángela Ramírez", desc:"Plataforma 3D interactiva en el navegador para ensayar tableros eléctricos trifásicos con multímetro virtual y cálculo de caídas de tensión seguro.", stack:["Three.js","WebRTC","Python Flask","SQLite","Tailwind CSS"], estado:"Público", nota:6.6, archivo:"simulador_circuitos_trifasicos.pdf", archivo_url:"assets/docs/anteproyecto_iot_maipu.pdf" },
-  { id:7, nombre:"Gestor Documental y Trazabilidad Aduanera para Embarques Marítimos", area:"Administración", carrera:"Ingeniería en Comercio Exterior", anio:2024, autores:"Carolina Espinoza, Luis Medina", desc:"Automatización de carpeta de importaciones con cálculo de aranceles Ad-Valorem, validación de Certificados de Origen y tracking GPS de contenedores.", stack:["Vue.js","Laravel","MySQL","Google Maps API","PDF.js"], estado:"Público", nota:6.4, archivo:"gestor_documental_aduanero.pdf", archivo_url:"assets/docs/gestor_documental_aduanero.pdf" },
-  { id:8, nombre:"Control de Acceso Biométrico por Reconocimiento Facial con Edge AI", area:"Informática, Ciberseguridad y Telecomunicaciones", carrera:"Ingeniería en Informática", anio:2024, autores:"Maximiliano Bravo, Renata Castillo", desc:"Seguridad física con validación facial en tiempo real usando embeddings DeepFace, generación de informes de asistencia e integración con relé electromagnético.", stack:["Python","DeepFace","OpenCV","Django","PostgreSQL","Raspberry Pi"], estado:"Público", nota:7.0, archivo:"reconocimiento_facial_edge.pdf", archivo_url:"assets/docs/reconocimiento_facial_edge.pdf" },
-  { id:9, nombre:"Asistente Conversacional NLP para Mantenimiento de Maquinaria Pesada", area:"Mecánica", carrera:"Ingeniería en Maquinaria Pesada y Vehículos Automotrices", anio:2025, autores:"Emilia Castro, Daniel Flores", desc:"Chatbot técnico especializado en manuales de talleres mecánicos que diagnóstica fallas hidráulicas y eléctricas mediante procesamiento de lenguaje natural.", stack:["Python","spaCy","Rasa Core","React","MongoDB","FastAPI"], estado:"En Revisión", nota:6.3 },
-  { id:10, nombre:"Software BIM y Estimación Presupuestaria para Edificación", area:"Construcción", carrera:"Construcción Civil", anio:2024, autores:"Felipe Gutiérrez, Sebastián Vargas", desc:"Extrae cantidades de obra de archivos IFC/Revit y genera presupuestos de materiales automatizados según normativas chilenas.", stack:["Autodesk Forge","Node.js","Python","PostgreSQL","Three.js"], estado:"Público", nota:6.8, archivo:"software_bim_presupuestos.docx", archivo_url:"assets/docs/software_bim_presupuestos.docx" },
-  { id:11, nombre:"Rover Teleoperado para Minería Subterránea con Sensores de Gas", area:"Minería", carrera:"Ingeniería en Minas", anio:2025, autores:"Gonzalo Parra, Tamara Henríquez", desc:"Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack:["Arduino","ROS 2","Python","React","WebSockets"], estado:"Público", nota:6.9, archivo:"rover_teleoperado_mineria.pdf", archivo_url:"assets/docs/rover_teleoperado_mineria.pdf" },
-  { id:12, nombre:"Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", area:"Agroindustria y Medioambiente", carrera:"Ingeniería en Medioambiente y Sustentabilidad", anio:2023, autores:"Bastián Morales, Camila Silva", desc:"Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack:["React","Express.js","PostgreSQL","Chart.js","Node.js"], estado:"Público", nota:6.5, archivo:"auditoria_ambiental_huella_carbono.docx", archivo_url:"assets/docs/software_bim_presupuestos.docx" }
+  { id: 1, nombre: "Sistema IoT de Monitoreo y Eficiencia Energética para Planta Industrial Maipú", area: "Automatización, Electrónica y Robótica", carrera: "Ingeniería en Electrónica y Sistemas Inteligentes", anio: 2025, autores: "Diego Álvarez, Valentina Cruz", desc: "Plataforma IoT con ESP32 y sensores SCT-013 para telemetría energética en tiempo real. Algoritmo predictivo por turnos con alertas automáticas vía Telegram.", stack: ["ESP32", "MQTT", "Node.js", "React", "MongoDB", "TensorFlow Lite"], estado: "Público", nota: 6.7, archivo: "anteproyecto_iot_maipu.pdf", archivo_url: "assets/docs/anteproyecto_iot_maipu.pdf" },
+  { id: 2, nombre: "App Móvil de Gestión de Stock y Trazabilidad QR para PyMEs Logísticas", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", anio: 2025, autores: "Camila Herrera, Francisco Sepúlveda", desc: "App multiplataforma para control de inventario con escaneo masivo QR, sincronización offline-first, reporte de stock crítico y backend distribuido en FastAPI.", stack: ["React Native", "FastAPI", "PostgreSQL", "Docker", "AWS S3"], estado: "Público", nota: 6.8, archivo: "app_stock_trazabilidad.docx", archivo_url: "assets/docs/app_stock_trazabilidad.docx" },
+  { id: 3, nombre: "Plataforma E-Commerce con Motor de Recomendación IA y Pagos Webpay", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", anio: 2024, autores: "Matías Rojas, Sofía Morales, Ignacio Vega", desc: "E-commerce con filtrado colaborativo en Python para recomendación personalizada, panel analítico de conversión y chatbot transaccional integrado.", stack: ["Next.js", "Python", "Scikit-learn", "Redis", "Transbank API", "MySQL"], estado: "Público", nota: 6.9, archivo: "ecommerce_recomendacion_ia.pdf", archivo_url: "assets/docs/ecommerce_recomendacion_ia.pdf" },
+  { id: 4, nombre: "Diagnóstico Predictivo de Vibraciones en Motores Diésel", area: "Mecánica", carrera: "Ingeniería en Mantenimiento Industrial", anio: 2025, autores: "Pablo Fuentes, Andrés Muñoz", desc: "Telemetría mecánica con FFT y acelerómetros MEMS para prevención de desalineaciones y desbalances en maquinaria pesada industrial.", stack: ["Python", "SciPy", "InfluxDB", "Grafana", "Raspberry Pi 4", "Twilio API"], estado: "Público", nota: 6.7, archivo: "diagnostico_vibraciones_motores.docx", archivo_url: "assets/docs/diagnostico_vibraciones_motores.docx" },
+  { id: 5, nombre: "Dashboard BI y Predicción RFM para Retail Maipú", area: "Administración", carrera: "Ingeniería en Administración de Empresas", anio: 2024, autores: "Javiera Contreras, Rodrigo Sánchez", desc: "Inteligencia de negocios para retail local: consolida ERP, segmenta clientes por RFM y proyecta ventas estacionales con modelos predictivos.", stack: ["Power BI", "SQL Server", "Python", "Excel VBA", "Azure Synapse"], estado: "Público", nota: 6.5, archivo: "dashboard_bi_retail_maipu.docx", archivo_url: "assets/docs/dashboard_bi_retail_maipu.docx" },
+  { id: 6, nombre: "Simulador Inmersivo WebGL de Circuitos Eléctricos Trifásicos", area: "Energía", carrera: "Ingeniería Eléctrica", anio: 2023, autores: "Nicolás Torres, Ángela Ramírez", desc: "Plataforma 3D interactiva en el navegador para ensayar tableros eléctricos trifásicos con multímetro virtual y cálculo de caídas de tensión seguro.", stack: ["Three.js", "WebRTC", "Python Flask", "SQLite", "Tailwind CSS"], estado: "Público", nota: 6.6, archivo: "simulador_circuitos_trifasicos.pdf", archivo_url: "assets/docs/anteproyecto_iot_maipu.pdf" },
+  { id: 7, nombre: "Gestor Documental y Trazabilidad Aduanera para Embarques Marítimos", area: "Administración", carrera: "Ingeniería en Comercio Exterior", anio: 2024, autores: "Carolina Espinoza, Luis Medina", desc: "Automatización de carpeta de importaciones con cálculo de aranceles Ad-Valorem, validación de Certificados de Origen y tracking GPS de contenedores.", stack: ["Vue.js", "Laravel", "MySQL", "Google Maps API", "PDF.js"], estado: "Público", nota: 6.4, archivo: "gestor_documental_aduanero.pdf", archivo_url: "assets/docs/gestor_documental_aduanero.pdf" },
+  { id: 8, nombre: "Control de Acceso Biométrico por Reconocimiento Facial con Edge AI", area: "Informática, Ciberseguridad y Telecomunicaciones", carrera: "Ingeniería en Informática", anio: 2024, autores: "Maximiliano Bravo, Renata Castillo", desc: "Seguridad física con validación facial en tiempo real usando embeddings DeepFace, generación de informes de asistencia e integración con relé electromagnético.", stack: ["Python", "DeepFace", "OpenCV", "Django", "PostgreSQL", "Raspberry Pi"], estado: "Público", nota: 7.0, archivo: "reconocimiento_facial_edge.pdf", archivo_url: "assets/docs/reconocimiento_facial_edge.pdf" },
+  { id: 9, nombre: "Asistente Conversacional NLP para Mantenimiento de Maquinaria Pesada", area: "Mecánica", carrera: "Ingeniería en Maquinaria Pesada y Vehículos Automotrices", anio: 2025, autores: "Emilia Castro, Daniel Flores", desc: "Chatbot técnico especializado en manuales de talleres mecánicos que diagnóstica fallas hidráulicas y eléctricas mediante procesamiento de lenguaje natural.", stack: ["Python", "spaCy", "Rasa Core", "React", "MongoDB", "FastAPI"], estado: "En Revisión", nota: 6.3 },
+  { id: 10, nombre: "Software BIM y Estimación Presupuestaria para Edificación", area: "Construcción", carrera: "Construcción Civil", anio: 2024, autores: "Felipe Gutiérrez, Sebastián Vargas", desc: "Extrae cantidades de obra de archivos IFC/Revit y genera presupuestos de materiales automatizados según normativas chilenas.", stack: ["Autodesk Forge", "Node.js", "Python", "PostgreSQL", "Three.js"], estado: "Público", nota: 6.8, archivo: "software_bim_presupuestos.docx", archivo_url: "assets/docs/software_bim_presupuestos.docx" },
+  { id: 11, nombre: "Rover Teleoperado para Minería Subterránea con Sensores de Gas", area: "Minería", carrera: "Ingeniería en Minas", anio: 2025, autores: "Gonzalo Parra, Tamara Henríquez", desc: "Prototipo de rover explorador con detección remota de CO y CH4, cámara infrarroja y transmisión de mapa térmico 2D a estación de control.", stack: ["Arduino", "ROS 2", "Python", "React", "WebSockets"], estado: "Público", nota: 6.9, archivo: "rover_teleoperado_mineria.pdf", archivo_url: "assets/docs/rover_teleoperado_mineria.pdf" },
+  { id: 12, nombre: "Plataforma de Auditoría Ambiental y Huella de Carbono Corporativa", area: "Agroindustria y Medioambiente", carrera: "Ingeniería en Medioambiente y Sustentabilidad", anio: 2023, autores: "Bastián Morales, Camila Silva", desc: "Sistema cloud para calcular emisiones CO2eq (Alcances 1, 2 y 3) en empresas de servicios, compatible con estándar GHG Protocol.", stack: ["React", "Express.js", "PostgreSQL", "Chart.js", "Node.js"], estado: "Público", nota: 6.5, archivo: "auditoria_ambiental_huella_carbono.docx", archivo_url: "assets/docs/software_bim_presupuestos.docx" }
 ];
 
 let PROJECTS = [...INITIAL_PROJECTS];
@@ -146,7 +146,7 @@ const API_BASE_URL = `${RENDER_BASE_URL}/api`;
 
 // Fetch silencioso a /api/health para despertar la instancia de Render si estaba inactiva
 function wakeUpRenderBackend() {
-  fetch(`${API_BASE_URL}/health`, { method: 'GET' }).catch(() => {});
+  fetch(`${API_BASE_URL}/health`, { method: 'GET' }).catch(() => { });
 }
 
 let currentRole = 'guest'; // 'guest', 'student'/'estudiante', 'teacher'/'docente', 'admin'/'administrador'
@@ -212,12 +212,10 @@ function populateCarreraDropdown(areaSelectId, carreraSelectId, includeAllOption
   if (area && AREAS_CARRERAS[area]) {
     list = AREAS_CARRERAS[area];
   } else if (!area && includeAllOption) {
-    // Si no hay área seleccionada y se permite 'Todas', consolidar todas las carreras
     const allSet = new Set();
     Object.values(AREAS_CARRERAS).forEach(arr => arr.forEach(c => allSet.add(c)));
     list = Array.from(allSet).sort();
   } else {
-    // Área por defecto: primera área
     const firstKey = Object.keys(AREAS_CARRERAS)[0];
     list = AREAS_CARRERAS[firstKey] || [];
   }
@@ -250,17 +248,6 @@ function onUploadAreaChange() {
 function onEditAreaChange() {
   populateCarreraDropdown('editArea', 'editCarrera', false);
 }
-
-function onRegTeacherAreaChange() {
-  populateCarreraDropdown('regTeacherArea', 'regTeacherCarrera', false);
-}
-
-function onRegStudentAreaChange() {
-  populateCarreraDropdown('regStudentArea', 'regStudentCarrera', false);
-}
-
-function onRegDocenteAreaChange() { onRegTeacherAreaChange(); }
-function onRegEstudianteAreaChange() { onRegStudentAreaChange(); }
 
 function onCrudAreaChange() {
   populateCarreraDropdown('crudArea', 'crudCarrera', false);
@@ -302,10 +289,6 @@ function resetCarouselTimer() {
 
 // ── Modal Unificado de Acceso (#authModal) ──
 let activeAuthRole = 'student'; // 'student', 'teacher', 'admin'
-let activeAuthMode = 'login';   // 'login', 'register'
-
-// ── Modal Unificado de Acceso (#authModal) ──
-let activeAuthRole = 'student'; // 'student', 'teacher', 'admin'
 
 function openLoginModal(role = 'student') {
   closeAllModals();
@@ -330,7 +313,7 @@ function closeLoginModal() {
 
 function closeAllModals() {
   closeAuthModal();
-  ['modalDocente','modalEstudiante','modalAdmin'].forEach(id => {
+  ['modalDocente', 'modalEstudiante', 'modalAdmin'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -339,12 +322,12 @@ function closeAllModals() {
 }
 
 // Cerrar modales al hacer clic en el backdrop
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   const authModal = document.getElementById('authModal');
   if (authModal && e.target === authModal) closeAuthModal();
 });
 // Cerrar con Escape
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     closeAllModals();
     closeUserCrudModal();
@@ -363,7 +346,7 @@ function updateUserDisplay(user) {
 
   // Banner de estudiante
   const stName = document.getElementById('studentUserName');
-  const stSub  = document.getElementById('studentUserSub');
+  const stSub = document.getElementById('studentUserSub');
   if (stName) stName.textContent = displayName.toUpperCase();
   if (stSub) {
     const roleLabel = isAdmin ? 'ADMINISTRADOR CRAI' : isTeacher ? 'DOCENTE' : 'ALUMNO';
@@ -495,87 +478,6 @@ function switchAuthRole(role) {
   }
 }
 
-async function doModalRegister(roleParam = null) {
-  const role = canonicalRole(roleParam || activeAuthRole);
-  hideAuthFeedback();
-
-  let nombre = '';
-  let email = '';
-  let pass = '';
-  let area = 'Informática, Ciberseguridad y Telecomunicaciones';
-  let carrera = 'Ingeniería en Informática';
-  let cargo = null;
-  let admin_code = null;
-
-  if (role === 'admin') {
-    nombre = document.getElementById('regAdminNombre')?.value.trim() || '';
-    email  = document.getElementById('regAdminEmail')?.value.trim() || '';
-    pass   = document.getElementById('regAdminPass')?.value.trim() || '';
-    cargo  = document.getElementById('regAdminCargo')?.value.trim() || 'Administrador CRAI';
-    admin_code = document.getElementById('regAdminCode')?.value.trim() || null;
-    area = 'Biblioteca CRAI · Sede Maipú';
-    carrera = cargo;
-  } else if (role === 'teacher') {
-    nombre = document.getElementById('regTeacherNombre')?.value.trim() || '';
-    email  = document.getElementById('regTeacherEmail')?.value.trim() || '';
-    pass   = document.getElementById('regTeacherPass')?.value.trim() || '';
-    area   = document.getElementById('regTeacherArea')?.value || area;
-    carrera = document.getElementById('regTeacherCarrera')?.value || carrera;
-  } else {
-    nombre = document.getElementById('regStudentNombre')?.value.trim() || '';
-    email  = document.getElementById('regStudentEmail')?.value.trim() || '';
-    pass   = document.getElementById('regStudentPass')?.value.trim() || '';
-    area   = document.getElementById('regStudentArea')?.value || area;
-    carrera = document.getElementById('regStudentCarrera')?.value || carrera;
-  }
-
-  if (!nombre || !email || !pass) {
-    showAuthFeedback('Por favor completa todos los campos obligatorios.', true);
-    return;
-  }
-  if (pass.length < 6) {
-    showAuthFeedback('La contraseña debe tener al menos 6 caracteres.', true);
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        password: pass,
-        nombre,
-        rol: role,
-        area,
-        carrera,
-        cargo,
-        admin_code
-      })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.success) {
-      showAuthFeedback(data.detail || 'No se pudo registrar la cuenta en Supabase.', true);
-      return;
-    }
-  } catch (err) {
-    console.error('Error en registro:', err);
-    showAuthFeedback('Error de conexión con el servidor en Render. Intenta nuevamente.', true);
-    return;
-  }
-
-  showAuthFeedback(`✅ Cuenta (${role}) creada en Supabase. Iniciando sesión automáticamente...`, false);
-  toast(`✅ Cuenta de ${role} registrada en Supabase`);
-
-  const loginEmailEl = document.getElementById('authLoginEmail');
-  const loginPassEl  = document.getElementById('authLoginPass');
-  if (loginEmailEl) loginEmailEl.value = email;
-  if (loginPassEl) loginPassEl.value = pass;
-
-  switchAuthMode('login');
-  await doModalLogin(role);
-}
-
 function enterAuthenticatedSession(user, showToastMsg = true) {
   if (!user) return;
   const rawRole = user.rol || user.role || 'student';
@@ -634,10 +536,10 @@ function enterAuthenticatedSession(user, showToastMsg = true) {
 async function doModalLogin(roleOverride = null) {
   const role = canonicalRole(roleOverride || activeAuthRole);
   const email = document.getElementById('authLoginEmail')?.value.trim();
-  const pass  = document.getElementById('authLoginPass')?.value.trim();
+  const pass = document.getElementById('authLoginPass')?.value.trim();
 
   if (!email) { showAuthFeedback('Ingresa tu correo institucional.', true); return; }
-  if (!pass)  { showAuthFeedback('Ingresa tu contraseña.', true); return; }
+  if (!pass) { showAuthFeedback('Ingresa tu contraseña.', true); return; }
 
   hideAuthFeedback();
 
@@ -685,7 +587,7 @@ function togglePass() {
 
 async function handleLogin() {
   const email = document.getElementById('loginEmail')?.value.trim();
-  const pass  = document.getElementById('loginPass')?.value.trim();
+  const pass = document.getElementById('loginPass')?.value.trim();
   const errEl = document.getElementById('loginError');
   const errMsg = document.getElementById('loginErrorMsg');
 
@@ -739,7 +641,7 @@ function toggleMobileMenu() {
 
 // ── Navbar activo al scroll ──
 function updateNavActive() {
-  const sections = ['inicio','sobre-nosotros','origen','napi'];
+  const sections = ['inicio', 'sobre-nosotros', 'origen', 'napi'];
   const links = document.querySelectorAll('.nav-landing-link');
   let current = '';
   sections.forEach(id => {
@@ -776,8 +678,6 @@ document.addEventListener('DOMContentLoaded', () => {
   populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
   populateCarreraDropdown('fArea', 'fCarrera', false);
   populateCarreraDropdown('editArea', 'editCarrera', false);
-  populateCarreraDropdown('regTeacherArea', 'regTeacherCarrera', false);
-  populateCarreraDropdown('regStudentArea', 'regStudentCarrera', false);
   populateCarreraDropdown('crudArea', 'crudCarrera', false);
 
   // Inicializar Drag & Drop para documentos de tesis
@@ -817,14 +717,13 @@ function logout() {
   localStorage.removeItem('napi_stored_users');
   if (prevKey) localStorage.removeItem(prevKey);
 
-  // Limpiar claves de caché de chat previas en localStorage
   try {
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith('napi_chat_')) {
         localStorage.removeItem(k);
       }
     });
-  } catch (e) {}
+  } catch (e) { }
 
   const adminScreen = document.getElementById('adminScreen');
   const studentScreen = document.getElementById('studentScreen');
@@ -860,15 +759,15 @@ function logout() {
 // ══════════════════════════════════════════
 
 function adminTab(tab) {
-  ['dashboard','upload','users','manage','reports','guidelines'].forEach(t => {
-    document.getElementById('tab-'+t)?.classList.toggle('hidden', t !== tab);
-    document.getElementById('nav-'+t)?.classList.toggle('active', t === tab);
+  ['dashboard', 'upload', 'users', 'manage', 'reports', 'guidelines'].forEach(t => {
+    document.getElementById('tab-' + t)?.classList.toggle('hidden', t !== tab);
+    document.getElementById('nav-' + t)?.classList.toggle('active', t === tab);
   });
-  const titles = { 
-    dashboard: 'Panel General de Control', 
+  const titles = {
+    dashboard: 'Panel General de Control',
     upload: 'Subir Nuevo Proyecto de Título',
     users: 'Gestión de Usuarios (Alumnos y Docentes)',
-    manage: 'Gestor del Repositorio Institucional', 
+    manage: 'Gestor del Repositorio Institucional',
     reports: 'Métricas e Informes Analíticos',
     guidelines: 'Configuración de Directrices IA (N.A.P.I)'
   };
@@ -939,14 +838,13 @@ function initAdmin(defaultTab = 'dashboard') {
   renderYearBars();
   loadAdminUsers();
 
-  // Asegurar dropdowns de carga
   populateCarreraDropdown('fArea', 'fCarrera', false);
   populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
 
   const stackInput = document.getElementById('fStack');
   if (stackInput && !stackInput.dataset.bound) {
     stackInput.dataset.bound = 'true';
-    stackInput.addEventListener('input', function() {
+    stackInput.addEventListener('input', function () {
       const tags = document.getElementById('techTags');
       if (!tags) return;
       tags.innerHTML = this.value.split(',').map(s => s.trim()).filter(Boolean)
@@ -1004,7 +902,7 @@ function renderAdminUsersTable(list) {
       roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#132644] text-white border border-[#495B7D]">Admin CRAI</span>';
     }
 
-    const initials = (u.nombre || u.email).split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+    const initials = (u.nombre || u.email).split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
     return `
     <tr>
@@ -1042,11 +940,11 @@ function filterAdminUsersTable() {
   const area = document.getElementById('userAreaFilter')?.value || '';
 
   const filtered = ADMIN_USERS.filter(u => {
-    const matchSearch = !search || 
-      (u.nombre && u.nombre.toLowerCase().includes(search)) || 
+    const matchSearch = !search ||
+      (u.nombre && u.nombre.toLowerCase().includes(search)) ||
       (u.email && u.email.toLowerCase().includes(search)) ||
       (u.carrera && u.carrera.toLowerCase().includes(search));
-    const matchRole = !role || u.rol === role;
+    const matchRole = !role || canonicalRole(u.rol) === canonicalRole(role);
     const matchArea = !area || u.area === area;
     return matchSearch && matchRole && matchArea;
   });
@@ -1059,7 +957,7 @@ function openCreateUserModal() {
   document.getElementById('crudUserId').value = '';
   document.getElementById('crudNombre').value = '';
   document.getElementById('crudEmail').value = '';
-  document.getElementById('crudRol').value = 'estudiante';
+  document.getElementById('crudRol').value = 'student';
   document.getElementById('crudPassword').value = '';
   document.getElementById('crudArea').value = 'Informática, Ciberseguridad y Telecomunicaciones';
   onCrudAreaChange();
@@ -1076,10 +974,10 @@ function openEditUserModal(userId) {
   document.getElementById('crudUserId').value = u.id;
   document.getElementById('crudNombre').value = u.nombre || '';
   document.getElementById('crudEmail').value = u.email || '';
-  document.getElementById('crudRol').value = u.rol || 'estudiante';
+  document.getElementById('crudRol').value = canonicalRole(u.rol);
   document.getElementById('crudPassword').value = '';
   document.getElementById('crudArea').value = u.area || 'Informática, Ciberseguridad y Telecomunicaciones';
-  
+
   onCrudAreaChange();
   const carSelect = document.getElementById('crudCarrera');
   if (carSelect && u.carrera) carSelect.value = u.carrera;
@@ -1095,10 +993,10 @@ function closeUserCrudModal() {
 async function submitUserCrud() {
   const userId = document.getElementById('crudUserId')?.value;
   const nombre = document.getElementById('crudNombre')?.value.trim();
-  const email  = document.getElementById('crudEmail')?.value.trim();
-  const rol    = document.getElementById('crudRol')?.value;
-  const pass   = document.getElementById('crudPassword')?.value.trim();
-  const area   = document.getElementById('crudArea')?.value || 'Informática, Ciberseguridad y Telecomunicaciones';
+  const email = document.getElementById('crudEmail')?.value.trim();
+  const rol = document.getElementById('crudRol')?.value;
+  const pass = document.getElementById('crudPassword')?.value.trim();
+  const area = document.getElementById('crudArea')?.value || 'Informática, Ciberseguridad y Telecomunicaciones';
   const carrera = document.getElementById('crudCarrera')?.value;
 
   const errEl = document.getElementById('userCrudError');
@@ -1249,13 +1147,13 @@ function getActivityIconSvg(icon) {
   return `<div class="w-8 h-8 rounded-xl bg-[#223355]/15 dark:bg-[#8BA3C5]/20 text-[#223355] dark:text-[#8BA3C5] flex items-center justify-center shrink-0 shadow-xs"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>`;
 }
 
-function logActivity(icon, text, time='Justo ahora') {
+function logActivity(icon, text, time = 'Justo ahora') {
   try {
     let logs = JSON.parse(localStorage.getItem('napi_activity_logs') || '[]');
     logs.unshift({ i: icon, t: text, h: time, ts: Date.now() });
     if (logs.length > 25) logs = logs.slice(0, 25);
     localStorage.setItem('napi_activity_logs', JSON.stringify(logs));
-  } catch(e) {}
+  } catch (e) { }
   renderActivity();
 }
 
@@ -1264,20 +1162,20 @@ function renderActivity() {
   try {
     const saved = localStorage.getItem('napi_activity_logs');
     if (saved) acts = JSON.parse(saved);
-  } catch(e) {}
+  } catch (e) { }
 
   if (!acts || acts.length === 0) {
     acts = [
-      {i:'rocket', t:'Sistema N.A.P.I v2.0 operativo en INACAP Sede Maipú', h:'Reciente'},
-      {i:'upload', t:'Proyecto indexado: <strong class="text-[#495B7D] dark:text-[#8BA3C5]">IoT Telemetría Industrial</strong> (Nota: 6.8)', h:'Hace 1h'},
-      {i:'users',  t:'Usuario registrado: <strong class="text-slate-800 dark:text-white">Flavio Escobar Mendoza</strong>', h:'Hace 2h'},
-      {i:'audit',  t:'Auditoría: <strong class="text-[#495B7D] dark:text-[#8BA3C5]">Validaciones RAG y Supabase activas</strong>', h:'Hace 3h'},
-      {i:'check',  t:'Proyecto aprobado: <strong class="text-slate-800 dark:text-white">App Móvil Stock QR</strong> (Nota: 6.5)', h:'Hace 5h'}
+      { i: 'rocket', t: 'Sistema N.A.P.I v2.0 operativo en INACAP Sede Maipú', h: 'Reciente' },
+      { i: 'upload', t: 'Proyecto indexado: <strong class="text-[#495B7D] dark:text-[#8BA3C5]">IoT Telemetría Industrial</strong> (Nota: 6.8)', h: 'Hace 1h' },
+      { i: 'users', t: 'Usuario registrado: <strong class="text-slate-800 dark:text-white">Flavio Escobar Mendoza</strong>', h: 'Hace 2h' },
+      { i: 'audit', t: 'Auditoría: <strong class="text-[#495B7D] dark:text-[#8BA3C5]">Validaciones RAG y Supabase activas</strong>', h: 'Hace 3h' },
+      { i: 'check', t: 'Proyecto aprobado: <strong class="text-slate-800 dark:text-white">App Móvil Stock QR</strong> (Nota: 6.5)', h: 'Hace 5h' }
     ];
   }
 
   const el = document.getElementById('recentActivity');
-  if (el) el.innerHTML = acts.slice(0, 6).map(a=>`
+  if (el) el.innerHTML = acts.slice(0, 6).map(a => `
     <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#23354D] border border-slate-200 dark:border-[rgba(139,163,197,0.2)] anim-fade">
       ${getActivityIconSvg(a.i)}
       <div class="min-w-0 flex-1">
@@ -1295,17 +1193,17 @@ function renderKpis() {
 
 function renderCarreraChart() {
   const counts = {};
-  PROJECTS.forEach(p => { const k = shortC(p.carrera); counts[k] = (counts[k]||0)+1; });
+  PROJECTS.forEach(p => { const k = shortC(p.carrera); counts[k] = (counts[k] || 0) + 1; });
   const max = Math.max(...Object.values(counts));
   const el = document.getElementById('carreraChart');
   if (!el) return;
-  el.innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([c,n]) => `
+  el.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `
     <div>
       <div class="flex justify-between mb-1">
         <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">${c}</span>
         <span class="text-xs font-bold text-[#495B7D] dark:text-[#8BA3C5]">${n}</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${Math.round(n/max*100)}%"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${Math.round(n / max * 100)}%"></div></div>
     </div>`).join('');
 }
 
@@ -1348,12 +1246,12 @@ let ACCESS_REQUESTS = [
 try {
   const savedReqs = localStorage.getItem('napi_access_requests');
   if (savedReqs) ACCESS_REQUESTS = JSON.parse(savedReqs);
-} catch(e) {}
+} catch (e) { }
 
 function saveAccessRequestsToStorage() {
   try {
     localStorage.setItem('napi_access_requests', JSON.stringify(ACCESS_REQUESTS));
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function renderReviews() {
@@ -1361,7 +1259,6 @@ function renderReviews() {
   const reviewCard = document.getElementById('reviewSectionCard') || el?.closest('.card');
   const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
 
-  // Solo el administrador ve y usa el panel de solicitudes de acceso
   if (!isAdmin) {
     if (reviewCard) reviewCard.classList.add('hidden');
     if (el) el.innerHTML = '';
@@ -1385,7 +1282,7 @@ function renderReviews() {
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-8 h-8 rounded-full bg-[#8BA3C5]/20 border border-[#8BA3C5]/40 text-[#223355] dark:text-[#8BA3C5] text-xs font-bold flex items-center justify-center shrink-0">
-            ${(r.n || 'Alumno').split(' ').map(x=>x[0]).join('').substring(0,2)}
+            ${(r.n || 'Alumno').split(' ').map(x => x[0]).join('').substring(0, 2)}
           </div>
           <div class="min-w-0">
             <p class="text-xs font-bold text-slate-800 dark:text-white truncate">${r.p}</p>
@@ -1394,12 +1291,11 @@ function renderReviews() {
             </p>
           </div>
         </div>
-        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estado==='Aprobada' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : r.estado==='Rechazada' ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estado === 'Aprobada' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : r.estado === 'Rechazada' ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">
           ${r.estado || 'Pendiente'}
         </span>
       </div>
 
-      <!-- Motivo Académico Solicitado -->
       <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-[#132238] border border-slate-200/80 dark:border-[rgba(139,163,197,0.15)] text-left">
         <p class="text-[10px] font-bold text-[#495B7D] dark:text-[#8BA3C5] uppercase tracking-wider mb-0.5">
           Motivo · ${r.proposito || 'Consulta Académica'}:
@@ -1410,7 +1306,6 @@ function renderReviews() {
         ${r.email ? `<p class="text-[10px] text-slate-400 dark:text-[#8BA3C5]/70 mt-1">Contacto estudiante: <span class="font-medium text-slate-600 dark:text-slate-300">${r.email}</span></p>` : ''}
       </div>
 
-      <!-- Acciones de Docente -->
       <div class="flex items-center justify-between pt-1">
         <span class="text-[10px] text-slate-400 font-medium">${r.fecha || 'Reciente'}</span>
         <div class="flex gap-1.5 shrink-0">
@@ -1460,14 +1355,14 @@ function rejectAccessRequest(reqId) {
 function renderTable(list) {
   const tbody = document.getElementById('projectBody');
   if (!tbody) return;
-  document.getElementById('showCount').textContent  = list.length;
+  document.getElementById('showCount').textContent = list.length;
   document.getElementById('totalCount').textContent = PROJECTS.length;
   document.getElementById('manageEmpty')?.classList.toggle('hidden', list.length > 0);
   tbody.innerHTML = list.map(p => `
     <tr>
       <td class="px-4 py-3">
         <p class="font-bold text-slate-800 text-xs leading-snug" style="max-width:260px">${p.nombre}</p>
-        <div class="flex gap-1 flex-wrap mt-1">${(Array.isArray(p.stack)?p.stack:[]).slice(0,3).map(s=>`<span class="badge-tech">${s}</span>`).join('')}</div>
+        <div class="flex gap-1 flex-wrap mt-1">${(Array.isArray(p.stack) ? p.stack : []).slice(0, 3).map(s => `<span class="badge-tech">${s}</span>`).join('')}</div>
       </td>
       <td class="px-4 py-3">
         <span class="badge-cyan block truncate max-w-[200px]" title="${p.carrera}">${shortC(p.carrera)}</span>
@@ -1476,31 +1371,31 @@ function renderTable(list) {
       <td class="px-4 py-3 text-xs font-semibold text-slate-700">${p.anio}</td>
       <td class="px-4 py-3 text-xs text-slate-500">${p.autores}</td>
       <td class="px-4 py-3">
-        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${p.estado==='Público'?'bg-cyan-50 text-cyan-700 border border-cyan-200':p.estado==='En Revisión'?'bg-amber-50 text-amber-700 border border-amber-200':'bg-slate-100 text-slate-500 border border-slate-200'}">${p.estado}</span>
+        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${p.estado === 'Público' ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' : p.estado === 'En Revisión' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}">${p.estado}</span>
       </td>
       <td class="px-4 py-3">
         <div class="flex gap-1.5 items-center">
           ${(p.archivo_url || p.archivo) ? (() => {
-            const fi = getFileInfo(p.archivo_url || p.archivo);
-            const downloadUrl = p.archivo_url || p.archivo;
-            const btnColor = fi.isDoc
-              ? 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400'
-              : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400';
-            return `
+      const fi = getFileInfo(p.archivo_url || p.archivo);
+      const downloadUrl = p.archivo_url || p.archivo;
+      const btnColor = fi.isDoc
+        ? 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+        : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400';
+      return `
             <a href="${downloadUrl}" target="_blank" download class="p-1.5 rounded-lg ${btnColor} transition-colors" title="Descargar Documento Oficial (${fi.fullLabel})">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             </a>`;
-          })() : `
+    })() : `
             <button onclick="toast('⚠️ Este proyecto no tiene documento adjunto (PDF o Word)')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed" title="Sin archivo adjunto (PDF / Word)">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             </button>`
-          }
+    }
           ${(isAdminRole(currentUser?.rol || currentUser?.role || currentRole)) ? `
           <button onclick="openEdit('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Metadatos">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
           <button onclick="toggleStatus('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Visibilidad">
-            ${p.estado==='Público'?'<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>':'<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>'}
+            ${p.estado === 'Público' ? '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>' : '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>'}
           </button>
           <button onclick="deleteP('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 transition-colors" title="Eliminar">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -1511,9 +1406,9 @@ function renderTable(list) {
 }
 
 function filterTable() {
-  const q    = document.getElementById('manageSearch')?.value.toLowerCase().trim() || '';
+  const q = document.getElementById('manageSearch')?.value.toLowerCase().trim() || '';
   const area = document.getElementById('manageAreaFilter')?.value.toLowerCase().trim() || '';
-  const car  = document.getElementById('manageCarreraFilter')?.value.toLowerCase().trim() || '';
+  const car = document.getElementById('manageCarreraFilter')?.value.toLowerCase().trim() || '';
 
   renderTable(PROJECTS.filter(p => {
     const matchQ = !q || p.nombre.toLowerCase().includes(q) || p.autores.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q);
@@ -1551,16 +1446,16 @@ function openEdit(id) {
   editingId = id;
   const p = PROJECTS.find(x => String(x.id) === String(id));
   if (!p) return;
-  document.getElementById('editNombre').value  = p.nombre || '';
-  document.getElementById('editArea').value    = p.area || 'Informática, Ciberseguridad y Telecomunicaciones';
+  document.getElementById('editNombre').value = p.nombre || '';
+  document.getElementById('editArea').value = p.area || 'Informática, Ciberseguridad y Telecomunicaciones';
   onEditAreaChange();
   document.getElementById('editCarrera').value = p.carrera || '';
   document.getElementById('editAutores').value = p.autores || '';
-  document.getElementById('editAnio').value    = p.anio || 2025;
-  document.getElementById('editNota').value    = p.nota || 6.5;
-  document.getElementById('editStack').value   = Array.isArray(p.stack) ? p.stack.join(', ') : (p.stack || '');
-  document.getElementById('editDesc').value    = p.desc || '';
-  document.getElementById('editEstado').value  = p.estado || 'Público';
+  document.getElementById('editAnio').value = p.anio || 2025;
+  document.getElementById('editNota').value = p.nota || 6.5;
+  document.getElementById('editStack').value = Array.isArray(p.stack) ? p.stack.join(', ') : (p.stack || '');
+  document.getElementById('editDesc').value = p.desc || '';
+  document.getElementById('editEstado').value = p.estado || 'Público';
 
   currentEditFile = null;
   const editFileInput = document.getElementById('editFileInput');
@@ -1588,15 +1483,15 @@ async function saveEdit() {
   }
   const p = PROJECTS.find(x => String(x.id) === String(editingId));
   if (!p) return;
-  const nombre  = document.getElementById('editNombre')?.value.trim();
-  const area    = document.getElementById('editArea')?.value;
+  const nombre = document.getElementById('editNombre')?.value.trim();
+  const area = document.getElementById('editArea')?.value;
   const carrera = document.getElementById('editCarrera')?.value;
   const autores = document.getElementById('editAutores')?.value.trim();
-  const anio    = parseInt(document.getElementById('editAnio')?.value) || 2025;
-  const nota    = parseFloat(document.getElementById('editNota')?.value);
-  const stackStr= document.getElementById('editStack')?.value.trim();
-  const desc    = document.getElementById('editDesc')?.value.trim();
-  const estado  = document.getElementById('editEstado')?.value;
+  const anio = parseInt(document.getElementById('editAnio')?.value) || 2025;
+  const nota = parseFloat(document.getElementById('editNota')?.value);
+  const stackStr = document.getElementById('editStack')?.value.trim();
+  const desc = document.getElementById('editDesc')?.value.trim();
+  const estado = document.getElementById('editEstado')?.value;
 
   if (!nombre || !carrera || !autores) {
     toast('⚠️ Completa los campos obligatorios del proyecto.');
@@ -1607,7 +1502,7 @@ async function saveEdit() {
     return;
   }
 
-  const stackArr = stackStr ? stackStr.split(',').map(s=>s.trim()).filter(Boolean) : ['General'];
+  const stackArr = stackStr ? stackStr.split(',').map(s => s.trim()).filter(Boolean) : ['General'];
 
   try {
     const resp = await fetch(`${API_BASE_URL}/projects/${p.id}`, {
@@ -1635,15 +1530,15 @@ async function saveEdit() {
     return;
   }
 
-  p.nombre  = nombre;
-  p.area    = area;
+  p.nombre = nombre;
+  p.area = area;
   p.carrera = carrera;
   p.autores = autores;
-  p.anio    = anio;
-  p.nota    = nota;
-  p.stack   = stackArr;
-  p.desc    = desc || p.desc;
-  p.estado  = estado;
+  p.anio = anio;
+  p.nota = nota;
+  p.stack = stackArr;
+  p.desc = desc || p.desc;
+  p.estado = estado;
 
   if (currentEditFile) {
     p.archivo = currentEditFile.name;
@@ -1651,8 +1546,8 @@ async function saveEdit() {
     logActivity('📎', `Documento actualizado para "${p.nombre}": ${currentEditFile.name}`);
   }
 
-  closeEdit(); 
-  filterTable(); 
+  closeEdit();
+  filterTable();
   renderKpis();
   renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
   logActivity('✏️', `Metadatos editados en Supabase: "${p.nombre}" (Nota: ${p.nota})`);
@@ -1685,7 +1580,7 @@ async function toggleStatus(id) {
   }
 
   p.estado = newStatus;
-  filterTable(); 
+  filterTable();
   renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
   logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
   toast(`${p.estado === 'Público' ? '👁️ Proyecto Visible en catálogo' : '🙈 Proyecto Oculto en catálogo'}`);
@@ -1754,8 +1649,8 @@ async function confirmDeleteProject() {
       if (resp.ok) {
         PROJECTS.splice(i, 1);
         logActivity('🗑️', `Proyecto eliminado de Supabase: "${deleted.nombre}"`);
-        filterTable(); 
-        renderKpis(); 
+        filterTable();
+        renderKpis();
         renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
         toast('🗑️ Proyecto eliminado permanentemente de Supabase.');
       } else {
@@ -1770,37 +1665,37 @@ async function confirmDeleteProject() {
 }
 
 function renderMetrics() {
-  const counts = {}; PROJECTS.forEach(p=>{ const k=shortC(p.carrera); counts[k]=(counts[k]||0)+1; });
+  const counts = {}; PROJECTS.forEach(p => { const k = shortC(p.carrera); counts[k] = (counts[k] || 0) + 1; });
   const total = PROJECTS.length;
   const mc = document.getElementById('metCarrera');
-  if (mc) mc.innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`
+  if (mc) mc.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `
     <div class="flex items-center gap-3">
       <span class="text-xs text-slate-700 w-36 truncate">${c}</span>
-      <div class="flex-1 progress-track"><div class="progress-fill" style="width:${Math.round(n/total*100)}%"></div></div>
-      <span class="text-xs font-bold text-cyan-700 w-14 text-right">${n} (${Math.round(n/total*100)}%)</span>
+      <div class="flex-1 progress-track"><div class="progress-fill" style="width:${Math.round(n / total * 100)}%"></div></div>
+      <span class="text-xs font-bold text-cyan-700 w-14 text-right">${n} (${Math.round(n / total * 100)}%)</span>
     </div>`).join('');
 
-  const techC = {}; PROJECTS.forEach(p=>p.stack.forEach(t=>{ techC[t]=(techC[t]||0)+1; }));
-  const topT = Object.entries(techC).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxT = topT[0]?.[1]||1;
+  const techC = {}; PROJECTS.forEach(p => p.stack.forEach(t => { techC[t] = (techC[t] || 0) + 1; }));
+  const topT = Object.entries(techC).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxT = topT[0]?.[1] || 1;
   const mt = document.getElementById('metTech');
-  if (mt) mt.innerHTML = topT.map(([t,n])=>`
+  if (mt) mt.innerHTML = topT.map(([t, n]) => `
     <div class="flex items-center gap-2">
       <span class="text-xs text-slate-700 w-24 truncate">${t}</span>
-      <div class="flex-1 progress-track"><div class="progress-fill" style="width:${Math.round(n/maxT*100)}%"></div></div>
+      <div class="flex-1 progress-track"><div class="progress-fill" style="width:${Math.round(n / maxT * 100)}%"></div></div>
       <span class="text-xs font-bold text-cyan-700">${n}</span>
     </div>`).join('');
 
   const sum = [
-    {l:'Proyectos Registrados',v:PROJECTS.length,i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>'},
-    {l:'Áreas Académicas INACAP',v:Object.keys(AREAS_CARRERAS).length,i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>'},
-    {l:'Nota Promedio',v:(PROJECTS.reduce((a,p)=>a+(p.nota||6.0),0)/PROJECTS.length).toFixed(1),i:'<svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'},
-    {l:'Consultas NAPI IA',v:184,i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>'},
-    {l:'Tasa de Aprobación',v:'100%',i:'<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>'},
-    {l:'Estado Supabase',v:'En Línea',i:'<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>'}
+    { l: 'Proyectos Registrados', v: PROJECTS.length, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>' },
+    { l: 'Áreas Académicas INACAP', v: Object.keys(AREAS_CARRERAS).length, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>' },
+    { l: 'Nota Promedio', v: (PROJECTS.reduce((a, p) => a + (p.nota || 6.0), 0) / PROJECTS.length).toFixed(1), i: '<svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>' },
+    { l: 'Consultas NAPI IA', v: 184, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>' },
+    { l: 'Tasa de Aprobación', v: '100%', i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>' },
+    { l: 'Estado Supabase', v: 'En Línea', i: '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>' }
   ];
   const ms = document.getElementById('sysSummary');
-  if (ms) ms.innerHTML = sum.map(s=>`
+  if (ms) ms.innerHTML = sum.map(s => `
     <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#1E2E44] border border-slate-200 dark:border-[rgba(139,163,197,0.2)]">
       <span class="text-xs text-slate-600 dark:text-[#B0ADA4] flex items-center gap-2">${s.i} <span>${s.l}</span></span>
       <span class="text-xs font-bold text-slate-800 dark:text-white">${s.v}</span>
@@ -1808,12 +1703,12 @@ function renderMetrics() {
 }
 
 function renderYearBars() {
-  const yc = {}; PROJECTS.forEach(p=>{ yc[p.anio]=(yc[p.anio]||0)+1; });
-  const years = [2023,2024,2025,2026];
-  const max = Math.max(...Object.values(yc),1);
+  const yc = {}; PROJECTS.forEach(p => { yc[p.anio] = (yc[p.anio] || 0) + 1; });
+  const years = [2023, 2024, 2025, 2026];
+  const max = Math.max(...Object.values(yc), 1);
   const el = document.getElementById('yearChart');
-  if (el) el.innerHTML = years.map(y=>{
-    const c = yc[y]||0; const pct = Math.round(c/max*100);
+  if (el) el.innerHTML = years.map(y => {
+    const c = yc[y] || 0; const pct = Math.round(c / max * 100);
     return `
     <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
       <span class="text-[11px] font-black text-cyan-700">${c}</span>
@@ -1830,7 +1725,7 @@ function toggleVis() {
   const btn = document.getElementById('visToggle');
   if (btn) btn.classList.toggle('bg-cyan-600', visPublic), btn.classList.toggle('bg-slate-400', !visPublic);
   const lbl = document.getElementById('visLabel');
-  if (lbl) { lbl.textContent = visPublic?'Público (Visible para Estudiantes)':'Oculto (Sólo Administración)'; lbl.className = visPublic?'text-xs font-bold text-cyan-700':'text-xs font-bold text-slate-500'; }
+  if (lbl) { lbl.textContent = visPublic ? 'Público (Visible para Estudiantes)' : 'Oculto (Sólo Administración)'; lbl.className = visPublic ? 'text-xs font-bold text-cyan-700' : 'text-xs font-bold text-slate-500'; }
 }
 
 let currentUploadedFile = null;
@@ -1853,7 +1748,7 @@ function processUploadedFile(file) {
   const validExtensions = ['.pdf', '.docx', '.doc'];
   const nameLower = file.name.toLowerCase();
   const isValid = validExtensions.some(ext => nameLower.endsWith(ext));
-  
+
   if (!isValid) {
     toast('⚠️ Formato no compatible. Por favor adjunta un archivo PDF (.pdf) o Word (.docx, .doc)');
     return;
@@ -1899,7 +1794,7 @@ function initDragAndDrop() {
 }
 
 function clearForm() {
-  ['fNombre','fAutores','fDesc','fStack'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['fNombre', 'fAutores', 'fDesc', 'fStack'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const fNota = document.getElementById('fNota');
   if (fNota) fNota.value = '6.5';
   const techTags = document.getElementById('techTags');
@@ -1910,30 +1805,28 @@ function clearForm() {
 }
 
 async function submitProject() {
-  const nombre  = document.getElementById('fNombre')?.value.trim();
-  const area    = document.getElementById('fArea')?.value;
+  const nombre = document.getElementById('fNombre')?.value.trim();
+  const area = document.getElementById('fArea')?.value;
   const carrera = document.getElementById('fCarrera')?.value;
   const autores = document.getElementById('fAutores')?.value.trim();
-  const desc    = document.getElementById('fDesc')?.value.trim();
-  const anio    = parseInt(document.getElementById('fAnio')?.value) || 2025;
+  const desc = document.getElementById('fDesc')?.value.trim();
+  const anio = parseInt(document.getElementById('fAnio')?.value) || 2025;
   const notaVal = document.getElementById('fNota')?.value.trim();
-  const nota    = parseFloat(notaVal);
+  const nota = parseFloat(notaVal);
 
   if (!nombre || !carrera || !autores || !desc) {
     toast('⚠️ Completa todos los campos obligatorios del proyecto.');
     return;
   }
 
-  // RF-10: Validación estricta que impida registrar proyectos con nota inferior a 6.0
   if (!notaVal || isNaN(nota) || nota < 6.0 || nota > 7.0) {
     toast('⛔ Normativa INACAP: Solo se pueden registrar proyectos con nota final igual o superior a 6.0 (Aprobados).');
     return;
   }
 
-  const stack = document.getElementById('fStack')?.value.split(',').map(s=>s.trim()).filter(Boolean) || ['General'];
+  const stack = document.getElementById('fStack')?.value.split(',').map(s => s.trim()).filter(Boolean) || ['General'];
   const btnSubmit = document.querySelector('#tab-upload button[onclick="submitProject()"]');
 
-  // RF-11: Indicador de carga durante el procesamiento e indexación
   if (btnSubmit) {
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = `<span class="inline-flex items-center gap-2"><div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Guardando en Supabase...</span>`;
@@ -1943,7 +1836,6 @@ async function submitProject() {
   let serverSuccess = false;
   let serverProjectData = null;
 
-  // Sincronizar en Supabase vía Render con soporte de subida a Storage
   try {
     const formData = new FormData();
     formData.append('titulo', nombre);
@@ -1977,16 +1869,16 @@ async function submitProject() {
   }
 
   if (serverSuccess) {
-    const newProjectItem = { 
-      id: serverProjectData?.project?.id || Date.now(), 
-      nombre, 
-      area: area || 'Informática, Ciberseguridad y Telecomunicaciones', 
-      carrera, 
-      anio, 
-      autores, 
-      desc, 
-      stack, 
-      estado: visPublic ? 'Público' : 'Oculto', 
+    const newProjectItem = {
+      id: serverProjectData?.project?.id || Date.now(),
+      nombre,
+      area: area || 'Informática, Ciberseguridad y Telecomunicaciones',
+      carrera,
+      anio,
+      autores,
+      desc,
+      stack,
+      estado: visPublic ? 'Público' : 'Oculto',
       nota: nota,
       archivo: fileToUpload ? fileToUpload.name : null,
       archivo_url: serverProjectData?.project?.archivo_url || null
@@ -1994,12 +1886,12 @@ async function submitProject() {
     PROJECTS.unshift(newProjectItem);
 
     const sb = document.getElementById('uploadSuccess');
-    if (sb) { sb.classList.remove('hidden'); setTimeout(()=>sb.classList.add('hidden'), 4000); }
-    clearForm(); 
+    if (sb) { sb.classList.remove('hidden'); setTimeout(() => sb.classList.add('hidden'), 4000); }
+    clearForm();
     logActivity('🚀', `Nuevo proyecto indexado en Supabase: "${nombre}" (Nota: ${nota})`);
     toast(`🚀 Proyecto "${nombre}" guardado y disponible para todos en Supabase.`);
 
-    filterTable(); 
+    filterTable();
     renderKpis();
     renderCards(PROJECTS.filter(p => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? p.estado === 'Público' : true));
   }
@@ -2054,7 +1946,6 @@ async function syncProjectsFromSupabase() {
   } catch (e) {
     console.warn('Error de red al cargar proyectos desde Supabase, usando INITIAL_PROJECTS como fallback:', e);
   }
-  // Fallback únicamente si falla la red o el backend no responde
   if (!PROJECTS || PROJECTS.length === 0) {
     PROJECTS = [...INITIAL_PROJECTS];
   }
@@ -2063,59 +1954,59 @@ async function syncProjectsFromSupabase() {
   renderKpis();
 }
 
-function initStudent() { 
+function initStudent() {
   currentRole = 'estudiante';
   if (currentUser) updateUserDisplay(currentUser);
   populateCarreraDropdown('studentAreaFilter', 'studentCarreraFilter', true);
-  renderCards(PROJECTS.filter(p=>p.estado==='Público')); 
+  renderCards(PROJECTS.filter(p => p.estado === 'Público'));
   syncProjectsFromSupabase();
 }
 
 function renderCards(list) {
-  const grid  = document.getElementById('studentGrid');
+  const grid = document.getElementById('studentGrid');
   const empty = document.getElementById('studentEmpty');
-  const cnt   = document.getElementById('studentCount');
-  if (cnt) cnt.textContent = `${list.length} proyecto${list.length!==1?'s':''} disponible${list.length!==1?'s':''}`;
-  if (list.length===0) { if(grid) grid.innerHTML=''; if(empty) empty.classList.remove('hidden'); return; }
+  const cnt = document.getElementById('studentCount');
+  if (cnt) cnt.textContent = `${list.length} proyecto${list.length !== 1 ? 's' : ''} disponible${list.length !== 1 ? 's' : ''}`;
+  if (list.length === 0) { if (grid) grid.innerHTML = ''; if (empty) empty.classList.remove('hidden'); return; }
   if (empty) empty.classList.add('hidden');
   if (!grid) return;
 
   const pastelThemes = [
-    { 
-      cardClass: 'card-pastel-sky', 
-      badgeColor: 'bg-[#23354D]', 
-      arrowColor: 'text-[#495B7D]', 
-      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>` 
+    {
+      cardClass: 'card-pastel-sky',
+      badgeColor: 'bg-[#23354D]',
+      arrowColor: 'text-[#495B7D]',
+      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`
     },
-    { 
-      cardClass: 'card-pastel-mint', 
-      badgeColor: 'bg-[#495B7D]', 
-      arrowColor: 'text-[#223355]', 
-      icon: `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>` 
+    {
+      cardClass: 'card-pastel-mint',
+      badgeColor: 'bg-[#495B7D]',
+      arrowColor: 'text-[#223355]',
+      icon: `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>`
     },
-    { 
-      cardClass: 'card-pastel-rose', 
-      badgeColor: 'bg-[#223355]', 
-      arrowColor: 'text-[#8BA3C5]', 
-      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>` 
+    {
+      cardClass: 'card-pastel-rose',
+      badgeColor: 'bg-[#223355]',
+      arrowColor: 'text-[#8BA3C5]',
+      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`
     },
-    { 
-      cardClass: 'card-pastel-lavender', 
-      badgeColor: 'bg-[#23354D]', 
-      arrowColor: 'text-[#8BA3C5]', 
-      icon: `<svg class="w-5 h-5 text-[#B0ADA4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.36 19.46A2 2 0 0 0 6.09 22h11.82a2 2 0 0 0 1.73-2.54L14 9.31V2"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line><line x1="14" y1="9.3" x2="10" y2="9.3"></line></svg>` 
+    {
+      cardClass: 'card-pastel-lavender',
+      badgeColor: 'bg-[#23354D]',
+      arrowColor: 'text-[#8BA3C5]',
+      icon: `<svg class="w-5 h-5 text-[#B0ADA4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.36 19.46A2 2 0 0 0 6.09 22h11.82a2 2 0 0 0 1.73-2.54L14 9.31V2"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line><line x1="14" y1="9.3" x2="10" y2="9.3"></line></svg>`
     },
-    { 
-      cardClass: 'card-pastel-butter', 
-      badgeColor: 'bg-[#495B7D]', 
-      arrowColor: 'text-[#223355]', 
-      icon: `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>` 
+    {
+      cardClass: 'card-pastel-butter',
+      badgeColor: 'bg-[#495B7D]',
+      arrowColor: 'text-[#223355]',
+      icon: `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`
     },
-    { 
-      cardClass: 'card-pastel-peach', 
-      badgeColor: 'bg-[#223355]', 
-      arrowColor: 'text-[#8BA3C5]', 
-      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>` 
+    {
+      cardClass: 'card-pastel-peach',
+      badgeColor: 'bg-[#223355]',
+      arrowColor: 'text-[#8BA3C5]',
+      icon: `<svg class="w-5 h-5 text-[#8BA3C5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`
     }
   ];
 
@@ -2144,25 +2035,25 @@ function renderCards(list) {
       </div>
       <div>
         <div class="flex flex-wrap gap-1.5 mb-4">
-          ${p.stack.slice(0,4).map(t=>`<span class="badge-tech">${t}</span>`).join('')}
-          ${p.stack.length>4?`<span class="text-[10px] text-slate-500 dark:text-[#8BA3C5] font-semibold">+${p.stack.length-4}</span>`:''}
+          ${p.stack.slice(0, 4).map(t => `<span class="badge-tech">${t}</span>`).join('')}
+          ${p.stack.length > 4 ? `<span class="text-[10px] text-slate-500 dark:text-[#8BA3C5] font-semibold">+${p.stack.length - 4}</span>` : ''}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-slate-700/60">
           ${(canDownloadDocuments() && (p.archivo_url || p.archivo)) ? (() => {
-            const fi = getFileInfo(p.archivo_url || p.archivo);
-            const downloadUrl = p.archivo_url || p.archivo;
-            const btnClass = fi.isDoc 
-              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60' 
-              : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60';
-            const iconSvg = fi.isDoc
-              ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`
-              : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>`;
-            return `
+        const fi = getFileInfo(p.archivo_url || p.archivo);
+        const downloadUrl = p.archivo_url || p.archivo;
+        const btnClass = fi.isDoc
+          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60'
+          : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60';
+        const iconSvg = fi.isDoc
+          ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`
+          : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>`;
+        return `
             <a href="${downloadUrl}" target="_blank" download onclick="event.stopPropagation()" class="px-2.5 py-1.5 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-sm ${btnClass}" title="${fi.isDoc ? 'Descargar Documento Oficial Word (.docx)' : 'Descargar Documento Oficial PDF'}">
               ${iconSvg}
               <span>${fi.label}</span>
             </a>`;
-          })() : `
+      })() : `
             <span class="badge-restricted">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
               <span>Acceso Académico</span>
@@ -2179,9 +2070,9 @@ function renderCards(list) {
 }
 
 function filterCards() {
-  const q    = document.getElementById('studentSearch')?.value.toLowerCase().trim() || '';
+  const q = document.getElementById('studentSearch')?.value.toLowerCase().trim() || '';
   const area = document.getElementById('studentAreaFilter')?.value.toLowerCase().trim() || '';
-  const car  = document.getElementById('studentCarreraFilter')?.value.toLowerCase().trim() || '';
+  const car = document.getElementById('studentCarreraFilter')?.value.toLowerCase().trim() || '';
   const anio = document.getElementById('anioFilter')?.value || '';
   const sort = document.getElementById('sortFilter')?.value || 'newest';
 
@@ -2193,24 +2084,23 @@ function filterCards() {
     return matchQ && matchArea && matchCar && matchAnio;
   });
 
-  if (sort === 'oldest') list.sort((a,b)=>a.anio-b.anio);
-  else if (sort === 'newest') list.sort((a,b)=>b.anio-a.anio);
-  else if (sort === 'az') list.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  if (sort === 'oldest') list.sort((a, b) => a.anio - b.anio);
+  else if (sort === 'newest') list.sort((a, b) => b.anio - a.anio);
+  else if (sort === 'az') list.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   renderCards(list);
 }
 
 function openProjModal(id) {
-  const p = PROJECTS.find(x => String(x.id) === String(id)); if(!p) return;
+  const p = PROJECTS.find(x => String(x.id) === String(id)); if (!p) return;
   currentModal = p;
-  document.getElementById('mBadge').textContent   = `${p.area ? p.area + ' · ' : ''}${shortC(p.carrera)}`;
-  document.getElementById('mTitle').textContent   = p.nombre;
-  document.getElementById('mAnio').textContent    = p.anio;
+  document.getElementById('mBadge').textContent = `${p.area ? p.area + ' · ' : ''}${shortC(p.carrera)}`;
+  document.getElementById('mTitle').textContent = p.nombre;
+  document.getElementById('mAnio').textContent = p.anio;
   document.getElementById('mAutores').textContent = p.autores;
-  document.getElementById('mDesc').textContent    = p.desc;
-  document.getElementById('mTechs').innerHTML     = p.stack.map(t=>`<span class="badge-cyan px-2.5 py-1 text-xs">${t}</span>`).join('');
+  document.getElementById('mDesc').textContent = p.desc;
+  document.getElementById('mTechs').innerHTML = p.stack.map(t => `<span class="badge-cyan px-2.5 py-1 text-xs">${t}</span>`).join('');
 
-  // Gestionar visibilidad de descarga y alertas según rol
   const dlContainer = document.getElementById('mDownloadContainer');
   const dlBtn = document.getElementById('mDownloadDocBtn');
   const alertRestricted = document.getElementById('mRestrictedAlert');
@@ -2219,7 +2109,6 @@ function openProjModal(id) {
   const fileTarget = p.archivo_url || p.archivo;
 
   if (isDocenteOrAdmin) {
-    // DOCENTE Y ADMINISTRADOR: Tienen acceso a la descarga
     if (fileTarget) {
       if (dlContainer) {
         dlContainer.classList.remove('hidden');
@@ -2245,10 +2134,8 @@ function openProjModal(id) {
         if (alertSubtitle) alertSubtitle.textContent = 'Este proyecto fue registrado en la base de datos sin archivo adjunto cargado.';
       }
     }
-    // Docentes y administradores nunca necesitan pedir permiso
     if (reqBtn) reqBtn.classList.add('hidden');
   } else {
-    // ALUMNO: El botón de descarga está estrictamente NO disponible
     if (dlContainer) dlContainer.classList.add('hidden');
     if (alertRestricted) {
       alertRestricted.classList.remove('hidden');
@@ -2257,19 +2144,18 @@ function openProjModal(id) {
       if (alertTitle) alertTitle.textContent = 'Descarga restringida por normativa institucional';
       if (alertSubtitle) alertSubtitle.textContent = 'La descarga del archivo completo (PDF / Word) está restringida para alumnos. Docentes y administradores tienen acceso directo.';
     }
-    // Solicitar autorización al docente
     if (reqBtn) reqBtn.classList.remove('hidden');
   }
 
   document.getElementById('projModal').classList.remove('hidden');
 }
 
-function closeProjModal() { 
-  document.getElementById('projModal').classList.add('hidden'); 
+function closeProjModal() {
+  document.getElementById('projModal').classList.add('hidden');
 }
 
-function requestAccess() { 
-  openRequestAccessModal(); 
+function requestAccess() {
+  openRequestAccessModal();
 }
 
 function openRequestAccessModal() {
@@ -2287,7 +2173,6 @@ function openRequestAccessModal() {
   if (titleEl) titleEl.textContent = currentModal.nombre || 'Proyecto';
   if (metaEl) metaEl.textContent = `${currentModal.carrera || currentModal.area || 'Carrera'} · Autores: ${currentModal.autores || 'Alumnos'}`;
 
-  // Autocompletar datos del estudiante si está logueado
   if (nombreInput) nombreInput.value = currentUser?.nombre || '';
   if (emailInput) emailInput.value = currentUser?.email || '';
   if (motivoInput) motivoInput.value = '';
@@ -2347,8 +2232,8 @@ function submitAccessRequest() {
 }
 
 function sendToNapi() {
-  closeProjModal(); if(!napiOpen) toggleChat();
-  if(currentModal) setTimeout(()=>{ document.getElementById('napiInput').value=`Quiero hacer un proyecto similar a: "${currentModal.nombre}"`; sendMsg(); },300);
+  closeProjModal(); if (!napiOpen) toggleChat();
+  if (currentModal) setTimeout(() => { document.getElementById('napiInput').value = `Quiero hacer un proyecto similar a: "${currentModal.nombre}"`; sendMsg(); }, 300);
 }
 
 // ══════════════════════════════════════════
@@ -2533,8 +2418,7 @@ function toggleVoiceSpeech() {
 function speakNapi(text) {
   if (!isVoiceSpeechEnabled || !('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
-  
-  // Extraer respuesta breve hablada (<= 2 frases) para locución natural y concisa
+
   let spokenText = text.split('\n')[0].replace(/#{1,6}\s?/g, '').trim();
   if (text.includes('coincide') || text.includes('similitud') || text.includes('%')) {
     const matchPct = text.match(/(\d{1,2}(?:\.\d)?%)/);
@@ -2632,7 +2516,7 @@ function toggleVoiceInput() {
 }
 
 function addNapi(txt, save = true) {
-  const box = document.getElementById('chatBox'); if(!box) return;
+  const box = document.getElementById('chatBox'); if (!box) return;
   const d = document.createElement('div');
   d.className = 'flex gap-2.5 items-start anim-fade mb-3.5';
   d.innerHTML = `
@@ -2651,7 +2535,7 @@ function addNapi(txt, save = true) {
 }
 
 function addUser(txt, save = true, cleanTextForDb = null) {
-  const box = document.getElementById('chatBox'); if(!box) return;
+  const box = document.getElementById('chatBox'); if (!box) return;
   const d = document.createElement('div');
   d.className = 'flex gap-2.5 items-start justify-end anim-fade mb-3.5';
   d.innerHTML = `
@@ -2669,7 +2553,7 @@ function addUser(txt, save = true, cleanTextForDb = null) {
 }
 
 function addTyping() {
-  const box = document.getElementById('chatBox'); if(!box) return null;
+  const box = document.getElementById('chatBox'); if (!box) return null;
   const d = document.createElement('div');
   d.id = 'typing';
   d.className = 'flex gap-2.5 items-start anim-fade mb-3';
@@ -2789,7 +2673,7 @@ function getChatHistoryArray() {
 }
 
 function addSimCardSupabase(sim, save = true) {
-  const box = document.getElementById('chatBox'); if(!box) return;
+  const box = document.getElementById('chatBox'); if (!box) return;
   const d = document.createElement('div');
   d.className = 'anim-fade mb-3 ml-8';
   const pct = Math.round(sim.porcentaje_similitud || 60);
@@ -2822,7 +2706,7 @@ async function sendMsg(overrideTxt = null) {
   if (!txt && !attached) return;
 
   const history = getChatHistoryArray();
-  
+
   let userDisplayMsg = txt;
   let cleanDbMsg = txt;
   if (attached) {
@@ -2876,10 +2760,8 @@ async function sendMsg(overrideTxt = null) {
     }
   }
 
-  // Intento 1 con timeout de 25s
   let data = await executeAnalyzeFetch(25000);
 
-  // Si el fetch falla, aborta, no es ok o no trae data.analisis: reintentar UNA vez automáticamente manteniendo "escribiendo"
   if (!data) {
     console.info('Reintentando /api/analyze automáticamente tras breve pausa...');
     await new Promise(r => setTimeout(r, 1200));
@@ -2891,7 +2773,6 @@ async function sendMsg(overrideTxt = null) {
   if (data && data.analisis) {
     addNapi(data.analisis, true);
 
-    // Mostrar tarjetas (máximo 2 o 3 proyectos)
     if (data.similares && data.similares.length > 0 && history.length === 0 && !attached) {
       data.similares.slice(0, 3).forEach((sim, idx) => {
         setTimeout(() => addSimCardSupabase(sim, true), 150 * (idx + 1));
@@ -2900,7 +2781,6 @@ async function sendMsg(overrideTxt = null) {
     return;
   }
 
-  // Si el reintento también falla: mensaje honesto con botón de reintentar (sin persistir el error temporal en la base de datos)
   const escapedQuery = (txt || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
   const retryHtml = `
     <div class="space-y-2">
@@ -2924,14 +2804,14 @@ window.retryNapiMsg = retryNapiMsg;
 // ══════════════════════════════════════════
 function toast(msg) {
   const el = document.createElement('div');
-  el.style.cssText='position:fixed;bottom:5.5rem;right:1.5rem;z-index:9999;background:#23354D;color:#ffffff;border:1px solid #495B7D;font-size:.8rem;font-weight:600;padding:.75rem 1.25rem;border-radius:.75rem;box-shadow:0 10px 25px rgba(2,18,47,.45);animation:fadeUp .3s ease;display:flex;align-items:center;gap:8px;';
-  el.textContent=msg; document.body.appendChild(el);
-  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); },3200);
+  el.style.cssText = 'position:fixed;bottom:5.5rem;right:1.5rem;z-index:9999;background:#23354D;color:#ffffff;border:1px solid #495B7D;font-size:.8rem;font-weight:600;padding:.75rem 1.25rem;border-radius:.75rem;box-shadow:0 10px 25px rgba(2,18,47,.45);animation:fadeUp .3s ease;display:flex;align-items:center;gap:8px;';
+  el.textContent = msg; document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3200);
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  ['projModal','editModal','userCrudModal'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
+document.addEventListener('DOMContentLoaded', () => {
+  ['projModal', 'editModal', 'userCrudModal'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', function (e) { if (e.target === this) this.classList.add('hidden'); });
   });
   initThemeSystem();
 });
@@ -2949,7 +2829,6 @@ function initThemeSystem() {
   updateThemeDropdownUI();
 }
 
-// Ejecutar inmediatamente para evitar parpadeos
 initThemeSystem();
 
 function applyThemeMode(mode, save = true) {
@@ -3021,7 +2900,6 @@ function updateThemeDropdownUI() {
     }
   }
 
-  // Daltonismo UI
   const badgeCvd = document.getElementById('badgeCurrentCVD');
   const cvdCards = {
     protanopia: document.getElementById('btnCvdProtanopia'),
@@ -3072,10 +2950,9 @@ function toggleThemeDropdown(triggerEl, event) {
   currentActiveTrigger = triggerEl;
   updateThemeDropdownUI();
 
-  // Posicionamiento inteligente
   const rect = triggerEl.getBoundingClientRect();
   const menuWidth = 320;
-  
+
   let left = rect.left;
   if (left + menuWidth > window.innerWidth - 12) {
     left = window.innerWidth - menuWidth - 12;
@@ -3109,7 +2986,6 @@ function toggleDaltonismoAccordion() {
   }
 }
 
-// Cerrar dropdown al hacer click fuera
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('themeDropdownMenu');
   if (!menu || menu.classList.contains('hidden')) return;
@@ -3118,7 +2994,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Cerrar con Escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeThemeDropdown();
 });
