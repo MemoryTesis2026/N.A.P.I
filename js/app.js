@@ -304,14 +304,16 @@ function resetCarouselTimer() {
 let activeAuthRole = 'student'; // 'student', 'teacher', 'admin'
 let activeAuthMode = 'login';   // 'login', 'register'
 
-function openLoginModal(role = 'student', mode = 'login') {
+// ── Modal Unificado de Acceso (#authModal) ──
+let activeAuthRole = 'student'; // 'student', 'teacher', 'admin'
+
+function openLoginModal(role = 'student') {
   closeAllModals();
   const modal = document.getElementById('authModal');
   if (!modal) return;
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
   switchAuthRole(canonicalRole(role));
-  switchAuthMode(mode);
 }
 
 function closeAuthModal() {
@@ -393,7 +395,7 @@ function updateUserDisplay(user) {
     adAvatar.textContent = initials || (isAdmin ? 'CR' : 'DC');
   }
 
-  // Visibilidad de pestañas según rol: Admin CRAI tiene acceso completo (incluye usuarios, subida, repositorio, métricas y directrices IA)
+  // Visibilidad de pestañas según rol: Admin CRAI tiene acceso completo
   if (navUsers) {
     navUsers.classList.toggle('hidden', !isAdmin);
   }
@@ -453,7 +455,6 @@ function switchAuthRole(role) {
     secAdmin.classList.toggle('border-slate-200', isAcademic);
   }
 
-  const activeCls = ['bg-[#223355]', 'text-white', 'shadow-sm'];
   const inactiveCls = ['bg-white', 'dark:bg-[#172C4C]', 'text-slate-600', 'dark:text-slate-300', 'border', 'border-slate-200', 'dark:border-[#495B7D]/40'];
 
   [
@@ -462,7 +463,7 @@ function switchAuthRole(role) {
     [btnAdmin, activeAuthRole === 'admin']
   ].forEach(([btn, isActive]) => {
     if (!btn) return;
-    btn.classList.remove(...activeCls, ...inactiveCls, 'bg-[#0E1F38]');
+    btn.classList.remove('bg-[#223355]', 'bg-[#0E1F38]', 'text-white', 'shadow-sm', ...inactiveCls);
     if (isActive) {
       btn.classList.add(activeAuthRole === 'admin' ? 'bg-[#0E1F38]' : 'bg-[#223355]', 'text-white', 'shadow-sm');
     } else {
@@ -478,7 +479,7 @@ function switchAuthRole(role) {
 
   if (activeAuthRole === 'admin') {
     if (titleEl) titleEl.textContent = 'Ingreso Administrador / Bibliotecario CRAI';
-    if (descEl) descEl.textContent = 'Control total del repositorio, usuarios, métricas y directrices de IA.';
+    if (descEl) descEl.textContent = 'Control total del repositorio, creación de usuarios, métricas y directrices de IA.';
     if (badgeEl) badgeEl.textContent = 'admin';
     if (emailInput) emailInput.placeholder = 'crai.maipu@inacap.cl';
   } else if (activeAuthRole === 'teacher') {
@@ -491,49 +492,6 @@ function switchAuthRole(role) {
     if (descEl) descEl.textContent = 'Explora el repositorio aprobado y consulta a NAPI IA.';
     if (badgeEl) badgeEl.textContent = 'student';
     if (emailInput) emailInput.placeholder = 'nombre.apellido@inacapmail.cl';
-  }
-
-  // Re-renderizar la vista activa para el rol seleccionado
-  switchAuthMode(activeAuthMode);
-}
-
-function switchAuthMode(mode) {
-  activeAuthMode = mode === 'register' ? 'register' : 'login';
-  hideAuthFeedback();
-
-  const btnLogin = document.getElementById('authModeBtn-login');
-  const btnReg = document.getElementById('authModeBtn-register');
-  if (btnLogin && btnReg) {
-    const activeModeCls = ['bg-white', 'dark:bg-[#223355]', 'text-[#0E1F38]', 'dark:text-white', 'shadow-xs'];
-    const inactiveModeCls = ['text-slate-500', 'dark:text-[#8BA3C5]'];
-    btnLogin.classList.remove(...activeModeCls, ...inactiveModeCls);
-    btnReg.classList.remove(...activeModeCls, ...inactiveModeCls);
-    if (activeAuthMode === 'login') {
-      btnLogin.classList.add(...activeModeCls);
-      btnReg.classList.add(...inactiveModeCls);
-    } else {
-      btnReg.classList.add(...activeModeCls);
-      btnLogin.classList.add(...inactiveModeCls);
-    }
-  }
-
-  const loginView = document.getElementById('authLoginView');
-  const regStudent = document.getElementById('regFormStudent');
-  const regTeacher = document.getElementById('regFormTeacher');
-  const regAdmin = document.getElementById('regFormAdmin');
-
-  [loginView, regStudent, regTeacher, regAdmin].forEach(el => el?.classList.add('hidden'));
-
-  if (activeAuthMode === 'login') {
-    loginView?.classList.remove('hidden');
-  } else if (activeAuthRole === 'admin') {
-    regAdmin?.classList.remove('hidden');
-  } else if (activeAuthRole === 'teacher') {
-    regTeacher?.classList.remove('hidden');
-    onRegTeacherAreaChange();
-  } else {
-    regStudent?.classList.remove('hidden');
-    onRegStudentAreaChange();
   }
 }
 
