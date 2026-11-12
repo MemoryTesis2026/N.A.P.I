@@ -149,23 +149,45 @@ function wakeUpRenderBackend() {
   fetch(`${API_BASE_URL}/health`, { method: 'GET' }).catch(() => {});
 }
 
-let currentRole = 'guest'; // 'guest', 'estudiante', 'docente', 'administrador'
+let currentRole = 'guest'; // 'guest', 'student'/'estudiante', 'teacher'/'docente', 'admin'/'administrador'
 let napiOpen = false;
 let editingId = null;
 let visPublic = true;
 let currentModal = null;
 let currentUser = null;
 
+function isAdminRole(role) {
+  const r = String(role || '').toLowerCase();
+  return r === 'admin' || r === 'administrador' || r === 'crai';
+}
+
+function isTeacherRole(role) {
+  const r = String(role || '').toLowerCase();
+  return r === 'teacher' || r === 'docente';
+}
+
+function isStudentRole(role) {
+  const r = String(role || '').toLowerCase();
+  return r === 'student' || r === 'estudiante';
+}
+
+function canonicalRole(role) {
+  if (isAdminRole(role)) return 'admin';
+  if (isTeacherRole(role)) return 'teacher';
+  if (isStudentRole(role)) return 'student';
+  return 'student';
+}
+
 function canDownloadDocuments() {
   const rol = currentUser?.rol || currentUser?.role;
   if (rol) {
-    return rol === 'docente' || rol === 'administrador';
+    return isTeacherRole(rol) || isAdminRole(rol);
   }
   const studentScreen = document.getElementById('studentScreen');
   if (studentScreen && !studentScreen.classList.contains('hidden')) {
     return false;
   }
-  return currentRole === 'docente' || currentRole === 'administrador';
+  return isTeacherRole(currentRole) || isAdminRole(currentRole);
 }
 
 // ──────────────────────────────────────────
@@ -229,13 +251,16 @@ function onEditAreaChange() {
   populateCarreraDropdown('editArea', 'editCarrera', false);
 }
 
-function onRegDocenteAreaChange() {
-  populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
+function onRegTeacherAreaChange() {
+  populateCarreraDropdown('regTeacherArea', 'regTeacherCarrera', false);
 }
 
-function onRegEstudianteAreaChange() {
-  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
+function onRegStudentAreaChange() {
+  populateCarreraDropdown('regStudentArea', 'regStudentCarrera', false);
 }
+
+function onRegDocenteAreaChange() { onRegTeacherAreaChange(); }
+function onRegEstudianteAreaChange() { onRegStudentAreaChange(); }
 
 function onCrudAreaChange() {
   populateCarreraDropdown('crudArea', 'crudCarrera', false);
@@ -275,35 +300,34 @@ function resetCarouselTimer() {
   startCarouselTimer();
 }
 
-// ── Modales de Login (desde Landing) ──
-function openLoginModal(role) {
-  closeAllModals();
-  let id = 'modalEstudiante';
-  if (role === 'docente') id = 'modalDocente';
-  else if (role === 'administrador') id = 'modalAdmin';
+// ── Modal Unificado de Acceso (#authModal) ──
+let activeAuthRole = 'student'; // 'student', 'teacher', 'admin'
+let activeAuthMode = 'login';   // 'login', 'register'
 
-  const el = document.getElementById(id);
-  if (el) {
-    el.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    currentModal = role;
+function openLoginModal(role = 'student', mode = 'login') {
+  closeAllModals();
+  const modal = document.getElementById('authModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  switchAuthRole(canonicalRole(role));
+  switchAuthMode(mode);
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 }
 
-function closeLoginModal(role) {
-  let id = 'modalEstudiante';
-  if (role === 'docente') id = 'modalDocente';
-  else if (role === 'administrador') id = 'modalAdmin';
-
-  const el = document.getElementById(id);
-  if (el) {
-    el.classList.add('hidden');
-    document.body.style.overflow = '';
-    currentModal = null;
-  }
+function closeLoginModal() {
+  closeAuthModal();
 }
 
 function closeAllModals() {
+  closeAuthModal();
   ['modalDocente','modalEstudiante','modalAdmin'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
@@ -314,10 +338,8 @@ function closeAllModals() {
 
 // Cerrar modales al hacer clic en el backdrop
 document.addEventListener('click', function(e) {
-  ['modalDocente','modalEstudiante','modalAdmin'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && e.target === el) closeAllModals();
-  });
+  const authModal = document.getElementById('authModal');
+  if (authModal && e.target === authModal) closeAuthModal();
 });
 // Cerrar con Escape
 document.addEventListener('keydown', function(e) {
@@ -332,15 +354,17 @@ document.addEventListener('keydown', function(e) {
 // ── Estado de Usuario ──
 function updateUserDisplay(user) {
   if (!user) return;
-  
-  const displayName = user.nombre || user.email || 'ESTUDIANTE INACAP';
+  const userRol = user.rol || user.role;
+  const isAdmin = isAdminRole(userRol);
+  const isTeacher = isTeacherRole(userRol);
+  const displayName = user.nombre || user.email || 'USUARIO INACAP';
 
   // Banner de estudiante
   const stName = document.getElementById('studentUserName');
   const stSub  = document.getElementById('studentUserSub');
   if (stName) stName.textContent = displayName.toUpperCase();
   if (stSub) {
-    const roleLabel = user.rol === 'administrador' ? 'ADMINISTRADOR' : user.rol === 'docente' ? 'DOCENTE' : 'ALUMNO';
+    const roleLabel = isAdmin ? 'ADMINISTRADOR CRAI' : isTeacher ? 'DOCENTE' : 'ALUMNO';
     stSub.textContent = `${roleLabel} INACAP · ${(user.carrera || 'SEDE MAIPÚ').toUpperCase()}`;
   }
 
@@ -351,29 +375,33 @@ function updateUserDisplay(user) {
   const adAvatar = document.getElementById('adminUserAvatar');
   const navUsers = document.getElementById('nav-users');
   const navUpload = document.getElementById('nav-upload');
-
-  const isAdmin = user.rol === 'administrador';
+  const navGuidelines = document.getElementById('nav-guidelines');
 
   if (adSubtitle) {
-    adSubtitle.textContent = isAdmin ? 'Administrador · Sede Maipú' : 'Portal Docente · Sede Maipú';
+    adSubtitle.textContent = isAdmin ? 'Administrador CRAI · Sede Maipú' : 'Portal Docente · Sede Maipú';
   }
   if (adName) {
-    adName.textContent = isAdmin ? (user.nombre || 'Admin Sede Maipú') : (user.nombre || 'Prof. Marcela Rojas');
+    adName.textContent = displayName;
   }
   if (adRole) {
-    adRole.textContent = isAdmin ? 'Administrador' : 'Docente / Evaluador';
+    adRole.textContent = isAdmin ? (user.cargo || 'Administrador CRAI') : 'Docente / Evaluador';
   }
   if (adAvatar) {
-    const initials = isAdmin ? 'AD' : (user.nombre || 'Prof. Marcela Rojas').replace('Prof. ', '').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
-    adAvatar.textContent = initials || (isAdmin ? 'AD' : 'MR');
+    const initials = isAdmin
+      ? 'CR'
+      : displayName.replace('Prof. ', '').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    adAvatar.textContent = initials || (isAdmin ? 'CR' : 'DC');
   }
 
-  // Visibilidad de pestañas según rol
+  // Visibilidad de pestañas según rol: Admin CRAI tiene acceso completo (incluye usuarios, subida, repositorio, métricas y directrices IA)
   if (navUsers) {
     navUsers.classList.toggle('hidden', !isAdmin);
   }
+  if (navGuidelines) {
+    navGuidelines.classList.toggle('hidden', !isAdmin);
+  }
   if (navUpload) {
-    navUpload.classList.toggle('hidden', isAdmin);
+    navUpload.classList.remove('hidden');
   }
   const reviewCard = document.getElementById('reviewSectionCard');
   if (reviewCard) {
@@ -384,85 +412,219 @@ function updateUserDisplay(user) {
 // ── Estado de Usuarios (Sincronizado desde Supabase) ──
 let ADMIN_USERS = [];
 
-// ── Modales de Login & Registro (100% Render + Supabase Auth) ──
-function toggleRegisterForm(role, show = null) {
-  const regId = role === 'docente' ? 'regFormDocente' : 'regFormEstudiante';
-  const logId = role === 'docente' ? 'loginFormDocente' : 'loginFormEstudiante';
-  const regEl = document.getElementById(regId);
-  const logEl = document.getElementById(logId);
-  if (!regEl || !logEl) return;
-
-  const shouldShow = show !== null ? show : regEl.classList.contains('hidden');
-  if (shouldShow) {
-    regEl.classList.remove('hidden');
-    logEl.classList.add('hidden');
-    if (role === 'docente') onRegDocenteAreaChange();
-    else onRegEstudianteAreaChange();
+function showAuthFeedback(message, isError = true) {
+  const box = document.getElementById('authFeedback');
+  const msgEl = document.getElementById('authFeedbackMsg');
+  if (!box || !msgEl) return;
+  box.classList.remove('hidden', 'bg-red-50', 'border-red-200', 'text-red-600', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-700');
+  if (isError) {
+    box.classList.add('bg-red-50', 'border', 'border-red-200', 'text-red-600');
   } else {
-    regEl.classList.add('hidden');
-    logEl.classList.remove('hidden');
+    box.classList.add('bg-emerald-50', 'border', 'border-emerald-200', 'text-emerald-700');
+  }
+  msgEl.textContent = message;
+}
+
+function hideAuthFeedback() {
+  document.getElementById('authFeedback')?.classList.add('hidden');
+}
+
+function switchAuthRole(role) {
+  activeAuthRole = canonicalRole(role);
+  hideAuthFeedback();
+
+  const secAcademic = document.getElementById('authSectionAcademic');
+  const secAdmin = document.getElementById('authSectionAdmin');
+  const btnStudent = document.getElementById('authRoleBtn-student');
+  const btnTeacher = document.getElementById('authRoleBtn-teacher');
+  const btnAdmin = document.getElementById('authRoleBtn-admin');
+
+  const isAcademic = activeAuthRole !== 'admin';
+  if (secAcademic) {
+    secAcademic.classList.toggle('border-2', isAcademic);
+    secAcademic.classList.toggle('border-[#223355]', isAcademic);
+    secAcademic.classList.toggle('border', !isAcademic);
+    secAcademic.classList.toggle('border-slate-200', !isAcademic);
+  }
+  if (secAdmin) {
+    secAdmin.classList.toggle('border-2', !isAcademic);
+    secAdmin.classList.toggle('border-[#0E1F38]', !isAcademic);
+    secAdmin.classList.toggle('border', isAcademic);
+    secAdmin.classList.toggle('border-slate-200', isAcademic);
+  }
+
+  const activeCls = ['bg-[#223355]', 'text-white', 'shadow-sm'];
+  const inactiveCls = ['bg-white', 'dark:bg-[#172C4C]', 'text-slate-600', 'dark:text-slate-300', 'border', 'border-slate-200', 'dark:border-[#495B7D]/40'];
+
+  [
+    [btnStudent, activeAuthRole === 'student'],
+    [btnTeacher, activeAuthRole === 'teacher'],
+    [btnAdmin, activeAuthRole === 'admin']
+  ].forEach(([btn, isActive]) => {
+    if (!btn) return;
+    btn.classList.remove(...activeCls, ...inactiveCls, 'bg-[#0E1F38]');
+    if (isActive) {
+      btn.classList.add(activeAuthRole === 'admin' ? 'bg-[#0E1F38]' : 'bg-[#223355]', 'text-white', 'shadow-sm');
+    } else {
+      btn.classList.add(...inactiveCls);
+    }
+  });
+
+  // Actualizar textos informativos de la vista Login
+  const titleEl = document.getElementById('authLoginRoleTitle');
+  const descEl = document.getElementById('authLoginRoleDesc');
+  const badgeEl = document.getElementById('authLoginRoleBadge');
+  const emailInput = document.getElementById('authLoginEmail');
+
+  if (activeAuthRole === 'admin') {
+    if (titleEl) titleEl.textContent = 'Ingreso Administrador / Bibliotecario CRAI';
+    if (descEl) descEl.textContent = 'Control total del repositorio, usuarios, métricas y directrices de IA.';
+    if (badgeEl) badgeEl.textContent = 'admin';
+    if (emailInput) emailInput.placeholder = 'crai.maipu@inacap.cl';
+  } else if (activeAuthRole === 'teacher') {
+    if (titleEl) titleEl.textContent = 'Ingreso Docente';
+    if (descEl) descEl.textContent = 'Sube proyectos, revisa entregas y evalúa propuestas con NAPI.';
+    if (badgeEl) badgeEl.textContent = 'teacher';
+    if (emailInput) emailInput.placeholder = 'nombre.apellido@inacap.cl';
+  } else {
+    if (titleEl) titleEl.textContent = 'Ingreso Estudiante';
+    if (descEl) descEl.textContent = 'Explora el repositorio aprobado y consulta a NAPI IA.';
+    if (badgeEl) badgeEl.textContent = 'student';
+    if (emailInput) emailInput.placeholder = 'nombre.apellido@inacapmail.cl';
+  }
+
+  // Re-renderizar la vista activa para el rol seleccionado
+  switchAuthMode(activeAuthMode);
+}
+
+function switchAuthMode(mode) {
+  activeAuthMode = mode === 'register' ? 'register' : 'login';
+  hideAuthFeedback();
+
+  const btnLogin = document.getElementById('authModeBtn-login');
+  const btnReg = document.getElementById('authModeBtn-register');
+  if (btnLogin && btnReg) {
+    const activeModeCls = ['bg-white', 'dark:bg-[#223355]', 'text-[#0E1F38]', 'dark:text-white', 'shadow-xs'];
+    const inactiveModeCls = ['text-slate-500', 'dark:text-[#8BA3C5]'];
+    btnLogin.classList.remove(...activeModeCls, ...inactiveModeCls);
+    btnReg.classList.remove(...activeModeCls, ...inactiveModeCls);
+    if (activeAuthMode === 'login') {
+      btnLogin.classList.add(...activeModeCls);
+      btnReg.classList.add(...inactiveModeCls);
+    } else {
+      btnReg.classList.add(...activeModeCls);
+      btnLogin.classList.add(...inactiveModeCls);
+    }
+  }
+
+  const loginView = document.getElementById('authLoginView');
+  const regStudent = document.getElementById('regFormStudent');
+  const regTeacher = document.getElementById('regFormTeacher');
+  const regAdmin = document.getElementById('regFormAdmin');
+
+  [loginView, regStudent, regTeacher, regAdmin].forEach(el => el?.classList.add('hidden'));
+
+  if (activeAuthMode === 'login') {
+    loginView?.classList.remove('hidden');
+  } else if (activeAuthRole === 'admin') {
+    regAdmin?.classList.remove('hidden');
+  } else if (activeAuthRole === 'teacher') {
+    regTeacher?.classList.remove('hidden');
+    onRegTeacherAreaChange();
+  } else {
+    regStudent?.classList.remove('hidden');
+    onRegStudentAreaChange();
   }
 }
 
-async function doModalRegister(role) {
-  const isDoc = role === 'docente';
-  const nombre = document.getElementById(isDoc ? 'regDocenteNombre' : 'regEstudianteNombre')?.value.trim();
-  const email  = document.getElementById(isDoc ? 'regDocenteEmail' : 'regEstudianteEmail')?.value.trim();
-  const pass   = document.getElementById(isDoc ? 'regDocentePass' : 'regEstudiantePass')?.value.trim();
-  const area   = document.getElementById(isDoc ? 'regDocenteArea' : 'regEstudianteArea')?.value || 'Informática, Ciberseguridad y Telecomunicaciones';
-  const carrera = document.getElementById(isDoc ? 'regDocenteCarrera' : 'regEstudianteCarrera')?.value || 'Ingeniería en Informática';
+async function doModalRegister(roleParam = null) {
+  const role = canonicalRole(roleParam || activeAuthRole);
+  hideAuthFeedback();
 
-  const errEl  = document.getElementById(isDoc ? 'regDocenteError' : 'regEstudianteError');
-  const errMsg = document.getElementById(isDoc ? 'regDocenteErrMsg' : 'regEstudianteErrMsg');
+  let nombre = '';
+  let email = '';
+  let pass = '';
+  let area = 'Informática, Ciberseguridad y Telecomunicaciones';
+  let carrera = 'Ingeniería en Informática';
+  let cargo = null;
+  let admin_code = null;
+
+  if (role === 'admin') {
+    nombre = document.getElementById('regAdminNombre')?.value.trim() || '';
+    email  = document.getElementById('regAdminEmail')?.value.trim() || '';
+    pass   = document.getElementById('regAdminPass')?.value.trim() || '';
+    cargo  = document.getElementById('regAdminCargo')?.value.trim() || 'Administrador CRAI';
+    admin_code = document.getElementById('regAdminCode')?.value.trim() || null;
+    area = 'Biblioteca CRAI · Sede Maipú';
+    carrera = cargo;
+  } else if (role === 'teacher') {
+    nombre = document.getElementById('regTeacherNombre')?.value.trim() || '';
+    email  = document.getElementById('regTeacherEmail')?.value.trim() || '';
+    pass   = document.getElementById('regTeacherPass')?.value.trim() || '';
+    area   = document.getElementById('regTeacherArea')?.value || area;
+    carrera = document.getElementById('regTeacherCarrera')?.value || carrera;
+  } else {
+    nombre = document.getElementById('regStudentNombre')?.value.trim() || '';
+    email  = document.getElementById('regStudentEmail')?.value.trim() || '';
+    pass   = document.getElementById('regStudentPass')?.value.trim() || '';
+    area   = document.getElementById('regStudentArea')?.value || area;
+    carrera = document.getElementById('regStudentCarrera')?.value || carrera;
+  }
 
   if (!nombre || !email || !pass) {
-    errEl?.classList.remove('hidden');
-    if (errMsg) errMsg.textContent = 'Por favor completa todos los campos obligatorios.';
+    showAuthFeedback('Por favor completa todos los campos obligatorios.', true);
     return;
   }
   if (pass.length < 6) {
-    errEl?.classList.remove('hidden');
-    if (errMsg) errMsg.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    showAuthFeedback('La contraseña debe tener al menos 6 caracteres.', true);
     return;
   }
-
-  errEl?.classList.add('hidden');
 
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass, nombre, rol: role, area, carrera })
+      body: JSON.stringify({
+        email,
+        password: pass,
+        nombre,
+        rol: role,
+        area,
+        carrera,
+        cargo,
+        admin_code
+      })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.success) {
-      errEl?.classList.remove('hidden');
-      if (errMsg) errMsg.textContent = data.detail || 'No se pudo registrar el usuario en Supabase.';
+      showAuthFeedback(data.detail || 'No se pudo registrar la cuenta en Supabase.', true);
       return;
     }
   } catch (err) {
     console.error('Error en registro:', err);
-    errEl?.classList.remove('hidden');
-    if (errMsg) errMsg.textContent = 'Error de conexión con el servidor en Render. Intenta nuevamente.';
+    showAuthFeedback('Error de conexión con el servidor en Render. Intenta nuevamente.', true);
     return;
   }
 
-  toast(`✅ Cuenta de ${role} registrada en Supabase exitosamente`);
-  const emailInput = document.getElementById(isDoc ? 'dEmail' : 'eEmail');
-  const passInput  = document.getElementById(isDoc ? 'dPass' : 'ePass');
-  if (emailInput) emailInput.value = email;
-  if (passInput) passInput.value = pass;
-  toggleRegisterForm(role, false);
+  showAuthFeedback(`✅ Cuenta (${role}) creada en Supabase. Iniciando sesión automáticamente...`, false);
+  toast(`✅ Cuenta de ${role} registrada en Supabase`);
+
+  const loginEmailEl = document.getElementById('authLoginEmail');
+  const loginPassEl  = document.getElementById('authLoginPass');
+  if (loginEmailEl) loginEmailEl.value = email;
+  if (loginPassEl) loginPassEl.value = pass;
+
+  switchAuthMode('login');
   await doModalLogin(role);
 }
 
 function enterAuthenticatedSession(user, showToastMsg = true) {
   if (!user) return;
-  const normalizedRole = user.rol || user.role || 'estudiante';
-  user.rol = normalizedRole;
-  user.role = normalizedRole;
+  const rawRole = user.rol || user.role || 'student';
+  user.rol = rawRole;
+  user.role = rawRole;
 
-  currentRole = normalizedRole;
+  currentRole = rawRole;
   currentUser = user;
   localStorage.setItem('napi_user', JSON.stringify(currentUser));
   updateUserDisplay(currentUser);
@@ -484,15 +646,15 @@ function enterAuthenticatedSession(user, showToastMsg = true) {
   if (studentScreen) studentScreen.classList.add('hidden');
 
   setTimeout(() => {
-    if (currentRole === 'administrador') {
+    if (isAdminRole(currentRole)) {
       document.getElementById('adminScreen')?.classList.remove('hidden');
-      initAdmin('users');
+      initAdmin('dashboard');
       const napiWidget = document.getElementById('napiWidget');
       if (napiWidget) napiWidget.style.display = 'none';
       const chatPanel = document.getElementById('chatPanel');
       if (chatPanel) chatPanel.classList.add('hidden');
       napiOpen = false;
-    } else if (currentRole === 'docente') {
+    } else if (isTeacherRole(currentRole)) {
       document.getElementById('adminScreen')?.classList.remove('hidden');
       initAdmin('dashboard');
       const napiWidget = document.getElementById('napiWidget');
@@ -511,45 +673,33 @@ function enterAuthenticatedSession(user, showToastMsg = true) {
   }, 150);
 }
 
-async function doModalLogin(role) {
-  let emailId = 'eEmail';
-  let passId  = 'ePass';
-  let errId   = 'loginError-e';
-  let errMsgId = 'loginErrMsg-e';
+async function doModalLogin(roleOverride = null) {
+  const role = canonicalRole(roleOverride || activeAuthRole);
+  const email = document.getElementById('authLoginEmail')?.value.trim();
+  const pass  = document.getElementById('authLoginPass')?.value.trim();
 
-  if (role === 'docente') {
-    emailId = 'dEmail'; passId = 'dPass'; errId = 'loginError-d'; errMsgId = 'loginErrMsg-d';
-  } else if (role === 'administrador') {
-    emailId = 'aEmail'; passId = 'aPass'; errId = 'loginError-a'; errMsgId = 'loginErrMsg-a';
-  }
+  if (!email) { showAuthFeedback('Ingresa tu correo institucional.', true); return; }
+  if (!pass)  { showAuthFeedback('Ingresa tu contraseña.', true); return; }
 
-  const email = document.getElementById(emailId)?.value.trim();
-  const pass  = document.getElementById(passId)?.value.trim();
-  const errEl = document.getElementById(errId);
-  const errMsg = document.getElementById(errMsgId);
-
-  if (!email) { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu correo institucional.'; return; }
-  if (!pass)  { errEl?.classList.remove('hidden'); if(errMsg) errMsg.textContent='Ingresa tu contraseña.'; return; }
-
-  errEl?.classList.add('hidden');
+  hideAuthFeedback();
 
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
+      body: JSON.stringify({ email, password: pass, role })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.success || !data.user) {
-      errEl?.classList.remove('hidden');
-      if (errMsg) errMsg.textContent = data.detail || 'Credenciales inválidas. Verifica tu correo y contraseña.';
+      showAuthFeedback(data.detail || 'Credenciales inválidas. Verifica tu correo y contraseña.', true);
       return;
     }
 
+    const returnedRole = data.user.rol || data.user.role || role || 'student';
     const user = {
       ...data.user,
-      rol: data.user.rol || data.user.role || role || 'estudiante',
-      role: data.user.role || data.user.rol || role || 'estudiante'
+      rol: isAdminRole(returnedRole) ? 'admin' : returnedRole,
+      role: isAdminRole(returnedRole) ? 'admin' : returnedRole
     };
     if (data.access_token) {
       localStorage.setItem('napi_access_token', data.access_token);
@@ -558,8 +708,7 @@ async function doModalLogin(role) {
     enterAuthenticatedSession(user, true);
   } catch (err) {
     console.error('Error conectando a Render /api/auth/login:', err);
-    errEl?.classList.remove('hidden');
-    if (errMsg) errMsg.textContent = 'No se pudo conectar al servidor de autenticación en Render. Intenta nuevamente en unos segundos.';
+    showAuthFeedback('No se pudo conectar al servidor de autenticación en Render. Intenta nuevamente en unos segundos.', true);
   }
 }
 
@@ -669,8 +818,8 @@ document.addEventListener('DOMContentLoaded', () => {
   populateCarreraDropdown('manageAreaFilter', 'manageCarreraFilter', true);
   populateCarreraDropdown('fArea', 'fCarrera', false);
   populateCarreraDropdown('editArea', 'editCarrera', false);
-  populateCarreraDropdown('regDocenteArea', 'regDocenteCarrera', false);
-  populateCarreraDropdown('regEstudianteArea', 'regEstudianteCarrera', false);
+  populateCarreraDropdown('regTeacherArea', 'regTeacherCarrera', false);
+  populateCarreraDropdown('regStudentArea', 'regStudentCarrera', false);
   populateCarreraDropdown('crudArea', 'crudCarrera', false);
 
   // Inicializar Drag & Drop para documentos de tesis
@@ -753,7 +902,7 @@ function logout() {
 // ══════════════════════════════════════════
 
 function adminTab(tab) {
-  ['dashboard','upload','users','manage','reports'].forEach(t => {
+  ['dashboard','upload','users','manage','reports','guidelines'].forEach(t => {
     document.getElementById('tab-'+t)?.classList.toggle('hidden', t !== tab);
     document.getElementById('nav-'+t)?.classList.toggle('active', t === tab);
   });
@@ -762,13 +911,62 @@ function adminTab(tab) {
     upload: 'Subir Nuevo Proyecto de Título',
     users: 'Gestión de Usuarios (Alumnos y Docentes)',
     manage: 'Gestor del Repositorio Institucional', 
-    reports: 'Métricas e Informes Analíticos' 
+    reports: 'Métricas e Informes Analíticos',
+    guidelines: 'Configuración de Directrices IA (N.A.P.I)'
   };
   const titleEl = document.getElementById('adminTitle');
   if (titleEl) titleEl.textContent = titles[tab] || 'Panel Académico';
 
   if (tab === 'users') {
     loadAdminUsers();
+  } else if (tab === 'guidelines') {
+    loadAiGuidelines();
+  }
+}
+
+async function loadAiGuidelines() {
+  const promptEl = document.getElementById('aiGuidelinePrompt');
+  const tempEl = document.getElementById('aiGuidelineTemp');
+  if (!promptEl) return;
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/guidelines`);
+    if (res.ok) {
+      const data = await res.json();
+      promptEl.value = data.system_prompt || '';
+      if (tempEl && data.temperature !== undefined) tempEl.value = data.temperature;
+    }
+  } catch (e) {
+    console.warn('Error cargando directrices IA:', e);
+  }
+}
+
+async function saveAiGuidelines() {
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
+  if (!isAdmin) {
+    toast('⛔ Solo el Administrador CRAI puede modificar directrices IA');
+    return;
+  }
+  const promptEl = document.getElementById('aiGuidelinePrompt');
+  const tempEl = document.getElementById('aiGuidelineTemp');
+  const system_prompt = promptEl?.value.trim() || '';
+  const temperature = parseFloat(tempEl?.value || '0.7');
+  if (!system_prompt) {
+    toast('⚠️ El prompt del sistema no puede estar vacío.');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/guidelines`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system_prompt, temperature, is_active: true })
+    });
+    if (res.ok) {
+      toast('☁️ Directriz IA actualizada en Supabase.');
+    } else {
+      toast('⚠️ No se pudo actualizar la directriz IA.');
+    }
+  } catch (e) {
+    toast('⚠️ Error de conexión con Render al guardar directriz IA.');
   }
 }
 
@@ -823,9 +1021,9 @@ function updateUserKpis() {
   const adm = document.getElementById('kpiUsersAdmins');
 
   if (tot) tot.textContent = ADMIN_USERS.length;
-  if (stu) stu.textContent = ADMIN_USERS.filter(u => u.rol === 'estudiante').length;
-  if (tea) tea.textContent = ADMIN_USERS.filter(u => u.rol === 'docente').length;
-  if (adm) adm.textContent = ADMIN_USERS.filter(u => u.rol === 'administrador').length;
+  if (stu) stu.textContent = ADMIN_USERS.filter(u => isStudentRole(u.rol)).length;
+  if (tea) tea.textContent = ADMIN_USERS.filter(u => isTeacherRole(u.rol)).length;
+  if (adm) adm.textContent = ADMIN_USERS.filter(u => isAdminRole(u.rol)).length;
 }
 
 function renderAdminUsersTable(list) {
@@ -842,10 +1040,10 @@ function renderAdminUsersTable(list) {
 
   tbody.innerHTML = list.map(u => {
     let roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#8BA3C5]/20 text-[#223355] dark:text-[#8BA3C5] border border-[rgba(139,163,197,0.3)]">Alumno</span>';
-    if (u.rol === 'docente') {
+    if (isTeacherRole(u.rol)) {
       roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#495B7D]/20 text-[#495B7D] dark:text-[#8BA3C5] border border-[rgba(139,163,197,0.3)]">Docente</span>';
-    } else if (u.rol === 'administrador') {
-      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#132644] text-white border border-[#495B7D]">Administrador</span>';
+    } else if (isAdminRole(u.rol)) {
+      roleBadge = '<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#132644] text-white border border-[#495B7D]">Admin CRAI</span>';
     }
 
     const initials = (u.nombre || u.email).split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
@@ -1203,7 +1401,7 @@ function saveAccessRequestsToStorage() {
 function renderReviews() {
   const el = document.getElementById('reviewList');
   const reviewCard = document.getElementById('reviewSectionCard') || el?.closest('.card');
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
 
   // Solo el administrador ve y usa el panel de solicitudes de acceso
   if (!isAdmin) {
@@ -1270,7 +1468,7 @@ function renderReviews() {
 }
 
 function approveAccessRequest(reqId) {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1286,7 +1484,7 @@ function approveAccessRequest(reqId) {
 }
 
 function rejectAccessRequest(reqId) {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1339,7 +1537,7 @@ function renderTable(list) {
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             </button>`
           }
-          ${((currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador') ? `
+          ${(isAdminRole(currentUser?.rol || currentUser?.role || currentRole)) ? `
           <button onclick="openEdit('${p.id}')" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#8BA3C5]/20 text-slate-600 dark:text-slate-300 hover:text-[#223355] dark:hover:text-white transition-colors" title="Editar Metadatos">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
@@ -1387,7 +1585,7 @@ function handleEditFile(e) {
 }
 
 function openEdit(id) {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1425,7 +1623,7 @@ function openEdit(id) {
 function closeEdit() { document.getElementById('editModal').classList.add('hidden'); }
 
 async function saveEdit() {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1498,13 +1696,13 @@ async function saveEdit() {
   closeEdit(); 
   filterTable(); 
   renderKpis();
-  renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
+  renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
   logActivity('✏️', `Metadatos editados en Supabase: "${p.nombre}" (Nota: ${p.nota})`);
   toast('☁️ Metadatos actualizados en Supabase.');
 }
 
 async function toggleStatus(id) {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1530,7 +1728,7 @@ async function toggleStatus(id) {
 
   p.estado = newStatus;
   filterTable(); 
-  renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
+  renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
   logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
   toast(`${p.estado === 'Público' ? '👁️ Proyecto Visible en catálogo' : '🙈 Proyecto Oculto en catálogo'}`);
 }
@@ -1538,7 +1736,7 @@ async function toggleStatus(id) {
 let pendingDeleteProjectId = null;
 
 function deleteP(id) {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1575,7 +1773,7 @@ function closeDeleteModal() {
 }
 
 async function confirmDeleteProject() {
-  const isAdmin = (currentUser && currentUser.rol === 'administrador') || currentRole === 'administrador';
+  const isAdmin = isAdminRole(currentUser?.rol || currentUser?.role || currentRole);
   if (!isAdmin) {
     toast('⛔ No tienes permisos para esta acción');
     return;
@@ -1600,7 +1798,7 @@ async function confirmDeleteProject() {
         logActivity('🗑️', `Proyecto eliminado de Supabase: "${deleted.nombre}"`);
         filterTable(); 
         renderKpis(); 
-        renderCards(PROJECTS.filter(x => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? x.estado === 'Público' : true));
+        renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
         toast('🗑️ Proyecto eliminado permanentemente de Supabase.');
       } else {
         toast('⚠️ No se pudo eliminar el proyecto en Supabase.');
@@ -1845,7 +2043,7 @@ async function submitProject() {
 
     filterTable(); 
     renderKpis();
-    renderCards(PROJECTS.filter(p => (currentUser?.rol === 'estudiante' || currentRole === 'estudiante') ? p.estado === 'Público' : true));
+    renderCards(PROJECTS.filter(p => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? p.estado === 'Público' : true));
   }
 
   if (btnSubmit) {
@@ -1877,7 +2075,7 @@ function mapSupabaseProjectToFrontend(sp, idx = 0) {
 }
 
 async function syncProjectsFromSupabase() {
-  const isStudent = (currentUser?.rol === 'estudiante' || currentRole === 'estudiante');
+  const isStudent = isStudentRole(currentUser?.rol || currentUser?.role || currentRole);
   const roleParam = isStudent ? '?role=estudiante' : '';
   try {
     const res = await fetch(`${API_BASE_URL}/projects${roleParam}`);
@@ -2267,7 +2465,7 @@ async function initNapi(forceGreeting = false) {
   if (privacyBadge) {
     if (isAuthenticatedUser()) {
       const userRole = currentUser.rol || currentUser.role;
-      const rolName = userRole === 'administrador' ? 'Admin' : userRole === 'docente' ? 'Docente' : 'Estudiante';
+      const rolName = isAdminRole(userRole) ? 'Admin' : isTeacherRole(userRole) ? 'Docente' : 'Estudiante';
       const firstName = (currentUser.nombre || currentUser.email).split(' ')[0];
       privacyBadge.textContent = `☁️ Base de Datos · ${firstName} (${rolName})`;
     } else {
@@ -2328,10 +2526,10 @@ async function initNapi(forceGreeting = false) {
 
 function renderDefaultGreeting() {
   const userRole = currentUser?.rol || currentUser?.role;
-  if (currentUser && userRole === 'estudiante') {
+  if (currentUser && isStudentRole(userRole)) {
     addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI**, tu Asistente de Proyectos de Título para **${currentUser.carrera || 'Ingeniería en Informática'}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te indicaré el porcentaje de coincidencia con proyectos previos y recomendaciones técnicas para diferenciarlo e innovar.`, false);
-  } else if (currentUser && (userRole === 'docente' || userRole === 'administrador')) {
-    addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI** en **Modo ${userRole === 'administrador' ? 'Administrador' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
+  } else if (currentUser && (isTeacherRole(userRole) || isAdminRole(userRole))) {
+    addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI** en **Modo ${isAdminRole(userRole) ? 'Administrador CRAI' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
   } else {
     addNapi(`¡Hola! Soy **NAPI**, el Asistente Institucional de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te indicaré qué porcentaje de coincidencia tiene con el repositorio y cómo potenciar su propuesta técnica.`, false);
   }

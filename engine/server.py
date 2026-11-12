@@ -121,9 +121,21 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     nombre: str
-    rol: str = "estudiante"
+    rol: str = "student"
     area: Optional[str] = "Informática, Ciberseguridad y Telecomunicaciones"
     carrera: Optional[str] = "Ingeniería en Informática"
+    cargo: Optional[str] = None
+    admin_code: Optional[str] = None
+
+def normalize_role(raw_role: Optional[str]) -> str:
+    r = (raw_role or "student").strip().lower()
+    if r in ("admin", "administrador", "crai"):
+        return "admin"
+    if r in ("teacher", "docente", "profesor"):
+        return "teacher"
+    if r in ("student", "estudiante", "alumno"):
+        return "student"
+    return r
 
 # ──────────────────────────────────────────
 # HELPER FUNCTIONS
@@ -267,9 +279,10 @@ def login(req: LoginRequest):
         user = res.user
         meta = user.user_metadata or {}
         nombre = meta.get("nombre", user.email.split("@")[0])
-        rol = meta.get("rol", req.role or "estudiante")
+        rol = meta.get("rol", req.role or "student")
         area = meta.get("area", "Informática, Ciberseguridad y Telecomunicaciones")
         carrera = meta.get("carrera", "Ingeniería en Informática")
+        cargo = meta.get("cargo")
 
         # Enriquecer desde tabla pública napi_usuarios si existe registro
         if db_admin:
@@ -284,16 +297,20 @@ def login(req: LoginRequest):
             except Exception:
                 pass
 
+        # Normalizar rol admin para garantizar acceso consistente entre web y móvil
+        rol_norm = normalize_role(rol) if rol in ("admin", "administrador", "crai") else rol
+
         return {
             "success": True,
             "user": {
                 "id": user.id,
                 "email": user.email,
                 "nombre": nombre,
-                "rol": rol,
-                "role": rol,
+                "rol": rol_norm,
+                "role": rol_norm,
                 "area": area,
-                "carrera": carrera
+                "carrera": carrera,
+                "cargo": cargo
             },
             "access_token": res.session.access_token if res.session else None
         }
@@ -304,26 +321,37 @@ def login(req: LoginRequest):
 
 @app.post("/api/auth/register")
 def register(req: RegisterRequest):
-    """Registra un nuevo docente o estudiante en Supabase Auth y en napi_usuarios."""
+    """Registra un usuario (student/estudiante, teacher/docente, admin/administrador) en Supabase Auth y en napi_usuarios."""
     if not db_admin:
         raise HTTPException(status_code=503, detail="Servicio de administración Supabase no configurado.")
     try:
         clean_email = req.email.strip()
         clean_nombre = req.nombre.strip()
-        clean_rol = req.rol.strip() if req.rol else "estudiante"
-        clean_area = req.area.strip() if req.area else "Informática, Ciberseguridad y Telecomunicaciones"
-        clean_carrera = req.carrera.strip() if req.carrera else "Ingeniería en Informática"
+        raw_rol = (req.rol or "student").strip().lower()
+        allowed_roles = {"student", "teacher", "admin", "estudiante", "docente", "administrador"}
+        if raw_rol not in allowed_roles:
+            raise HTTPException(status_code=400, detail=f"Rol no válido: {req.rol}")
+
+        # Guardar admin siempre como 'admin'; preservar student/teacher o equivalentes
+        clean_rol = "admin" if raw_rol in ("admin", "administrador") else raw_rol
+        clean_cargo = (req.cargo or ("Administrador CRAI" if clean_rol == "admin" else "")).strip() or None
+        clean_area = req.area.strip() if req.area else ("Biblioteca CRAI · Sede Maipú" if clean_rol == "admin" else "Informática, Ciberseguridad y Telecomunicaciones")
+        clean_carrera = req.carrera.strip() if req.carrera else (clean_cargo or "Ingeniería en Informática")
+
+        user_meta = {
+            "nombre": clean_nombre,
+            "rol": clean_rol,
+            "area": clean_area,
+            "carrera": clean_carrera
+        }
+        if clean_cargo:
+            user_meta["cargo"] = clean_cargo
 
         res = db_admin.auth.admin.create_user({
             "email": clean_email,
             "password": req.password.strip(),
             "email_confirm": True,
-            "user_metadata": {
-                "nombre": clean_nombre,
-                "rol": clean_rol,
-                "area": clean_area,
-                "carrera": clean_carrera
-            }
+            "user_metadata": user_meta
         })
         user = res.user
 
@@ -349,9 +377,12 @@ def register(req: RegisterRequest):
                 "rol": clean_rol,
                 "role": clean_rol,
                 "area": clean_area,
-                "carrera": clean_carrera
+                "carrera": clean_carrera,
+                "cargo": clean_cargo
             }
         }
+    except HTTPException:
+        raise
     except Exception as e:
         log.error(f"Error al registrar usuario: {e}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -579,19 +610,53 @@ def clear_chat_history(email: str, role: Optional[str] = None):
 # ── Proyectos ──
 @app.get("/api/projects")
 def get_projects(role: Optional[str] = None):
-    """Obtiene todos los proyectos registrados en Supabase. Si role == 'estudiante', filtra solo los públicos."""
+    """Obtiene todos los proyectos registrados en Supabase. Si role es estudiante/student, filtra solo los públicos."""
     try:
         cols_full = "id, titulo, resumen, carrera, anio, autores, created_at, archivo_url, estado, area, stack, nota"
         cols_safe = "id, titulo, resumen, carrera, anio, autores, created_at, archivo_url"
         try:
             query = db_anon.table("proyectos_titulo").select(cols_full)
-            if role == "estudiante":
+            if role and role.strip().lower() in ("estudiante", "student"):
                 query = query.eq("estado", "Público")
             response = query.order("anio", desc=True).execute()
         except Exception:
             response = db_anon.table("proyectos_titulo").select(cols_safe).order("anio", desc=True).execute()
         return {"projects": response.data}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class GuidelineUpdateRequest(BaseModel):
+    system_prompt: str
+    temperature: float = 0.7
+    is_active: bool = True
+
+
+@app.get("/api/admin/guidelines")
+def get_admin_guidelines(slug: str = "napi_chat_principal"):
+    """Obtiene la directriz de IA actual desde Supabase."""
+    prompt, temp = get_cloud_guideline(slug)
+    return {"slug": slug, "system_prompt": prompt, "temperature": temp, "is_active": True}
+
+
+@app.put("/api/admin/guidelines")
+def update_admin_guidelines(req: GuidelineUpdateRequest, slug: str = "napi_chat_principal"):
+    """Actualiza la directriz de IA en Supabase (public.ai_guidelines) y limpia la caché."""
+    if not db_admin:
+        raise HTTPException(status_code=503, detail="Supabase Admin no configurado.")
+    try:
+        temp = max(0.0, min(1.5, float(req.temperature)))
+        payload = {
+            "slug": slug,
+            "system_prompt": req.system_prompt.strip(),
+            "temperature": temp,
+            "is_active": req.is_active
+        }
+        db_admin.table("ai_guidelines").upsert(payload, on_conflict="slug").execute()
+        _GUIDELINES_CACHE.pop(slug, None)
+        return {"success": True, "guideline": payload}
+    except Exception as e:
+        log.error(f"Error actualizando ai_guidelines: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/projects")
