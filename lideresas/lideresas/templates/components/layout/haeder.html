@@ -1,0 +1,71 @@
+<!-- Header Section -->
+<header class="bg-gradient-to-b from-[#ffffff] to-[#F5FAFA] shadow-md z-50">
+   <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="{% url "home" %}"
+         class="text-2xl font-bold text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Your Logo</a>
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex space-x-8">
+         <a href="{% url "about" %}"
+            class="text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Sobre Nosotros</a>
+         <a href="{% url "faq" %}"
+            class="text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">FAQ</a>
+         <a href="{% url "privacy" %}"
+            class="text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Privacidad</a>
+         <a href="{% url "contact" %}"
+            class="text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Contactos</a>
+      </nav>
+      <!-- Call to Action -->
+      {% if user.is_authenticated %}
+         <div x-data="{ open: false }" class="relative">
+            <a @click="open = !open"
+               class="hidden md:inline-block px-5 py-2 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+               Menu
+            </a>
+            <div x-show="open"
+                 @click.away="open = false"
+                 class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border-[#475F45] ring-1 ring-black ring-opacity-5 px-2 py-2">
+               <a href="{% url "users:me" %}"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Perfil</a>
+               <a href="{% url "organizations:organization-list" %}"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Organizaciones</a>
+               <a href="{% url "projects:project-list" %}"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Proyectos</a>
+               {% if user.is_staff %}
+                  <a href="{% url "dashboard:index" %}"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Dashboard</a>
+               {% endif %}
+               <a href="{% url "users:logout" %}"
+                  class="block px-4 py-2 text-sm text-red-500 hover:bg-red-100 rounded-md">Cerrar Cesion</a>
+            </div>
+         </div>
+      {% else %}
+         <a href="{% url "users:login" %}"
+            class="hidden md:inline-block px-5 py-2 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+            Iniciar Sesion
+         </a>
+      {% endif %}
+      <div x-data></div>
+      <!-- Mobile Menu Button -->
+      <button id="menu-btn" class="md:hidden focus:outline-none">
+         <svg class="w-6 h-6 text-[#6D929B]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+         </svg>
+      </button>
+   </div>
+   <!-- Mobile Navigation -->
+   <nav id="mobile-menu" class="md:hidden hidden px-6 pb-4 space-y-4">
+      <a href="#features"
+         class="block text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Features</a>
+      <a href="#testimonials"
+         class="block text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Testimonials</a>
+      <a href="#pricing"
+         class="block text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Pricing</a>
+      <a href="#contact"
+         class="block text-[#6D929B] hover:text-[#ACD1E9] transition duration-300">Contact</a>
+   </nav>
+</header>

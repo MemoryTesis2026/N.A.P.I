@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Error del Servidor
+{% endblock title %}
+{% block content %}
+    <main class="bg-[#F5FAFA] min-h-screen flex items-center justify-center px-6 py-12">
+        <div id="app" class="text-center space-y-6">
+            <div class="max-w-lg mx-auto">
+                <img src="https://via.placeholder.com/600x400"
+                     alt="404 Error Image"
+                     class="w-full max-w-md mx-auto rounded-xl shadow-md mb-6" />
+                <h1 class="text-6xl font-extrabold text-[#6D929B]">595</h1>
+                <p class="text-xl sm:text-2xl text-[#B7AFA3]">Ocurrio un error en el servidor.</p>
+                <p class="text-base text-gray-900">Prueba dentro de un tiempo o contacta a un administrador.</p>
+                <a href="{% url "home" %}"
+                   class="mt-6 inline-block px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                    Go to Home
+                </a>
+            </div>
+        </div>
+    </main>
+{% endblock content %}

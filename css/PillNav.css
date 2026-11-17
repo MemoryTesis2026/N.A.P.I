@@ -1,0 +1,281 @@
+/* ═══════════════════════════════════════════════════════════
+   PillNav – React Bits Component (JavaScript + CSS)
+   Paleta Oficial:
+   • Fondo: #FFFFFF
+   • Círculo Hover: #495B7D (Dusk Blue)
+   • Acento Activo: #223355 / #8BA3C5
+   • Texto: #02122F (Prussian Blue)
+   ═══════════════════════════════════════════════════════════ */
+
+.pill-nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 1rem;
+  margin-right: 0.5rem;
+}
+
+.pill-nav {
+  --nav-h: 42px;
+  --pill-pad-x: 16px;
+  --pill-gap: 5px;
+  --base: #FFFFFF;
+  --pill-bg: #FFFFFF;
+  --pill-border: rgba(139, 163, 197, 0.35);
+  --pill-text: #02122F;
+  --hover-circle: #495B7D;
+  --hover-text: #FFFFFF;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.pill-nav-items {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--nav-h);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 163, 197, 0.45);
+  border-radius: 9999px;
+  padding: 3px;
+  box-shadow: 0 4px 20px -2px rgba(2, 18, 47, 0.08);
+}
+
+.pill-list {
+  list-style: none;
+  display: flex;
+  align-items: stretch;
+  gap: var(--pill-gap);
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.pill-list > li {
+  display: flex;
+  height: 100%;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--pill-pad-x);
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  color: var(--pill-text);
+  text-decoration: none;
+  border-radius: 9999px;
+  box-sizing: border-box;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
+}
+
+.pill:hover {
+  border-color: rgba(74, 127, 167, 0.6);
+  box-shadow: 0 4px 14px rgba(74, 127, 167, 0.2);
+}
+
+.pill .hover-circle {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  border-radius: 50%;
+  background: var(--hover-circle);
+  z-index: 1;
+  display: block;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.pill .label-stack {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  z-index: 2;
+}
+
+.pill .pill-label {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  line-height: 1;
+  will-change: transform;
+  color: var(--pill-text);
+  transition: color 0.2s;
+}
+
+.pill .pill-label-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--hover-text);
+  font-weight: 700;
+  z-index: 3;
+  display: inline-block;
+  will-change: transform, opacity;
+  white-space: nowrap;
+}
+
+/* Indicador de píldora activa */
+.pill.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background: #495B7D;
+  box-shadow: 0 0 8px rgba(73, 91, 125, 0.8);
+  border-radius: 50%;
+  z-index: 4;
+}
+
+.pill.is-active {
+  border-color: rgba(73, 91, 125, 0.6);
+  background: rgba(139, 163, 197, 0.2);
+  color: #223355;
+}
+
+.pill.is-active .pill-label {
+  color: #223355;
+  font-weight: 700;
+}
+
+/* Responsive & Mobile popover */
+.desktop-only {
+  display: flex;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .desktop-only {
+    display: none;
+  }
+  .mobile-only {
+    display: block;
+  }
+}
+
+.mobile-menu-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(139, 163, 197, 0.4);
+  border-radius: 20px;
+  padding: 1rem;
+  box-shadow: 0 20px 40px -10px rgba(2, 18, 47, 0.15);
+  z-index: 100;
+  animation: fadeUp 0.25s ease both;
+}
+
+.mobile-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-menu-link {
+  display: block;
+  padding: 0.7rem 1rem;
+  color: #02122F;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.mobile-menu-link:hover,
+.mobile-menu-link.is-active {
+  background: rgba(139, 163, 197, 0.2);
+  color: #223355;
+  font-weight: 700;
+}
+
+/* ── Dark Mode Support en PillNav ── */
+html.dark .pill-nav,
+html.theme-dark .pill-nav {
+  --base: #172C4C;
+  --pill-bg: #172C4C;
+  --pill-border: rgba(139, 163, 197, 0.3);
+  --pill-text: #F8FAFC;
+  --hover-circle: #495B7D;
+  --hover-text: #FFFFFF;
+}
+
+html.dark .pill-nav-items,
+html.theme-dark .pill-nav-items {
+  background: rgba(23, 44, 76, 0.94);
+  border-color: rgba(139, 163, 197, 0.3);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .pill,
+html.theme-dark .pill {
+  background: rgba(23, 44, 76, 0.9);
+  border-color: rgba(139, 163, 197, 0.25);
+  color: #F8FAFC;
+}
+
+html.dark .pill.is-active,
+html.theme-dark .pill.is-active {
+  background: rgba(73, 91, 125, 0.5);
+  border-color: #8BA3C5;
+  color: #FFFFFF;
+}
+
+html.dark .pill.is-active .pill-label,
+html.theme-dark .pill.is-active .pill-label {
+  color: #FFFFFF;
+}
+
+html.dark .pill.is-active::after,
+html.theme-dark .pill.is-active::after {
+  background: #8BA3C5;
+  box-shadow: 0 0 10px rgba(139, 163, 197, 0.8);
+}
+
+html.dark .mobile-menu-popover,
+html.theme-dark .mobile-menu-popover {
+  background: #172C4C;
+  border-color: rgba(139, 163, 197, 0.3);
+}
+
+html.dark .mobile-menu-link,
+html.theme-dark .mobile-menu-link {
+  color: #E2E8F0;
+}
+
+html.dark .mobile-menu-link:hover,
+html.dark .mobile-menu-link.is-active,
+html.theme-dark .mobile-menu-link:hover,
+html.theme-dark .mobile-menu-link.is-active {
+  background: #1F3B66;
+  color: #8BA3C5;
+}
+
+

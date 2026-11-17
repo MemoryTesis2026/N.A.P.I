@@ -1,0 +1,45 @@
+[
+    {
+        "model": "projects.Project",
+        "pk": 1,
+        "fields": {
+            "name": "project 01",
+            "description": "project 01",
+            "owner": 101,
+            "organization": 1,
+            "initial_balance": 100
+        }
+    },
+    {
+        "model": "projects.Project",
+        "pk": 2,
+        "fields": {
+            "name": "project 02",
+            "description": "project 02",
+            "owner": 102,
+            "organization": 2,
+            "initial_balance": 10000
+        }
+    },
+    {
+        "model": "projects.Project",
+        "pk": 3,
+        "fields": {
+            "name": "project 03",
+            "description": "project 03",
+            "owner": 103,
+            "organization": 3,
+            "initial_balance": 10000
+        }
+    },
+    {
+        "model": "projects.Project",
+        "pk": 4,
+        "fields": {
+            "name": "project 04",
+            "description": "project 04",
+            "owner": 103,
+            "initial_balance": 100
+        }
+    }
+]

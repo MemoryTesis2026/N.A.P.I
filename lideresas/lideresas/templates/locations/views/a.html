@@ -1,0 +1,21 @@
+<div>
+    <select hx-trigger="change"
+            hx-get="{% url "locations:provinces-list" %}"
+            hx-target="#next-select"
+            hx-swap="outerHTML"
+            required>
+        <option value="1">Region 1</option>
+        <option value="2">Region 2</option>
+        <option value="3">Region 3</option>
+    </select>
+    <select hx-trigger="change"
+            hx-get="{% url "locations:comunas-list" %}"
+            hx-target="#next-select"
+            hx-swap="outerHTML"
+            required>
+        <option value="1">Region 1</option>
+        <option value="2">Region 2</option>
+        <option value="3">Region 3</option>
+    </select>
+    <div id="next-select"></div>
+</div>

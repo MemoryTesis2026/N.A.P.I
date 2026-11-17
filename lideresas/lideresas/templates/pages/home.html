@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block header %}
+    {% include "components/layout/haeder.html" with bg_color="bg-gray-900" text_color="text-gray-400" only %}
+{% endblock header %}
+{% block content %}
+    <main id="app"
+          class="min-h-screen bg-[#F5FAFA] px-6 py-12 sm:px-8 lg:px-10">
+        <section class="max-w-5xl mx-auto flex flex-col-reverse lg:flex-row items-center space-y-6 lg:space-y-0 lg:space-x-12 text-center lg:text-left">
+            <!-- Text Content -->
+            <div class="lg:w-1/2 space-y-4">
+                <h1 class="text-5xl font-extrabold text-[#6D929B]">Welcome to Our Product</h1>
+                <p class="pb-4 text-lg sm:text-xl text-[#B7AFA3]">
+                    A solution that simplifies your business needs and accelerates growth.
+                </p>
+                <a href="#get-started"
+                   class="px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                    Get Started
+                </a>
+            </div>
+            <!-- Image -->
+            <div class="lg:w-1/2">
+                <img src="https://via.placeholder.com/600x400"
+                     alt="Product Image"
+                     class="w-full rounded-xl shadow-md" />
+            </div>
+        </section>
+        <!-- Features Section -->
+        <section id="features" class="mt-16 space-y-8">
+            <h2 class="text-4xl font-semibold text-center text-[#6D929B]">Features</h2>
+            <ul class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                <li class="bg-[#C1DAD6] rounded-xl p-6 shadow-md">
+                    <img src="https://via.placeholder.com/150"
+                         alt="Feature One"
+                         class="w-full h-auto mb-4 rounded-md" />
+                    <h3 class="text-2xl font-semibold text-[#6D929B] mb-2">Feature One</h3>
+                    <p class="text-sm text-gray-900">This feature provides an exceptional benefit.</p>
+                </li>
+                <li class="bg-[#C1DAD6] rounded-xl p-6 shadow-md">
+                    <img src="https://via.placeholder.com/150"
+                         alt="Feature Two"
+                         class="w-full h-auto mb-4 rounded-md" />
+                    <h3 class="text-2xl font-semibold text-[#6D929B] mb-2">Feature Two</h3>
+                    <p class="text-sm text-gray-900">Experience seamless performance with this feature.</p>
+                </li>
+                <li class="bg-[#C1DAD6] rounded-xl p-6 shadow-md">
+                    <img src="https://via.placeholder.com/150"
+                         alt="Feature Three"
+                         class="w-full h-auto mb-4 rounded-md" />
+                    <h3 class="text-2xl font-semibold text-[#6D929B] mb-2">Feature Three</h3>
+                    <p class="text-sm text-gray-900">This feature boosts productivity and saves time.</p>
+                </li>
+            </ul>
+        </section>
+        <!-- About the Product Section -->
+        <section id="about-product"
+                 class="mt-16 bg-[#E8D0A9] rounded-xl shadow-md p-8 space-y-6">
+            <h2 class="text-4xl font-semibold text-center text-[#6D929B]">About the Product</h2>
+            <div class="flex flex-col lg:flex-row items-center space-y-6 lg:space-y-0 lg:space-x-12">
+                <img src="https://via.placeholder.com/500x300"
+                     alt="About Product Image"
+                     class="w-full lg:w-1/2 rounded-xl shadow-md" />
+                <div class="lg:w-1/2 space-y-4">
+                    <p class="text-base text-gray-900">
+                        Our product is built to address the most pressing challenges businesses face today. We combine simplicity and power to create a solution that drives growth and efficiency.
+                    </p>
+                    <p class="text-base text-gray-900">
+                        Our focus is on providing a seamless experience from start to finish, backed by robust technology and excellent support.
+                    </p>
+                </div>
+            </div>
+        </section>
+        <!-- Call to Action Section -->
+        <section id="cta" class="mt-16 text-center space-y-6">
+            <h2 class="text-4xl font-semibold text-[#6D929B]">Ready to Transform Your Business?</h2>
+            <p class="pb-4 text-lg text-[#B7AFA3]">
+                Join thousands of satisfied customers who have experienced the power of our product.
+            </p>
+            <a href="#get-started"
+               class="px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Get Started Today
+            </a>
+        </section>
+    </main>
+{% endblock content %}
+{% block footer %}
+    {% include "components/layout/footer.html" with bg_color="bg-gray-900" text_color="text-white" only %}
+{% endblock footer %}

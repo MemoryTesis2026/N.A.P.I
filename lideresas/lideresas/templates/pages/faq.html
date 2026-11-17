@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block header %}
+  {% include "components/layout/haeder.html" %}
+{% endblock header %}
+{% block content %}
+  <main class="bg-[#F5FAFA] min-h-screen px-6 py-12 sm:px-8 lg:px-10">
+    <div id="app" class="max-w-5xl mx-auto">
+      <!-- FAQ Header Section -->
+      <section class="text-center space-y-6">
+        <h1 class="text-5xl font-extrabold text-[#6D929B]">Frequently Asked Questions</h1>
+        <p class="text-lg sm:text-xl text-[#B7AFA3]">Find answers to the most common questions about our product.</p>
+      </section>
+      <!-- FAQ Accordion Section -->
+      <section id="faq" class="mt-16 space-y-6">
+        <h2 class="text-4xl font-semibold text-center text-[#6D929B]">FAQs</h2>
+        <div class="space-y-4">
+          <!-- Single FAQ Item -->
+          <div x-data="{ open: false }" class="bg-[#C1DAD6] rounded-xl shadow-md">
+            <button @click="open = !open"
+                    class="w-full text-left px-6 py-4 flex justify-between items-center text-[#6D929B] font-semibold text-2xl">
+              What is your product about?
+              <svg :class="open ? 'rotate-180' : ''"
+                   class="h-6 w-6 transition-transform">
+                <path fill="none" stroke="currentColor" stroke-width="2" d="M6 9l6 6 6-6"></path>
+              </svg>
+            </button>
+            <div x-show="open" x-collapse class="px-6 py-4 text-sm text-gray-900">
+              Our product simplifies business operations and helps accelerate growth through seamless integration and user-friendly features.
+            </div>
+          </div>
+          <!-- Another FAQ Item -->
+          <div x-data="{ open: false }" class="bg-[#C1DAD6] rounded-xl shadow-md">
+            <button @click="open = !open"
+                    class="w-full text-left px-6 py-4 flex justify-between items-center text-[#6D929B] font-semibold text-2xl">
+              How do I get started?
+              <svg :class="open ? 'rotate-180' : ''"
+                   class="h-6 w-6 transition-transform">
+                <path fill="none" stroke="currentColor" stroke-width="2" d="M6 9l6 6 6-6"></path>
+              </svg>
+            </button>
+            <div x-show="open" x-collapse class="px-6 py-4 text-sm text-gray-900">
+              To get started, click on the "Get Started" button above and follow the onboarding process. Our support team is always available to help.
+            </div>
+          </div>
+          <!-- Another FAQ Item -->
+          <div x-data="{ open: false }" class="bg-[#C1DAD6] rounded-xl shadow-md">
+            <button @click="open = !open"
+                    class="w-full text-left px-6 py-4 flex justify-between items-center text-[#6D929B] font-semibold text-2xl">
+              Is customer support available?
+              <svg :class="open ? 'rotate-180' : ''"
+                   class="h-6 w-6 transition-transform">
+                <path fill="none" stroke="currentColor" stroke-width="2" d="M6 9l6 6 6-6"></path>
+              </svg>
+            </button>
+            <div x-show="open" x-collapse class="px-6 py-4 text-sm text-gray-900">
+              Yes, our customer support team is available 24/7 to assist you with any queries.
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Call to Action Section -->
+      <section id="cta" class="mt-16 text-center space-y-6">
+        <h2 class="text-4xl font-semibold text-[#6D929B]">Still Have Questions?</h2>
+        <p class="pb-4 text-lg text-[#B7AFA3]">Contact us and we’ll be happy to assist you.</p>
+        <a href="#contact"
+           class="px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+          Contact Us
+        </a>
+      </section>
+    </div>
+  </main>
+{% endblock content %}
+{% block footer %}
+  {% include "components/layout/footer.html" %}
+{% endblock footer %}

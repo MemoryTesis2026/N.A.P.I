@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block header %}
+    <c-layout.admin.header />
+{% endblock header %}
+{% block content %}
+    <main id="app" class="h-screen">
+        <h1 class="text-5xl mt-4 font-extrabold text-[#6D929B]">Organizaciones</h1>
+        <div class="flex justify-between items-center mt-4 ">
+            <div class="flex space-x-4 ml-4">
+                <c-buttons.normal_button>
+                <a href="{% url 'dashboard:organization-create' %}">Crear organización</a>
+                </c-buttons.normal_button>
+            </div>
+        </div>
+        <div class="flex pt-4 h-full">
+            <!-- Sidebar -->
+            <aside class="w-1/4 bg-gray-50 p-4 overflow-y-auto">
+                {% if organization_filter %}
+                    <div class="flex flex-col space-y-4">
+                        <h3 class="text-xl font-extrabold text-gray-400">Filtros</h3>
+                        <div class="flex flex-col space-y-2">
+                            <form method="get">
+                                <c-buttons.normal_button class="mb-4">
+                                <input type="submit" value="Filtrar" />
+                                </c-buttons.normal_button>
+                                <div class="flex flex-col space-y-2">{{ organization_filter.form|crispy }}</div>
+                                <c-buttons.normal_button class="mt-4">
+                                <input type="submit" value="Filtrar" />
+                                </c-buttons.normal_button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            </aside>
+            <!-- Main Content -->
+            <section class="w-3/4 h-full max-h-screen p-4 overflow-y-auto">
+                {% if organization_filter.qs %}
+                    <div class="flex flex-col space-y-4">
+                        <h3 class="text-xl font-extrabold text-gray-400">Organizaciones</h3>
+                        <div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                            {% for organization in organization_filter.qs %}
+                                <div class="flex flex-col p-4 border rounded shadow-sm">
+                                    <h4 class="text-xl font-extrabold text-gray-600">{{ organization.name }}</h4>
+                                    <p class="text-gray-500">{{ organization.description }}</p>
+                                    <a href="{% url 'dashboard:organization-detail' pk=organization.pk %}"
+                                       class="hover:scale-105 w-full px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                                        Ver
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+{% endblock content %}

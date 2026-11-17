@@ -1,0 +1,74 @@
+[
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 0,
+        "fields": {
+            "slug": "deportiva",
+            "name": "Deportiva",
+            "description": "Deportiva"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 1,
+        "fields": {
+            "slug": "cultural",
+            "name": "Cultural",
+            "description": "Cultural"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 2,
+        "fields": {
+            "slug": "junta_vecinos",
+            "name": "Junta de vecinos",
+            "description": "Junta de vecinos"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 3,
+        "fields": {
+            "slug": "mujeres",
+            "name": "Mujeres",
+            "description": "Mujeres"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 4,
+        "fields": {
+            "slug": "adulto_mayor",
+            "name": "Adulto mayor",
+            "description": "Adulto mayor"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 5,
+        "fields": {
+            "slug": "fundacion",
+            "name": "Fundación",
+            "description": "Fundación"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 6,
+        "fields": {
+            "slug": "corporacion",
+            "name": "Corporación",
+            "description": "Corporación"
+        }
+    },
+    {
+        "model": "organizations.OrganizationType",
+        "pk": 7,
+        "fields": {
+            "slug": "inclusion",
+            "name": "Inclusión",
+            "description": "Inclusión"
+        }
+    }
+]

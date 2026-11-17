@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <main id="app"
+          class="min-h-screen bg-[#F5FAFA] px-6 py-12 sm:px-8 lg:px-10">
+        <section class="max-w-5xl mx-auto space-y-6">
+            <h1 class="text-5xl font-extrabold text-[#6D929B]">{{ project.name }}</h1>
+            <p class="text-lg text-[#B7AFA3]">{{ project.descipcion }}</p>
+            <!-- Project Details -->
+            <div class="bg-white p-8 rounded-lg shadow-md space-y-4">
+                <div class="text-gray-900">
+                    <strong>Indicador de Exito:</strong> {{ project.get_indicador_display }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Representante:</strong> {{ project.owner.name }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Organizacion:</strong> {{ project.organization.name }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Lugar del Proyecto:</strong> {{ project.location }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Representante Legal:</strong> {{ project.legal_representative }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Personalidad Juridica:</strong> {{ project.legal_personality }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>RUT:</strong> {{ project.rut }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Dinero Inicial:</strong> ${{ project.initial_balance }}
+                </div>
+                <div class="text-gray-900">
+                    <strong>Dinero Actual:</strong> ${{ project.get_actual_balance }}
+                </div>
+            </div>
+            <!-- Back to Project List -->
+            <a href="{% url 'projects:project-update' pk=object.pk %}"
+               class="inline-block px-8 py-3 mt-6 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Editar
+            </a>
+            <a href="{% url 'projects:project-set-location' pk=object.pk %}"
+               class="inline-block px-8 py-3 mt-6 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Cambiar Ubicacion
+            </a>
+            <a href="{% url "projects:document-list" project=object.pk %}"
+               class="inline-block px-8 py-3 mt-6 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Ver Documentos
+            </a>
+            <a href="{% url 'projects:transaction-list' project=object.pk %}"
+               class="inline-block px-8 py-3 mt-6 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Ver Boletas
+            </a>
+            <a href="{% url 'projects:project-list' %}"
+               class="inline-block px-8 py-3 mt-6 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Ver Todos los Proyectos
+            </a>
+            <a href="{% url 'projects:project-delete' pk=object.pk %}"
+               class="inline-block px-8 py-3 mt-6 text-white bg-[#E8D0A9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                Eliminar
+            </a>
+        </section>
+    </main>
+{% endblock content %}
+

@@ -1,0 +1,1533 @@
+/* ═══════════════════════════════════════════════════════════
+   N.A.P.I – styles.css
+   Paleta de Colores Oficial (de la imagen de referencia):
+   • Silver:                      #B0ADA4 (Acentos neutros, bordes sutiles, texto secundario suave)
+   • Wisteria Blue:               #8BA3C5 (Celeste medio / acentos luminosos, badges activos)
+   • Dusk Blue:                   #495B7D (Azul pizarra medio, bordes activos, iconos, detalles)
+   • Twilight Indigo:             #223355 (Azul índigo / primario, superficies intermedias y botones)
+   • Deep Space Blue:             #23354D (Azul marino profundo, paneles y sidebars)
+   • Prussian Blue:               #02122F (Azul noche de contraste máximo, encabezados y fondo dark)
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Variables Oficiales de la Paleta */
+  --palette-silver:    #B0ADA4;
+  --palette-wisteria:  #8BA3C5;
+  --palette-dusk:      #495B7D;
+  --palette-twilight:  #223355;
+  --palette-space:     #23354D;
+  --palette-prussian:  #02122F;
+
+  --napi-dark:         #02122F;
+  --napi-primary:      #223355;
+  --napi-deep:         #23354D;
+  --napi-ocean:        #495B7D;
+  --napi-ice:          #8BA3C5;
+  --napi-silver:       #B0ADA4;
+  --napi-bg:           #F4F7F9;
+
+  /* Compatibilidad con variables previas */
+  --inacap-red:        #223355;
+  --inacap-red-dark:   #02122F;
+  --inacap-red-light:  #F4F7F9;
+  --inacap-red-border: #8BA3C5;
+
+  --bg-main:           #F4F7F9;
+  --bg-white:          #FFFFFF;
+  --border-gray:       #CBD5E1;
+  --text-dark:         #02122F;
+  --text-muted:        #495B7D;
+  --text-light:        #64748B;
+  --text-white:        #FFFFFF;
+}
+
+* { font-family: 'Inter', system-ui, -apple-system, sans-serif; box-sizing: border-box; }
+body { background: var(--bg-main); color: var(--text-dark); margin: 0; }
+
+/* ── Scrollbar Moderno ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F4F7F9; }
+::-webkit-scrollbar-thumb { background: #8BA3C5; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #495B7D; }
+
+/* ── Animaciones Fluídas ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlowRed {
+  0%, 100% { box-shadow: 0 0 12px rgba(73, 91, 125, 0.35); }
+  50% { box-shadow: 0 0 24px rgba(34, 51, 85, 0.6); }
+}
+
+.anim-fade { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-glow-red { animation: pulseGlowRed 2.4s ease-in-out infinite; }
+
+/* ── Pantalla de Login ── */
+.login-bg {
+  background: radial-gradient(circle at top right, rgba(73, 91, 125, 0.28), transparent 45%),
+              radial-gradient(circle at bottom left, rgba(34, 51, 85, 0.35), transparent 40%),
+              linear-gradient(135deg, #02122F 0%, #23354D 60%, #223355 100%);
+  min-height: 100vh;
+}
+
+.login-card {
+  background: #FFFFFF;
+  border: 1px solid #8BA3C5;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(2, 18, 47, 0.18);
+}
+
+/* ── Campos de Entrada (Inputs) ── */
+.input-field {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  color: #02122F;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.input-field::placeholder { color: #94A3B8; }
+.input-field:focus {
+  outline: none;
+  border-color: #495B7D;
+  box-shadow: 0 0 0 3px rgba(73, 91, 125, 0.2);
+}
+
+/* ── Role Pills ── */
+.role-pill {
+  background: #F4F7F9;
+  border: 1.5px solid #D8E0EA;
+  color: #223355;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.role-pill:hover {
+  border-color: #495B7D;
+  color: #02122F;
+}
+.role-pill.active {
+  background: #223355;
+  border-color: #223355;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(34, 51, 85, 0.35);
+}
+
+/* ── Navbar Dashboard & Portal Estilo N.A.P.I ── */
+.portal-user-banner {
+  background: linear-gradient(90deg, #02122F 0%, #223355 45%, #495B7D 100%);
+  color: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(2, 18, 47, 0.15);
+}
+
+.sidebar-white {
+  background: #FFFFFF;
+  border-right: 1px solid #D8E0EA;
+}
+
+.header-portal {
+  background: #FFFFFF;
+  border-bottom: 1px solid #D8E0EA;
+}
+
+.nav-link,
+.nav-link-portal {
+  color: #223355;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-link:hover,
+.nav-link-portal:hover {
+  background: #EBF3F9;
+  color: #02122F;
+}
+.nav-link.active,
+.nav-link-portal.active {
+  background: #E1EDF7;
+  color: #223355;
+  border-left: 4px solid #495B7D;
+  font-weight: 700;
+}
+
+/* ── Tarjetas Modernas de Proyectos N.A.P.I (Paleta Oficial) ── */
+.card-pastel-rose {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-top: 4px solid #223355;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.card-pastel-peach {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-top: 4px solid #8BA3C5;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.card-pastel-mint {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-top: 4px solid #495B7D;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.card-pastel-sky {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-top: 4px solid #23354D;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.card-pastel-lavender {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-top: 4px solid #B0ADA4;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.card-pastel-butter {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-top: 4px solid #495B7D;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.card-pastel-rose:hover,
+.card-pastel-peach:hover,
+.card-pastel-mint:hover,
+.card-pastel-sky:hover,
+.card-pastel-lavender:hover,
+.card-pastel-butter:hover {
+  transform: translateY(-3px);
+  border-color: #8BA3C5;
+  box-shadow: 0 12px 28px rgba(34, 51, 85, 0.12);
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  border-color: #495B7D;
+  box-shadow: 0 14px 30px rgba(73, 91, 125, 0.15);
+}
+
+.kpi-card {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-left-width: 4.5px;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
+}
+
+/* ── Barras de Progreso ── */
+.progress-track {
+  height: 8px;
+  border-radius: 99px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #4A7FA7, #1A3D63);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Tablas ── */
+.tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+.tbl th {
+  background: #F1F5F9;
+  color: #1A3D63;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 1.5px solid #CBD5E1;
+}
+.tbl tr { transition: background 0.15s ease; }
+.tbl tr:hover { background: #F8FAFC; }
+.tbl td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #E2E8F0;
+  color: #1E293B;
+}
+
+/* ── Badges y Chips N.A.P.I ── */
+.badge-admin {
+  background: rgba(73, 91, 125, 0.1);
+  border: 1.5px solid rgba(73, 91, 125, 0.35);
+  color: #223355;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+}
+.badge-student {
+  background: rgba(139, 163, 197, 0.18);
+  border: 1.5px solid rgba(73, 91, 125, 0.35);
+  color: #223355;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+}
+.badge-red {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1.5px solid rgba(239, 68, 68, 0.3);
+  color: #B91C1C;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+}
+.badge-tech {
+  background: #F1F5F9;
+  border: 1.5px solid #CBD5E1;
+  color: #223355;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2.5px 9px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+.badge-restricted {
+  background: rgba(73, 91, 125, 0.1);
+  border: 1.5px solid rgba(73, 91, 125, 0.3);
+  color: #223355;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.badge-cyan {
+  background: rgba(73, 91, 125, 0.08);
+  border: 1.5px solid rgba(73, 91, 125, 0.28);
+  color: #223355;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2.5px 10px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Zona de Subida ── */
+.upload-zone {
+  border: 2px dashed #CBD5E1;
+  border-radius: 14px;
+  background: #F6FAFD;
+  transition: all 0.2s ease;
+}
+.upload-zone:hover {
+  border-color: #4A7FA7;
+  background: #EBF3F9;
+}
+
+/* ── Chat Widget NAPI ── */
+#napiWidget {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 999;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.napi-btn {
+  background: #1A3D63;
+  color: #FFFFFF;
+  border-radius: 99px;
+  padding: 13px 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 8px 24px rgba(26, 61, 99, 0.45);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.napi-btn:hover {
+  background: #0A1931;
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(10, 25, 49, 0.6);
+}
+
+.napi-panel {
+  width: 390px;
+  height: 530px;
+  max-height: calc(100vh - 120px);
+  background: #FFFFFF;
+  border: 1px solid #B3CFE5;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(10, 25, 49, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.napi-header {
+  background: #0A1931;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bubble-napi {
+  background: #F6FAFD;
+  border: 1px solid #E2E8F0;
+  color: #0A1931;
+  border-radius: 0 14px 14px 14px;
+}
+.bubble-user {
+  background: #1A3D63 !important;
+  color: #FFFFFF !important;
+  border-radius: 14px 14px 0 14px;
+  box-shadow: 0 4px 14px rgba(26, 61, 99, 0.25);
+}
+
+.sim-card {
+  background: #FFFFFF;
+  border: 1.5px solid #4A7FA7;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(74, 127, 167, 0.1);
+}
+
+/* ── Utilidades ── */
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+@media (max-width: 768px) {
+  #adminSidebar { display: none !important; }
+  .napi-panel { width: calc(100vw - 32px); }
+}
+
+/* ══════════════════════════════════════════════════
+   LANDING PAGE STYLES (PALETA CELESTE & AZUL)
+══════════════════════════════════════════════════ */
+
+/* ── Navbar Landing Blanco N.A.P.I ── */
+.landing-nav {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px -2px rgba(10, 25, 49, 0.05);
+}
+
+.landing-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* ── Botones Navbar de Acción (Unificados en tamaño, forma y proporción) ── */
+.btn-login-docente,
+.btn-login-student,
+.btn-login-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-login-docente {
+  background: #FFFFFF;
+  border: 1.5px solid #B3CFE5;
+  color: #1A3D63;
+}
+.btn-login-docente:hover {
+  background: #F6FAFD;
+  border-color: #4A7FA7;
+  color: #0A1931;
+  transform: translateY(-1px);
+}
+
+.btn-login-student {
+  background: #1A3D63;
+  border: 1.5px solid #1A3D63;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(26, 61, 99, 0.35);
+}
+.btn-login-student:hover {
+  background: #0A1931;
+  border-color: #0A1931;
+  box-shadow: 0 6px 20px rgba(10, 25, 49, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-login-admin {
+  background: #495B7D;
+  border: 1.5px solid #495B7D;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(73, 91, 125, 0.3);
+}
+.btn-login-admin:hover {
+  background: #223355;
+  border-color: #223355;
+  box-shadow: 0 6px 20px rgba(34, 51, 85, 0.45);
+  transform: translateY(-1px);
+}
+
+/* ── Carrusel Hero ── */
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+  pointer-events: none;
+}
+.carousel-slide.active {
+  opacity: 1;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.carousel-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 25, 49, 0.92) 0%, rgba(26, 61, 99, 0.65) 50%, rgba(74, 127, 167, 0.2) 100%);
+}
+
+.carousel-content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.carousel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(74, 127, 167, 0.25);
+  border: 1px solid rgba(179, 207, 229, 0.6);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(12px);
+}
+
+.carousel-title {
+  font-size: clamp(1.8rem, 4.2vw, 3.5rem);
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  max-width: 820px;
+  margin-bottom: 1rem;
+}
+
+.carousel-subtitle {
+  font-size: clamp(0.85rem, 1.6vw, 1.1rem);
+  color: #E2E8F0;
+  max-width: 660px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.btn-carousel-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: #1A3D63;
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(26, 61, 99, 0.45);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-carousel-primary:hover {
+  background: #0A1931;
+  box-shadow: 0 12px 32px rgba(10, 25, 49, 0.65);
+  transform: translateY(-2px);
+}
+
+.btn-carousel-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-carousel-secondary:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+.carousel-arrow:hover {
+  background: #4A7FA7;
+  border-color: #4A7FA7;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+.carousel-dot {
+  width: 28px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.carousel-dot.active {
+  background: #4A7FA7;
+  width: 42px;
+  box-shadow: 0 0 10px rgba(74, 127, 167, 0.8);
+}
+
+/* ── Galería de Sedes N.A.P.I ── */
+.sede-photo-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+.sede-photo-card:hover {
+  transform: translateY(-6px);
+  border-color: #4A7FA7;
+  box-shadow: 0 18px 36px rgba(74, 127, 167, 0.18);
+}
+.sede-photo-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.sede-photo-card:hover .sede-photo-img {
+  transform: scale(1.04);
+}
+
+/* ── Stats Bar Institucional N.A.P.I ── */
+.stats-strip {
+  background: linear-gradient(135deg, #0A1931 0%, #1A3D63 50%, #4A7FA7 100%);
+  color: #FFFFFF;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-number {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Tarjetas Sobre Nosotros & Origen ── */
+.feature-box {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s ease;
+}
+.feature-box:hover {
+  border-color: #4A7FA7;
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(74, 127, 167, 0.12);
+}
+
+.feature-mini-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+.feature-mini-card:hover {
+  border-color: #4A7FA7;
+  transform: translateX(4px);
+}
+
+/* ── NAPI Showcase ── */
+.napi-showcase-box {
+  background: #FFFFFF;
+  border: 1.5px solid #B3CFE5;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(10, 25, 49, 0.08);
+}
+.napi-showcase-header {
+  background: #0A1931;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Footer Institucional ── */
+.footer-inacap {
+  background: #0A1931;
+  border-top: 1px solid #1A3D63;
+}
+.footer-link {
+  color: #B3CFE5;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.footer-link:hover {
+  color: #FFFFFF;
+  padding-left: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACCESIBILIDAD Y FILTROS DE DALTONISMO (PROTANOPIA, DEUTERANOPIA, TRITANOPIA)
+   ═══════════════════════════════════════════════════════════ */
+html.filter-protanopia {
+  filter: url('#protanopia-filter') !important;
+  -webkit-filter: url('#protanopia-filter') !important;
+}
+
+html.filter-deuteranopia {
+  filter: url('#deuteranopia-filter') !important;
+  -webkit-filter: url('#deuteranopia-filter') !important;
+}
+
+html.filter-tritanopia {
+  filter: url('#tritanopia-filter') !important;
+  -webkit-filter: url('#tritanopia-filter') !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODO OSCURO (DARK MODE) COMPLETO Y ARMONIOSO
+   Paleta Oficial:
+   • Fondo base:      #02122F (Prussian Blue)
+   • Paneles/Sidebar: #23354D (Deep Space Blue)
+   • Tarjetas/Boxes:  #223355 (Twilight Indigo)
+   • Bordes/Iconos:   #495B7D (Dusk Blue)
+   • Resaltes/Badges: #8BA3C5 (Wisteria Blue)
+   • Textos suaves:   #B0ADA4 (Silver)
+   ═══════════════════════════════════════════════════════════ */
+html.theme-dark,
+html.dark {
+  --bg-main: #0E1F38;
+  --bg-white: #172C4C;
+  --border-gray: rgba(139, 163, 197, 0.28);
+  --text-dark: #FFFFFF;
+  --text-muted: #CBD5E1;
+  --text-light: #94A3B8;
+  color-scheme: dark;
+}
+
+html.theme-dark body,
+html.dark body {
+  background-color: #0E1F38 !important;
+  color: #F8FAFC !important;
+}
+
+/* ── Header Landing & PillNav en Modo Oscuro ── */
+html.theme-dark header,
+html.dark header,
+html.theme-dark nav.header-landing,
+html.dark nav.header-landing,
+html.theme-dark #landingNav,
+html.dark #landingNav,
+html.theme-dark .landing-nav,
+html.dark .landing-nav {
+  background: rgba(14, 31, 56, 0.94) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid rgba(139, 163, 197, 0.25) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.theme-dark #pillLogoLink span.text-\[\#0A1931\],
+html.dark #pillLogoLink span.text-\[\#0A1931\],
+html.theme-dark #pillLogoLink span.text-slate-900,
+html.dark #pillLogoLink span.text-slate-900,
+html.theme-dark #pillLogoLink span.tracking-tight,
+html.dark #pillLogoLink span.tracking-tight {
+  color: #FFFFFF !important;
+}
+
+html.theme-dark .pill-nav,
+html.dark .pill-nav {
+  --base: #172C4C;
+  --pill-bg: #172C4C;
+  --pill-border: rgba(139, 163, 197, 0.3);
+  --pill-text: #F8FAFC;
+  --hover-circle: #495B7D;
+  --hover-text: #FFFFFF;
+}
+
+html.theme-dark .pill-nav-items,
+html.dark .pill-nav-items {
+  background: rgba(23, 44, 76, 0.94) !important;
+  border-color: rgba(139, 163, 197, 0.3) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.theme-dark .pill,
+html.dark .pill {
+  background: rgba(23, 44, 76, 0.9) !important;
+  border-color: rgba(139, 163, 197, 0.25) !important;
+  color: #F8FAFC !important;
+}
+
+html.theme-dark .pill.is-active,
+html.dark .pill.is-active {
+  background: rgba(73, 91, 125, 0.5) !important;
+  border-color: #8BA3C5 !important;
+  color: #FFFFFF !important;
+}
+
+html.theme-dark .pill.is-active::after,
+html.dark .pill.is-active::after {
+  background: #8BA3C5 !important;
+  box-shadow: 0 0 10px rgba(139, 163, 197, 0.8) !important;
+}
+
+html.theme-dark .mobile-menu-popover,
+html.dark .mobile-menu-popover {
+  background: #172C4C !important;
+  border-color: rgba(139, 163, 197, 0.3) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6) !important;
+}
+
+html.theme-dark .mobile-menu-link,
+html.dark .mobile-menu-link {
+  color: #E2E8F0 !important;
+}
+
+html.theme-dark .mobile-menu-link:hover,
+html.dark .mobile-menu-link:hover,
+html.theme-dark .mobile-menu-link.is-active,
+html.dark .mobile-menu-link.is-active {
+  background: #1F3B66 !important;
+  color: #8BA3C5 !important;
+}
+
+/* ── Sidebars e Intranets (Docente, Admin, Alumno) ── */
+html.theme-dark #adminSidebar,
+html.dark #adminSidebar,
+html.theme-dark .sidebar-white,
+html.dark .sidebar-white,
+html.theme-dark aside.sidebar-white,
+html.dark aside.sidebar-white,
+html.theme-dark #studentScreen aside,
+html.dark #studentScreen aside,
+html.theme-dark #adminScreen aside,
+html.dark #adminScreen aside {
+  background-color: #132644 !important;
+  border-color: rgba(139, 163, 197, 0.2) !important;
+  border-right: 1px solid rgba(139, 163, 197, 0.25) !important;
+  color: #F8FAFC !important;
+}
+
+html.theme-dark #adminSidebar span.text-slate-900,
+html.dark #adminSidebar span.text-slate-900,
+html.theme-dark #studentScreen aside span.text-slate-900,
+html.dark #studentScreen aside span.text-slate-900 {
+  color: #FFFFFF !important;
+}
+
+html.theme-dark .nav-link,
+html.dark .nav-link,
+html.theme-dark .nav-link-portal,
+html.dark .nav-link-portal {
+  color: #CBD5E1 !important;
+}
+
+html.theme-dark .nav-link:hover,
+html.dark .nav-link:hover,
+html.theme-dark .nav-link-portal:hover,
+html.dark .nav-link-portal:hover {
+  background-color: #1B3459 !important;
+  color: #FFFFFF !important;
+}
+
+html.theme-dark .nav-link.active,
+html.dark .nav-link.active,
+html.theme-dark .nav-link-portal.active,
+html.dark .nav-link-portal.active {
+  background-color: #1B3459 !important;
+  color: #8BA3C5 !important;
+  border-left: 4px solid #8BA3C5 !important;
+}
+
+/* ── Header portal Docente y Vistas ── */
+html.theme-dark .header-portal,
+html.dark .header-portal {
+  background-color: #132644 !important;
+  border-bottom: 1px solid rgba(139, 163, 197, 0.22) !important;
+}
+
+html.theme-dark #adminTitle,
+html.dark #adminTitle {
+  color: #FFFFFF !important;
+}
+
+/* ── Pantallas completas ── */
+html.theme-dark #adminScreen,
+html.dark #adminScreen,
+html.theme-dark #studentScreen,
+html.dark #studentScreen,
+html.theme-dark .bg-\[\#F6FAFD\],
+html.dark .bg-\[\#F6FAFD\],
+html.theme-dark .bg-\[\#F4F6F9\],
+html.dark .bg-\[\#F4F6F9\] {
+  background-color: #0E1F38 !important;
+}
+
+/* ── Secciones Landing en Modo Oscuro (Elimina fondos negros o blancos duros) ── */
+html.theme-dark section#sedes,
+html.dark section#sedes,
+html.theme-dark section#origen,
+html.dark section#origen,
+html.theme-dark section#sobre-nosotros,
+html.dark section#sobre-nosotros,
+html.theme-dark section#napi,
+html.dark section#napi {
+  background-color: #0E1F38 !important;
+  border-bottom-color: rgba(139, 163, 197, 0.2) !important;
+}
+
+/* ── Tarjetas, Superficies y Contenedores ── */
+html.theme-dark .card,
+html.dark .card,
+html.theme-dark .bg-white,
+html.dark .bg-white,
+html.theme-dark .card-white,
+html.dark .card-white,
+html.theme-dark .kpi-card,
+html.dark .kpi-card,
+html.theme-dark .catalog-card,
+html.dark .catalog-card,
+html.theme-dark .feature-box,
+html.dark .feature-box,
+html.theme-dark .feature-mini-card,
+html.dark .feature-mini-card,
+html.theme-dark .napi-showcase-box,
+html.dark .napi-showcase-box,
+html.theme-dark .sede-photo-card,
+html.dark .sede-photo-card,
+html.theme-dark .sim-card,
+html.dark .sim-card {
+  background-color: #172C4C !important;
+  border-color: rgba(139, 163, 197, 0.28) !important;
+  color: #F8FAFC !important;
+}
+
+html.theme-dark .bg-slate-50,
+html.dark .bg-slate-50,
+html.theme-dark .bg-slate-100,
+html.dark .bg-slate-100 {
+  background-color: #132644 !important;
+  border-color: rgba(139, 163, 197, 0.22) !important;
+  color: #F8FAFC !important;
+}
+
+html.theme-dark .border-slate-100,
+html.dark .border-slate-100,
+html.theme-dark .border-slate-200,
+html.dark .border-slate-200,
+html.theme-dark .border-slate-300,
+html.dark .border-slate-300,
+html.theme-dark .border-\[\#B3CFE5\],
+html.dark .border-\[\#B3CFE5\] {
+  border-color: rgba(139, 163, 197, 0.28) !important;
+}
+
+/* ── Tarjetas de Proyectos en Alumno (Resolución completa de contraste) ── */
+html.theme-dark .card-pastel-rose,
+html.dark .card-pastel-rose,
+html.theme-dark .card-pastel-peach,
+html.dark .card-pastel-peach,
+html.theme-dark .card-pastel-mint,
+html.dark .card-pastel-mint,
+html.theme-dark .card-pastel-sky,
+html.dark .card-pastel-sky,
+html.theme-dark .card-pastel-lavender,
+html.dark .card-pastel-lavender,
+html.theme-dark .card-pastel-butter,
+html.dark .card-pastel-butter {
+  background-color: #172C4C !important;
+  border: 1px solid rgba(139, 163, 197, 0.3) !important;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25) !important;
+}
+
+html.theme-dark .card-pastel-rose:hover,
+html.dark .card-pastel-rose:hover,
+html.theme-dark .card-pastel-peach:hover,
+html.dark .card-pastel-peach:hover,
+html.theme-dark .card-pastel-mint:hover,
+html.dark .card-pastel-mint:hover,
+html.theme-dark .card-pastel-sky:hover,
+html.dark .card-pastel-sky:hover,
+html.theme-dark .card-pastel-lavender:hover,
+html.dark .card-pastel-lavender:hover,
+html.theme-dark .card-pastel-butter:hover,
+html.dark .card-pastel-butter:hover {
+  background-color: #1F3B66 !important;
+  border-color: #8BA3C5 !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Títulos y textos de tarjetas de proyectos */
+.proj-card-title {
+  color: #02122F;
+}
+html.theme-dark .proj-card-title,
+html.dark .proj-card-title {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+}
+html.theme-dark .group:hover .proj-card-title,
+html.dark .group:hover .proj-card-title {
+  color: #8BA3C5 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESOLUCIÓN DE TEXTO INVISIBLE EN MODO OSCURO (GARANTIZADA)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Todos los encabezados y títulos principales en blanco nítido */
+html.theme-dark h1, html.dark h1,
+html.theme-dark h2, html.dark h2,
+html.theme-dark h3, html.dark h3,
+html.theme-dark h4, html.dark h4,
+html.theme-dark h5, html.dark h5,
+html.theme-dark .text-\[\#02122F\], html.dark .text-\[\#02122F\],
+html.theme-dark .text-\[\#0A1931\], html.dark .text-\[\#0A1931\],
+html.theme-dark .text-slate-900, html.dark .text-slate-900,
+html.theme-dark .text-slate-800, html.dark .text-slate-800 {
+  color: #FFFFFF !important;
+}
+
+/* Textos secundarios y párrafos en gris claro de alto contraste */
+html.theme-dark .text-slate-700, html.dark .text-slate-700,
+html.theme-dark .text-slate-600, html.dark .text-slate-600,
+html.theme-dark .text-slate-500, html.dark .text-slate-500,
+html.theme-dark .text-\[\#1A3D63\], html.dark .text-\[\#1A3D63\],
+html.theme-dark .text-\[\#B0ADA4\], html.dark .text-\[\#B0ADA4\] {
+  color: #CBD5E1 !important;
+}
+
+/* Subtítulos y textos de soporte */
+html.theme-dark .text-slate-400, html.dark .text-slate-400,
+html.theme-dark .text-\[\#4A7FA7\], html.dark .text-\[\#4A7FA7\] {
+  color: #94A3B8 !important;
+}
+
+/* Resaltes azulados / wisteria */
+html.theme-dark .text-\[\#495B7D\], html.dark .text-\[\#495B7D\],
+html.theme-dark .text-\[\#8BA3C5\], html.dark .text-\[\#8BA3C5\] {
+  color: #8BA3C5 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESOLUCIÓN DE ICONOS Y CAJAS EN MODO OSCURO (100% VISIBLES)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Cajas de iconos en Feature Box y Feature Mini Card */
+html.theme-dark .feature-box > div:first-child,
+html.dark .feature-box > div:first-child,
+html.theme-dark .feature-mini-card > div:first-child,
+html.dark .feature-mini-card > div:first-child,
+html.theme-dark #napi .space-y-3 > div > div:first-child,
+html.dark #napi .space-y-3 > div > div:first-child {
+  background: rgba(139, 163, 197, 0.16) !important;
+  border: 1px solid rgba(139, 163, 197, 0.35) !important;
+  color: #8BA3C5 !important;
+}
+
+/* SVGs de los iconos siempre luminosos */
+html.theme-dark .feature-box svg,
+html.dark .feature-box svg,
+html.theme-dark .feature-mini-card svg,
+html.dark .feature-mini-card svg,
+html.theme-dark #napi svg,
+html.dark #napi svg,
+html.theme-dark #sobre-nosotros svg,
+html.dark #sobre-nosotros svg {
+  color: #8BA3C5 !important;
+  stroke: currentColor !important;
+}
+
+/* Badges numéricos de Origen (01, 02, 03) */
+html.theme-dark section#origen .card > div:first-child,
+html.dark section#origen .card > div:first-child {
+  background: rgba(139, 163, 197, 0.22) !important;
+  border: 1px solid rgba(139, 163, 197, 0.45) !important;
+  color: #FFFFFF !important;
+  font-weight: 900 !important;
+}
+
+/* Tarjeta de Cita Central en Origen */
+html.theme-dark section#origen .rounded-2xl.border,
+html.dark section#origen .rounded-2xl.border {
+  background-color: #132644 !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+}
+
+html.theme-dark section#origen .rounded-2xl.border p:first-child,
+html.dark section#origen .rounded-2xl.border p:first-child {
+  color: #FFFFFF !important;
+  font-weight: 500 !important;
+}
+
+html.theme-dark section#origen .rounded-2xl.border p:last-child,
+html.dark section#origen .rounded-2xl.border p:last-child {
+  color: #8BA3C5 !important;
+  font-weight: 700 !important;
+}
+
+/* ── Gráficos y Barras de Progreso en Dark Mode ── */
+html.theme-dark .progress-track,
+html.dark .progress-track {
+  background: #10223D !important;
+  border-color: rgba(139, 163, 197, 0.25) !important;
+}
+html.theme-dark .progress-fill,
+html.dark .progress-fill {
+  background: linear-gradient(90deg, #495B7D, #8BA3C5) !important;
+}
+
+/* ── Badges adaptados en Dark Mode ── */
+html.theme-dark .badge-tech,
+html.dark .badge-tech {
+  background: #132644 !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+  color: #8BA3C5 !important;
+}
+
+html.theme-dark .badge-restricted,
+html.dark .badge-restricted {
+  background: rgba(139, 163, 197, 0.16) !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+  color: #8BA3C5 !important;
+}
+
+html.theme-dark .badge-red,
+html.dark .badge-red {
+  background: rgba(139, 163, 197, 0.16) !important;
+  border-color: rgba(139, 163, 197, 0.4) !important;
+  color: #8BA3C5 !important;
+}
+
+/* ── Inputs, Textareas y Selects en Dark Mode ── */
+html.theme-dark input,
+html.dark input,
+html.theme-dark select,
+html.dark select,
+html.theme-dark textarea,
+html.dark textarea,
+html.theme-dark .input-field,
+html.dark .input-field {
+  background-color: #10223D !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+  color: #FFFFFF !important;
+}
+
+html.theme-dark input:focus,
+html.dark input:focus,
+html.theme-dark select:focus,
+html.dark select:focus,
+html.theme-dark textarea:focus,
+html.dark textarea:focus,
+html.theme-dark .input-field:focus,
+html.dark .input-field:focus {
+  border-color: #8BA3C5 !important;
+  box-shadow: 0 0 0 3px rgba(139, 163, 197, 0.3) !important;
+}
+
+html.theme-dark input::placeholder,
+html.dark input::placeholder,
+html.theme-dark textarea::placeholder,
+html.dark textarea::placeholder {
+  color: #8BA3C5 !important;
+  opacity: 0.75;
+}
+
+/* ── Botones de Login y Acciones ── */
+html.theme-dark .btn-login-docente,
+html.dark .btn-login-docente {
+  background-color: #172C4C !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+  color: #8BA3C5 !important;
+}
+html.theme-dark .btn-login-docente:hover,
+html.dark .btn-login-docente:hover {
+  background-color: #1F3B66 !important;
+  color: #FFFFFF !important;
+  border-color: #8BA3C5 !important;
+}
+html.theme-dark .btn-login-student,
+html.dark .btn-login-student {
+  background-color: #223355 !important;
+  border-color: #495B7D !important;
+  color: #FFFFFF !important;
+}
+html.theme-dark .btn-login-student:hover,
+html.dark .btn-login-student:hover {
+  background-color: #1F3B66 !important;
+  border-color: #8BA3C5 !important;
+}
+html.theme-dark .btn-login-admin,
+html.dark .btn-login-admin {
+  background-color: #495B7D !important;
+  border-color: rgba(139, 163, 197, 0.5) !important;
+  color: #FFFFFF !important;
+}
+html.theme-dark .btn-login-admin:hover,
+html.dark .btn-login-admin:hover {
+  background-color: #223355 !important;
+  border-color: #8BA3C5 !important;
+}
+
+/* ── Modales en Dark Mode ── */
+html.theme-dark #modalEstudiante > div,
+html.dark #modalEstudiante > div,
+html.theme-dark #modalDocente > div,
+html.dark #modalDocente > div,
+html.theme-dark #modalAdmin > div,
+html.dark #modalAdmin > div,
+html.theme-dark #userCrudModal > div,
+html.dark #userCrudModal > div,
+html.theme-dark #editModal > div,
+html.dark #editModal > div,
+html.theme-dark #projModal > div,
+html.dark #projModal > div,
+html.theme-dark .login-card,
+html.dark .login-card {
+  background-color: #172C4C !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+  color: #F8FAFC !important;
+}
+
+/* ── Tablas en Dark Mode ── */
+html.theme-dark table thead th,
+html.dark table thead th,
+html.theme-dark .tbl th,
+html.dark .tbl th {
+  background-color: #10223D !important;
+  color: #8BA3C5 !important;
+  border-bottom-color: rgba(139, 163, 197, 0.25) !important;
+}
+
+html.theme-dark table tbody tr,
+html.dark table tbody tr,
+html.theme-dark .tbl tr,
+html.dark .tbl tr {
+  border-bottom-color: rgba(139, 163, 197, 0.18) !important;
+  background-color: #172C4C !important;
+  color: #F8FAFC !important;
+}
+
+html.theme-dark table tbody tr:hover,
+html.dark table tbody tr:hover,
+html.theme-dark .tbl tr:hover,
+html.dark .tbl tr:hover {
+  background-color: #1F3B66 !important;
+}
+
+/* ── Chat Widget NAPI en Dark Mode ── */
+html.theme-dark #napiWidget .napi-btn,
+html.dark #napiWidget .napi-btn {
+  background-color: #172C4C !important;
+  border: 1px solid #495B7D !important;
+}
+html.theme-dark #napiWidget .napi-btn:hover,
+html.dark #napiWidget .napi-btn:hover {
+  background-color: #1F3B66 !important;
+}
+
+html.theme-dark .napi-panel,
+html.dark .napi-panel {
+  background-color: #172C4C !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+}
+html.theme-dark .napi-header,
+html.dark .napi-header {
+  background-color: #10223D !important;
+}
+html.theme-dark .bubble-napi,
+html.dark .bubble-napi {
+  background-color: #132644 !important;
+  border-color: #495B7D !important;
+  color: #F8FAFC !important;
+}
+html.theme-dark .bubble-user,
+html.dark .bubble-user {
+  background-color: #223355 !important;
+  color: #FFFFFF !important;
+}
+
+/* ── Dropdown Menú de Tema y Daltonismo en Dark Mode ── */
+html.theme-dark #themeDropdownMenu,
+html.dark #themeDropdownMenu {
+  background-color: #172C4C !important;
+  border-color: rgba(139, 163, 197, 0.35) !important;
+  color: #F8FAFC !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important;
+}
+
+html.theme-dark #themeDropdownMenu .bg-gradient-to-r,
+html.dark #themeDropdownMenu .bg-gradient-to-r {
+  background: linear-gradient(to right, #10223D, #172C4C) !important;
+  border-bottom-color: rgba(139, 163, 197, 0.25) !important;
+}
+
+html.theme-dark #themeDropdownMenu .theme-choice-card,
+html.dark #themeDropdownMenu .theme-choice-card,
+html.theme-dark #themeDropdownMenu .cvd-option-card,
+html.dark #themeDropdownMenu .cvd-option-card {
+  background-color: #132644 !important;
+  border-color: rgba(139, 163, 197, 0.28) !important;
+  color: #F8FAFC !important;
+}
+
+html.theme-dark #btnToggleDaltonismo,
+html.dark #btnToggleDaltonismo {
+  background-color: #132644 !important;
+  border-color: rgba(139, 163, 197, 0.28) !important;
+  color: #E2E8F0 !important;
+}
+
+html.theme-dark #btnCvdNone,
+html.dark #btnCvdNone {
+  border-color: #495B7D !important;
+  color: #CBD5E1 !important;
+}
+
+html.theme-dark #btnCvdNone:hover,
+html.dark #btnCvdNone:hover {
+  background-color: #1B3459 !important;
+  color: #FFFFFF !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BADGES Y CHIPS EN DARK MODE (Alto Contraste y Luminosidad)
+   Resuelve el texto oscuro ilegible en modales y tablas
+   ══════════════════════════════════════════════════════════════ */
+html.theme-dark .badge-admin,
+html.dark .badge-admin {
+  background: rgba(139, 163, 197, 0.22) !important;
+  border: 1.5px solid rgba(139, 163, 197, 0.5) !important;
+  color: #FFFFFF !important;
+}
+
+html.theme-dark .badge-student,
+html.dark .badge-student {
+  background: rgba(139, 163, 197, 0.22) !important;
+  border: 1.5px solid rgba(139, 163, 197, 0.5) !important;
+  color: #FFFFFF !important;
+}
+
+html.theme-dark .badge-tech,
+html.dark .badge-tech {
+  background: #10223D !important;
+  border: 1.5px solid rgba(139, 163, 197, 0.35) !important;
+  color: #E2E8F0 !important;
+}
+
+html.theme-dark .badge-restricted,
+html.dark .badge-restricted {
+  background: rgba(139, 163, 197, 0.18) !important;
+  border: 1.5px solid rgba(139, 163, 197, 0.38) !important;
+  color: #CBD5E1 !important;
+}
+
+html.theme-dark .badge-cyan,
+html.dark .badge-cyan {
+  background: rgba(139, 163, 197, 0.22) !important;
+  border: 1.5px solid rgba(139, 163, 197, 0.5) !important;
+  color: #FFFFFF !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BORDES NÍTIDOS Y MARCADOS EN MODO CLARO
+   Hace que los cuadros, tablas y filtros se distingan a simple vista
+   ══════════════════════════════════════════════════════════════ */
+html:not(.dark):not(.theme-dark) .border-slate-200 {
+  border-color: #CBD5E1 !important;
+  border-width: 1.5px;
+}
+
+html:not(.dark):not(.theme-dark) .border-slate-300 {
+  border-color: #B0C4DE !important;
+  border-width: 1.5px;
+}
+
+html:not(.dark):not(.theme-dark) .overflow-x-auto.border,
+html:not(.dark):not(.theme-dark) .overflow-x-auto.border-slate-200 {
+  border: 1.5px solid #CBD5E1 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+html:not(.dark):not(.theme-dark) .tbl th {
+  border-bottom: 1.5px solid #CBD5E1 !important;
+  background-color: #F1F5F9;
+}
+
+html:not(.dark):not(.theme-dark) .tbl td {
+  border-bottom: 1.5px solid #E2E8F0 !important;
+}
+
+html:not(.dark):not(.theme-dark) .input-field {
+  border: 1.5px solid #B0C4DE !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+html:not(.dark):not(.theme-dark) .input-field:focus {
+  border-color: #223355 !important;
+  box-shadow: 0 0 0 3px rgba(73, 91, 125, 0.25) !important;
+}
+
+html:not(.dark):not(.theme-dark) .progress-track {
+  background: #E2E8F0;
+  border: 1.5px solid #CBD5E1;
+}
+
+html:not(.dark):not(.theme-dark) .sidebar-white,
+html:not(.dark):not(.theme-dark) aside.bg-white {
+  border-right: 1.5px solid #CBD5E1 !important;
+}
+
+html:not(.dark):not(.theme-dark) .header-portal {
+  border-bottom: 1.5px solid #CBD5E1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TARJETAS Y TABLAS EN MODO OSCURO (Bordes y Textos Definidos)
+   ══════════════════════════════════════════════════════════════ */
+html.dark .card,
+html.theme-dark .card,
+html.dark .kpi-card,
+html.theme-dark .kpi-card {
+  border: 1.5px solid rgba(139, 163, 197, 0.3) !important;
+}
+
+html.dark .overflow-x-auto.border,
+html.theme-dark .overflow-x-auto.border {
+  border: 1.5px solid rgba(139, 163, 197, 0.28) !important;
+}
+
+html.dark .tbl td .text-slate-800,
+html.theme-dark .tbl td .text-slate-800,
+html.dark .tbl td .text-slate-700,
+html.theme-dark .tbl td .text-slate-700 {
+  color: #FFFFFF !important;
+}
+
+html.dark .tbl td .text-slate-500,
+html.theme-dark .tbl td .text-slate-500 {
+  color: #CBD5E1 !important;
+}
+
+
+

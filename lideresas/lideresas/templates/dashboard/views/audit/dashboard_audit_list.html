@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block header %}
+    <c-layout.admin.header />
+{% endblock header %}
+{% block content %}
+    <main id="app">
+        <div class="mt-6 flex justify-center items-center">
+            <div>
+                <h1 class="text-5xl font-extrabold text-[#6D929B]">Auditoría</h1>
+                <h2 class="text-3xl font-extrabold text-gray-400">Listado</h2>
+            </div>
+        </div>
+        <section class="max-w-2xl mx-auto flex flex-col items-center space-y-6">
+            <div class="w-full space-y-2 bg-white p-2 rounded-lg shadow-md">
+                <form method="get"
+                      class="w-full space-y-4 bg-white p-8 rounded-lg shadow-md">
+                    {{ audit_filter.form|crispy }}
+                    <c-buttons.normal_button type="submit">
+                    Buscar
+                    </c-buttons.normal_button>
+                </form>
+            </div>
+        </section>
+        <section>
+            <div class="w-full space-y-4 bg-white p-8 rounded-lg shadow-md overflow-y-auto">
+                <div class="flex flex-col space-y-2 overflow-y-auto">
+                    <table class="w-full text-sm text-left text-gray-500 overflow-y-auto">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 overflow-y-auto">
+                            <tr class="overflow-y-auto">
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-y-auto">
+                                    Usuario
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-y-auto">
+                                    Description
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-y-auto">
+                                    Tipo
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-y-auto">
+                                    Fecha
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="overflow-y-auto">
+                            {% for audit in audit_filter.qs %}
+                                {{ audit.name }}
+                                <tr class="overflow-y-auto">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 overflow-y-auto">
+                                        {{ audit.dash_board.admin.username }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 overflow-y-auto">{{ audit.description }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 overflow-y-auto">{{ audit.action_type }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 overflow-y-auto">{{ audit.date }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr class="overflow-y-auto">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 overflow-y-auto">No hay registros</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="text-xs text-gray-700 uppercase bg-gray-50 overflow-y-auto">
+                            <tr class="overflow-y-auto">
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-y-auto">
+                                    Total
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-y-auto">
+                                    {{ audit_filter.qs.count }}
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+{% endblock content %}

@@ -1,0 +1,10 @@
+<select name="comuna"
+        id="comunas-selector"
+        hx-trigger="change"
+        hx-get="{% url "locations:comunas-list" %}"
+        hx-target="#next-select"
+        hx-swap="outerHTML"
+        hx-include="#province-selector"
+        required>
+        {% for comuna in object_list %}<option value="{{ comuna.pk }}">{{ comuna.name }}</option>{% endfor %}
+</select>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <main class="min-h-screen bg-[#F5FAFA] px-6 py-12 sm:px-8 lg:px-10">
+        <div class="max-w-5xl mx-auto space-y-12">
+            <!-- Quick Data Section -->
+            <section class="text-center space-y-4">
+                <h1 class="text-4xl font-extrabold text-[#6D929B] sm:text-5xl">About Us</h1>
+                <p class="text-lg sm:text-xl text-[#B7AFA3]">We are passionate about delivering the best service to our customers.</p>
+                <div class="relative rounded-xl shadow-md overflow-hidden">
+                    <img src="https://via.placeholder.com/800x400"
+                         alt="About Image"
+                         class="w-full h-auto object-cover" />
+                </div>
+            </section>
+            <!-- Objectives Section -->
+            <section class="bg-[#E8D0A9] rounded-xl shadow-lg p-8 space-y-6">
+                <h2 class="text-3xl font-semibold text-[#6D929B]">Our Objectives</h2>
+                <p class="text-base text-gray-700 leading-relaxed">
+                    Our primary objective is to ensure customer satisfaction through quality service and innovative solutions. We aim to:
+                </p>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>Deliver exceptional customer experiences.</li>
+                    <li>Innovate and stay ahead in the market.</li>
+                    <li>Empower our team to grow professionally and personally.</li>
+                </ul>
+            </section>
+            <!-- Meet Our Team Section -->
+            <section class="space-y-6">
+                <h2 class="text-3xl font-semibold text-center text-[#6D929B]">Meet Our Team</h2>
+                <ul class="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+                    <li class="text-center">
+                        <img src="https://via.placeholder.com/150"
+                             alt="Team Member 1"
+                             class="w-32 h-32 mx-auto rounded-full shadow-md" />
+                        <h3 class="text-xl font-semibold text-[#6D929B] mt-4">Alice Johnson</h3>
+                        <p class="text-sm text-gray-700">CEO & Founder</p>
+                    </li>
+                    <li class="text-center">
+                        <img src="https://via.placeholder.com/150"
+                             alt="Team Member 2"
+                             class="w-32 h-32 mx-auto rounded-full shadow-md" />
+                        <h3 class="text-xl font-semibold text-[#6D929B] mt-4">Mark Smith</h3>
+                        <p class="text-sm text-gray-700">Chief Operations Officer</p>
+                    </li>
+                    <li class="text-center">
+                        <img src="https://via.placeholder.com/150"
+                             alt="Team Member 3"
+                             class="w-32 h-32 mx-auto rounded-full shadow-md" />
+                        <h3 class="text-xl font-semibold text-[#6D929B] mt-4">Jane Doe</h3>
+                        <p class="text-sm text-gray-700">Marketing Director</p>
+                    </li>
+                </ul>
+            </section>
+            <!-- Hear Our Customers Section -->
+            <section class="bg-[#C1DAD6] rounded-xl shadow-md p-8 space-y-6">
+                <h2 class="text-3xl font-semibold text-[#6D929B] text-center">Hear from Our Customers</h2>
+                <div class="space-y-6">
+                    <blockquote class="text-gray-800 italic">
+                        "This company has transformed the way we do business. Their dedication to customer service is unmatched!"
+                    </blockquote>
+                    <blockquote class="text-gray-800 italic">
+                        "A wonderful team that truly cares about their clients. Highly recommend working with them."
+                    </blockquote>
+                </div>
+            </section>
+        </div>
+    </main>
+{% endblock content %}

@@ -1,0 +1,42 @@
+[
+    {
+        "model": "organizations.Organization",
+        "pk": 1,
+        "fields": {
+            "name": "org 01",
+            "description": "org 01",
+            "owner": 101,
+            "organization_type": 1
+        }
+    },
+    {
+        "model": "organizations.Organization",
+        "pk": 2,
+        "fields": {
+            "name": "org 02",
+            "description": "org 02",
+            "owner": 102,
+            "organization_type": 2
+        }
+    },
+    {
+        "model": "organizations.Organization",
+        "pk": 3,
+        "fields": {
+            "name": "org 03",
+            "description": "org 03",
+            "owner": 103,
+            "organization_type": 3
+        }
+    },
+    {
+        "model": "organizations.Organization",
+        "pk": 4,
+        "fields": {
+            "name": "org 04",
+            "description": "org 04",
+            "owner": 103,
+            "organization_type": 4
+        }
+    }
+]

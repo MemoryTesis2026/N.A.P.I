@@ -1,0 +1,10 @@
+<select name="province"
+        id="province-selector"
+        hx-get="{% url "locations:comunas-list" %}"
+        hx-target="#comunas-selector"
+        hx-swap="outerHTML"
+        hx-include="#region-selector"
+        required
+        class="{{ class }}">
+    {% for province in object_list %}<option value="{{ province.pk }}">{{ province.name }}</option>{% endfor %}
+</select>

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block header %}
+    {% include "components/layout/admin/header.html" %}
+{% endblock header %}
+{% block content %}
+    <main id="app">
+        <section class="max-w-5xl mx-auto flex flex-col items-center space-y-6 mt-4">
+            <h1 class="text-5xl font-extrabold text-[#6D929B]">Dashboard</h1>
+            <h2 class="text-3xl font-extrabold text-gray-400">Dashboard</h2>
+            <div class="w-full lg:w-2/3 space-y-4 bg-white p-8 rounded-lg shadow-md">
+                <div class="flex flex-col space-y-4">
+                    <h3 class="text-xl font-extrabold text-gray-400">Ver</h3>
+                    <div class="flex flex-col space-y-2">
+                        <a href="{% url 'dashboard:organization-list' %}"
+                           class="hover:scale-105 w-full px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                            Organizaciones
+                        </a>
+                        <a href="{% url 'dashboard:project-list' %}"
+                           class="hover:scale-105 w-full px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                            Proyectos
+                        </a>
+                        <a href="{% url 'dashboard:user-list' %}"
+                           class="hover:scale-105 w-full px-8 py-3 text-white bg-[#ACD1E9] rounded-lg shadow-md hover:bg-[#6D929B] transition-all duration-300">
+                            Usuarios
+                        </a>
+                    </div>
+                </div>
+                {% if stats %}
+                    <div class="flex flex-col space-y-4">
+                        <h3 class="text-xl font-extrabold text-gray-400">Estadísticas</h3>
+                        <div class="flex flex-col space-y-2">
+                            <div class="flex flex-row space-x-2">
+                                <div class="flex flex-col">
+                                    <h4 class="text-xl font-extrabold text-gray-400">Proyectos</h4>
+                                    <p class="text-xl font-extrabold text-gray-400">{{ stats.projects }}</p>
+                                </div>
+                                <div class="flex flex-col">
+                                    <h4 class="text-xl font-extrabold text-gray-400">Organizaciones</h4>
+                                    <p class="text-xl font-extrabold text-gray-400">{{ stats.organizations }}</p>
+                                </div>
+                                <div class="flex flex-col">
+                                    <h4 class="text-xl font-extrabold text-gray-400">Documentos</h4>
+                                    <p class="text-xl font-extrabold text-gray-400">{{ stats.documents }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if logs %}
+                    <div class="flex flex-col space-y-4">
+                        <h3 class="text-xl font-extrabold text-gray-400">Logs</h3>
+                        <div class="flex flex-col space-y-2">
+                            <div class="flex flex-row space-x-2">
+                                {% for log in logs %}
+                                    <div class="flex flex-col">
+                                        <h4 class="text-xl font-extrabold text-gray-400">{{ log.created_at }}</h4>
+                                        <p class="text-xl font-extrabold text-gray-400">{{ log.message }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+{% endblock content %}
