@@ -777,7 +777,7 @@ def update_admin_guidelines(req: GuidelineUpdateRequest, slug: str = "napi_chat_
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/projects")
-async def create_project(request: Request):
+async def create_project(request: Request, staff: AuthUser = Depends(security.require_staff)):
     """Inserta un nuevo proyecto validando nota >= 6.0, calculando embeddings y subiendo archivo opcional a Supabase Storage."""
     try:
         content_type = request.headers.get("content-type", "")
@@ -920,7 +920,7 @@ async def create_project(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/projects/{project_id}")
-async def update_project(project_id: str, request: Request):
+async def update_project(project_id: str, request: Request, admin: AuthUser = Depends(security.require_admin)):
     """Actualiza metadatos de un proyecto (incluyendo visibilidad y estado)."""
     try:
         data = await request.json()
@@ -946,7 +946,7 @@ async def update_project(project_id: str, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/projects/{project_id}")
-def delete_project(project_id: str):
+def delete_project(project_id: str, admin: AuthUser = Depends(security.require_admin)):
     """Elimina un proyecto del repositorio en Supabase."""
     try:
         if db_admin:
