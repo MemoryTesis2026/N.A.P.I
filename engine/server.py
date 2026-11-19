@@ -327,10 +327,17 @@ def login(req: LoginRequest):
         raise HTTPException(status_code=401, detail="Correo institucional o contraseña incorrectos.")
 
 @app.post("/api/auth/register")
-def register(req: RegisterRequest):
-    """Registra un usuario (student/estudiante, teacher/docente, admin/administrador) en Supabase Auth y en napi_usuarios."""
+def register(req: RegisterRequest, requester: Optional[AuthUser] = Depends(security.get_optional_user)):
+    """Registra un usuario en Supabase Auth y en napi_usuarios.
+    El registro público solo permite el rol estudiante; docentes y administradores
+    deben ser creados por un Administrador CRAI autenticado (evita escalamiento de privilegios)."""
     if not db_admin:
         raise HTTPException(status_code=503, detail="Servicio de administración Supabase no configurado.")
+    if security.canonical_role(req.rol) != security.ROLE_STUDENT and not (requester and requester.is_admin):
+        raise HTTPException(
+            status_code=403,
+            detail="Solo un Administrador CRAI puede registrar cuentas de docente o administrador."
+        )
     try:
         clean_email = req.email.strip()
         clean_nombre = req.nombre.strip()
