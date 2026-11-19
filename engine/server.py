@@ -412,8 +412,8 @@ class UserCreateAdminRequest(BaseModel):
 
 @app.get("/api/auth/users")
 @app.get("/api/admin/users")
-def get_users():
-    """Obtiene la lista de usuarios registrados (Alumnos, Docentes y Administradores) desde Supabase."""
+def get_users(admin: AuthUser = Depends(security.require_admin)):
+    """Obtiene la lista de usuarios registrados (solo Administrador CRAI)."""
     try:
         user_list = []
         # 1. Intentar leer desde tabla pública en Supabase
@@ -456,7 +456,7 @@ def to_db_role(raw_role: Optional[str]) -> str:
     return "estudiante"
 
 @app.post("/api/admin/users")
-def admin_create_user(req: UserCreateAdminRequest):
+def admin_create_user(req: UserCreateAdminRequest, admin: AuthUser = Depends(security.require_admin)):
     """Crea un usuario (Alumno, Docente o Administrador) en Supabase Auth y en public.napi_usuarios."""
     if not db_admin:
         raise HTTPException(status_code=503, detail="Servicio de administración Supabase no configurado.")
@@ -592,7 +592,7 @@ def admin_create_user(req: UserCreateAdminRequest):
         raise HTTPException(status_code=400, detail=f"Error al guardar en Supabase: {str(e)}")
 
 @app.put("/api/admin/users/{user_id}")
-def admin_update_user(user_id: str, req: UserUpdateRequest):
+def admin_update_user(user_id: str, req: UserUpdateRequest, admin: AuthUser = Depends(security.require_admin)):
     """Actualiza los datos de un usuario en Supabase."""
     try:
         db_rol = to_db_role(req.rol) if req.rol is not None else None
@@ -638,8 +638,10 @@ def admin_update_user(user_id: str, req: UserUpdateRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.delete("/api/admin/users/{user_id}")
-def admin_delete_user(user_id: str):
-    """Elimina un usuario de Supabase."""
+def admin_delete_user(user_id: str, admin: AuthUser = Depends(security.require_admin)):
+    """Elimina un usuario de Supabase (solo Administrador CRAI)."""
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta de administrador.")
     try:
         if db_admin:
             try:
