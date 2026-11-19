@@ -109,6 +109,30 @@ const RENDER_BASE_URL = (
 ).replace(/\/+$/, '');
 const API_BASE_URL = `${RENDER_BASE_URL}/api`;
 
+// ── Seguridad: adjuntar el token de sesión (Bearer) a todas las llamadas a la API ──
+// El backend valida este token contra Supabase Auth y aplica permisos según el rol real del usuario.
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = async (input, init = {}) => {
+  const url = typeof input === 'string' ? input : (input && input.url) || '';
+  const isApiCall = url.startsWith(API_BASE_URL);
+  const token = isApiCall ? localStorage.getItem('napi_access_token') : null;
+  if (token) {
+    const headers = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined));
+    if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+    init = { ...init, headers };
+  }
+  const response = await _nativeFetch(input, init);
+  // Si la sesión expiró en el servidor, cerrar sesión localmente para no dejar la UI en estado inconsistente
+  // (solo una vez: si el token ya fue limpiado por otra respuesta concurrente, no se repite el aviso)
+  if (token && response.status === 401 && !url.includes('/auth/login')
+      && localStorage.getItem('napi_access_token') === token) {
+    localStorage.removeItem('napi_access_token');
+    alert('Tu sesión expiró. Inicia sesión nuevamente.');
+    if (typeof logout === 'function') logout();
+  }
+  return response;
+};
+
 // Fetch silencioso a /api/health para despertar la instancia de Render si estaba inactiva
 function wakeUpRenderBackend() {
   fetch(`${API_BASE_URL}/health`, { method: 'GET' }).catch(() => { });
