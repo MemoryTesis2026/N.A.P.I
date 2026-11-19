@@ -790,27 +790,98 @@ El servidor backend quedará disponible en `http://127.0.0.1:8000` y servirá el
 
 ```plaintext
 N.A.P.I/
-├── assets/                     # Recursos gráficos, fotografías del campus y fondos hero
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # Pipeline de integración continua (lint y tests automáticos)
+├── assets/                     # Recursos gráficos oficiales, fotografías de sede y manuales
 ├── css/
 │   ├── PillNav.css             # Estilos de navegación flotante interactiva
 │   └── styles.css              # Sistema de diseño global, modo oscuro, CVD y layout
 ├── engine/                     # Núcleo del servidor backend y RAG
 │   ├── archivaia_schema_gemini.sql # Esquema DDL de PostgreSQL, pgvector y RPC
 │   ├── motor_rag.py            # Clase principal ArchivaIAEngine para embeddings y búsqueda
-│   ├── requirements.txt        # Dependencias de Python
+│   ├── requirements.txt        # Dependencias de Python con rangos de versión
+│   ├── security.py             # Módulo de autenticación Bearer JWT y RBAC
 │   ├── seed_all_projects.py    # Script de población de datos con vectorización inicial
 │   └── server.py               # Servidor FastAPI con endpoints REST y lógica de negocio RAG
-├── img/                        # Recursos de respaldo para visualizadores de sedes
 ├── js/
 │   ├── PillNav.js              # Controlador JS del menú de navegación
 │   └── app.js                  # Lógica del frontend (autenticación, CRUD, chat RAG, voz, timeouts)
-├── src/                        # Componentes fuente reutilizables (JSX / CSS)
+├── tests/
+│   └── test_api.py             # Pruebas unitarias y de integración con pytest
+├── .editorconfig               # Normalización de sangría y estilo de código
+├── .gitattributes              # Tratamiento de fin de línea (LF/CRLF) y binarios
 ├── .gitignore                  # Exclusión de archivos sensibles (.env, cachés, venv)
+├── CHANGELOG.md                # Registro de cambios y versionado semántico
+├── CONTRIBUTING.md             # Guía de contribución y flujo de ramas
 ├── index.html                  # Punto de entrada principal SPA
 ├── iniciar_servidor.bat        # Acceso directo para ejecución en entornos Windows
 ├── motor_rag.py                # Wrapper de ejecución rápida desde raíz
 ├── README.md                   # Documentación académica e integral del proyecto de título
+├── requirements.txt            # Dependencias del proyecto en raíz
 └── run_server.py               # Lanzador principal ASGI con Uvicorn
+```
+
+---
+
+## 🚀 Instalación y Puesta en Marcha Local
+
+### Prerrequisitos
+- Python 3.12 o superior.
+- Git instalado.
+- Cuenta y proyecto activo en [Supabase](https://supabase.com).
+- Llaves de API de Google Gemini (requerida para embeddings y RAG) y opcionalmente Groq, DeepSeek u OpenAI.
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/MemoryTesis2026/N.A.P.I.git
+cd N.A.P.I
+```
+
+### 2. Configurar entorno virtual e instalar dependencias
+```bash
+python -m venv .venv
+# En Windows:
+.venv\Scripts\activate
+# En Linux / macOS:
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### 3. Variables de Entorno (`.env`)
+Crear un archivo `.env` en la raíz del proyecto o dentro de `engine/` tomando como referencia `engine/.env.example`:
+
+```ini
+# Configuración de Servidor
+PORT=8000
+ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000,https://n-a-p-i.onrender.com
+
+# Proveedores de Inteligencia Artificial
+GEMINI_API_KEY=tu_api_key_de_google_gemini
+GROQ_API_KEY=tu_api_key_de_groq
+DEEPSEEK_API_KEY=tu_api_key_de_deepseek
+OPENAI_API_KEY=tu_api_key_de_openai
+
+# Supabase (Base de datos vectorial y autenticación)
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_SERVICE_KEY=tu_service_role_key
+SUPABASE_ANON_KEY=tu_anon_public_key
+
+# Dispositivo de Voz ESP32 (Opcional)
+VOICE_DEVICE_KEY=clave_secreta_dispositivo
+```
+
+### 4. Ejecutar el Servidor
+```bash
+python run_server.py
+```
+O en Windows mediante el archivo `iniciar_servidor.bat`. La aplicación estará disponible en `http://127.0.0.1:8000`.
+
+### 5. Ejecutar la Suite de Pruebas
+```bash
+pip install pytest httpx
+pytest tests/ -v
 ```
 
 ---
