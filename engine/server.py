@@ -177,7 +177,7 @@ def validar_documento_subido(filename: str, file_bytes: bytes) -> tuple[str, str
         raise HTTPException(status_code=400, detail=f"Extensión no permitida: {ext}. Solo se admiten PDF y DOCX.")
     
     if len(file_bytes) > MAX_FILE_SIZE_BYTES:
-        raise HTTPException(status_code=400, detail="El archivo excede el límite permitido de 100MB.")
+        raise HTTPException(status_code=400, detail="El archivo excede el límite permitido de 100 MB.")
     
     # Validar firma binaria (Magic bytes)
     content_type = "application/octet-stream"
@@ -222,7 +222,7 @@ def get_doc_embedding(texto: str) -> list:
 _GUIDELINES_CACHE = {}
 CACHE_TTL_SECONDS = 300  # 5 minutos
 
-FALLBACK_NAPI_PROMPT = """Eres NAPI, el asistente virtual de INACAP Sede Maipú que ayuda a estudiantes a validar y orientar ideas de proyecto de título. Conversas como un docente guía cercano, empático y constructivo (español de Chile, trato de "tú").
+FALLBACK_NAPI_PROMPT = """Eres NAPI, el asistente virtual de Inacap Sede Maipú que ayuda a estudiantes a validar y orientar ideas de proyecto de título. Conversas como un docente guía cercano, empático y constructivo (español de Chile, trato de "tú").
 Responde de forma concisa, sin tablas ni encabezados markdown, indicando proyectos similares si existen y 2 recomendaciones concretas para diferenciarse."""
 
 def get_cloud_guideline(slug: str = "napi_chat_principal") -> tuple[str, float]:
@@ -921,11 +921,11 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
             if archivo_url and not str(archivo_url).startswith(storage_prefix):
                 raise HTTPException(status_code=400, detail="URL de documento no permitida.")
 
-        # Validación de nota según normativa INACAP
+        # Validación de nota según normativa Inacap
         if nota is not None and (nota < 6.0 or nota > 7.0):
             raise HTTPException(
                 status_code=400, 
-                detail="Normativa INACAP: Solo se pueden registrar proyectos con nota final igual o superior a 6.0."
+                detail="Normativa Inacap: Solo se pueden registrar proyectos con nota final igual o superior a 6.0."
             )
 
         texto_completo = f"{titulo}. {resumen}"
@@ -1144,12 +1144,12 @@ def generar_respuesta_banco(query: str, history: list, similares: list, is_follo
         
         if similares:
             lista_projs = "\n".join([
-                f"• \"{s.get('titulo')}\" ({s.get('carrera', 'INACAP')} · {s.get('anio', 2025)}) — {int(s.get('porcentaje_similitud', 60))}% de similitud"
+                f"• \"{s.get('titulo')}\" ({s.get('carrera', 'Inacap')} · {s.get('anio', 2025)}) — {int(s.get('porcentaje_similitud', 60))}% de similitud"
                 for s in similares[:3]
             ])
-            bloque_sim = f"Tu idea tiene similitud con estos proyectos registrados en INACAP Sede Maipú:\n{lista_projs}"
+            bloque_sim = f"Tu idea tiene similitud con estos proyectos registrados en Inacap Sede Maipú:\n{lista_projs}"
         else:
-            bloque_sim = "Tu idea se ve original y no presenta coincidencias directas en el repositorio de INACAP Sede Maipú."
+            bloque_sim = "Tu idea se ve original y no presenta coincidencias directas en el repositorio de Inacap Sede Maipú."
             
         sug1 = elegidas[0]["plantilla"].format(tema=tema)
         sug2 = elegidas[1]["plantilla"].format(tema=tema)
@@ -1308,7 +1308,7 @@ async def voice_endpoint(request: Request):
     como audio crudo (mismo formato) para reproducirlo directo por el parlante.
     """
     if VOICE_DEVICE_KEY and request.headers.get("x-device-key") != VOICE_DEVICE_KEY:
-        raise HTTPException(status_code=401, detail="Clave de dispositivo invalida")
+        raise HTTPException(status_code=401, detail="Clave de dispositivo inválida.")
     pcm = await request.body()
     if len(pcm) < VOICE_RATE * 2 // 2:  # menos de 0.5 s
         raise HTTPException(status_code=400, detail="Audio demasiado corto")
@@ -1393,7 +1393,7 @@ def analyze_project(req: AnalyzeRequest):
 
             # Formatear contexto RAG
             if not similares:
-                contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Resultado RAG\nNo se encontraron proyectos con similitud suficiente en el repositorio de INACAP Sede Maipú."
+                contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Resultado RAG\nNo se encontraron proyectos con similitud suficiente en el repositorio de Inacap Sede Maipú."
             else:
                 items_txt = "\n\n".join([
                     f"**Proyecto {i+1}** ({s.get('porcentaje_similitud', 60)}% similitud)\n"
@@ -1403,7 +1403,7 @@ def analyze_project(req: AnalyzeRequest):
                     f"- Resumen: {s.get('resumen', '')}"
                     for i, s in enumerate(similares)
                 ])
-                contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio INACAP Maipú\n{items_txt}"
+                contexto = f"## Proyecto del estudiante\n{req.query}\n\n## Proyectos Similares en Repositorio Inacap Maipú\n{items_txt}"
         else:
             similares = []
             contexto = ""
@@ -1435,7 +1435,7 @@ def analyze_project(req: AnalyzeRequest):
                 f"NO repitas la lista de proyectos similares ni la introducción del primer mensaje]."
             )
         else:
-            user_prompt_content = f"{req.query}{file_info}{carrera_info}\n\n[Repositorio INACAP Maipú - Proyectos detectados]:\n{contexto}"
+            user_prompt_content = f"{req.query}{file_info}{carrera_info}\n\n[Repositorio Inacap Maipú - Proyectos detectados]:\n{contexto}"
 
         contents_list.append(genai_types.Content(
             role="user",

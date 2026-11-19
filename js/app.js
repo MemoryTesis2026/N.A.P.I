@@ -331,15 +331,15 @@ function updateUserDisplay(user) {
   const userRol = user.rol || user.role;
   const isAdmin = isAdminRole(userRol);
   const isTeacher = isTeacherRole(userRol);
-  const displayName = user.nombre || user.email || 'USUARIO INACAP';
+  const displayName = user.nombre || user.email || 'Usuario Inacap';
 
   // Banner de estudiante
   const stName = document.getElementById('studentUserName');
   const stSub = document.getElementById('studentUserSub');
-  if (stName) stName.textContent = displayName.toUpperCase();
+  if (stName) stName.textContent = displayName;
   if (stSub) {
-    const roleLabel = isAdmin ? 'ADMINISTRADOR CRAI' : isTeacher ? 'DOCENTE' : 'ALUMNO';
-    stSub.textContent = `${roleLabel} INACAP · ${(user.carrera || 'SEDE MAIPÚ').toUpperCase()}`;
+    const roleLabel = isAdmin ? 'Administrador CRAI' : isTeacher ? 'Docente' : 'Alumno';
+    stSub.textContent = `${roleLabel} Inacap · ${user.carrera || 'Sede Maipú'}`;
   }
 
   // Sidebar de docente / admin
@@ -514,7 +514,7 @@ async function doModalLogin(roleOverride = null) {
   if (!pass) { showAuthFeedback('Ingresa tu contraseña.', true); return; }
 
   hideAuthFeedback();
-  const originalBtnText = submitBtn ? submitBtn.textContent : 'Ingresar a N.A.P.I';
+  const originalBtnText = submitBtn ? submitBtn.textContent : 'Ingresar a N.A.P.I.';
   if (submitBtn) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Ingresando...';
@@ -746,7 +746,7 @@ function adminTab(tab) {
     users: 'Gestión de Usuarios (Alumnos y Docentes)',
     manage: 'Gestor del Repositorio Institucional',
     reports: 'Métricas e Informes Analíticos',
-    guidelines: 'Configuración de Directrices IA (N.A.P.I)'
+    guidelines: 'Configuración de Directrices IA (N.A.P.I.)'
   };
   const titleEl = document.getElementById('adminTitle');
   if (titleEl) titleEl.textContent = titles[tab] || 'Panel Académico';
@@ -984,7 +984,7 @@ async function submitUserCrud() {
 
   if (!nombre || !email) {
     errEl?.classList.remove('hidden');
-    if (errMsg) errMsg.textContent = 'Nombre y Correo son obligatorios.';
+    if (errMsg) errMsg.textContent = 'Nombre y correo son obligatorios.';
     return;
   }
 
@@ -1562,7 +1562,7 @@ async function saveEdit() {
     return;
   }
   if (isNaN(nota) || nota < 6.0 || nota > 7.0) {
-    toast('⛔ Normativa INACAP: La nota final debe ser entre 6.0 y 7.0.');
+    toast('⛔ Normativa Inacap: La nota final debe ser entre 6.0 y 7.0.');
     return;
   }
 
@@ -1647,7 +1647,7 @@ async function toggleStatus(id) {
   filterTable();
   renderCards(PROJECTS.filter(x => isStudentRole(currentUser?.rol || currentUser?.role || currentRole) ? x.estado === 'Público' : true));
   logActivity('👁️', `Visibilidad cambiada: "${p.nombre}" -> ${p.estado}`);
-  toast(`${p.estado === 'Público' ? '👁️ Proyecto Visible en catálogo' : '🙈 Proyecto Oculto en catálogo'}`);
+  toast(`${p.estado === 'Público' ? '👁️ Proyecto visible en el catálogo' : '🙈 Proyecto oculto en el catálogo'}`);
 }
 
 let pendingDeleteProjectId = null;
@@ -1764,7 +1764,7 @@ function renderMetrics() {
 
   const sum = [
     { l: 'Proyectos Registrados', v: PROJECTS.length, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>' },
-    { l: 'Áreas Académicas INACAP', v: Object.keys(AREAS_CARRERAS).length, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>' },
+    { l: 'Áreas Académicas Inacap', v: Object.keys(AREAS_CARRERAS).length, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>' },
     { l: 'Nota Promedio', v: avgGrade, i: '<svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>' },
     { l: 'Consultas NAPI IA', v: METRICS_SUMMARY.total_consultas_ia ?? 0, i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>' },
     { l: 'Tasa de Aprobación', v: '100%', i: '<svg class="w-4 h-4 text-[#495B7D] dark:text-[#8BA3C5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>' },
@@ -1801,7 +1801,7 @@ function toggleVis() {
   const btn = document.getElementById('visToggle');
   if (btn) btn.classList.toggle('bg-cyan-600', visPublic), btn.classList.toggle('bg-slate-400', !visPublic);
   const lbl = document.getElementById('visLabel');
-  if (lbl) { lbl.textContent = visPublic ? 'Público (Visible para Estudiantes)' : 'Oculto (Sólo Administración)'; lbl.className = visPublic ? 'text-xs font-bold text-cyan-700' : 'text-xs font-bold text-slate-500'; }
+  if (lbl) { lbl.textContent = visPublic ? 'Público (Visible para Estudiantes)' : 'Oculto (Solo Administración)'; lbl.className = visPublic ? 'text-xs font-bold text-cyan-700' : 'text-xs font-bold text-slate-500'; }
 }
 
 let currentUploadedFile = null;
@@ -1901,7 +1901,7 @@ async function submitProject() {
   }
 
   if (!notaVal || isNaN(nota) || nota < 6.0 || nota > 7.0) {
-    toast('⛔ Normativa INACAP: Solo se pueden registrar proyectos con nota final igual o superior a 6.0 (Aprobados).');
+    toast('⛔ Normativa Inacap: Solo se pueden registrar proyectos con nota final igual o superior a 6.0 (Aprobados).');
     return;
   }
 
@@ -2402,7 +2402,7 @@ async function initNapi(forceGreeting = false) {
       const firstName = (currentUser.nombre || currentUser.email).split(' ')[0];
       privacyBadge.textContent = `☁️ Base de Datos · ${firstName} (${rolName})`;
     } else {
-      privacyBadge.textContent = `☁️ Chat Seguro · INACAP Maipú`;
+      privacyBadge.textContent = `☁️ Chat Seguro · Inacap Maipú`;
     }
   }
 
@@ -2460,11 +2460,11 @@ async function initNapi(forceGreeting = false) {
 function renderDefaultGreeting() {
   const userRole = currentUser?.rol || currentUser?.role;
   if (currentUser && isStudentRole(userRole)) {
-    addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI**, tu Asistente de Proyectos de Título para **${currentUser.carrera || 'Ingeniería en Informática'}** (${currentUser.area || 'INACAP'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te indicaré el porcentaje de coincidencia con proyectos previos y recomendaciones técnicas para diferenciarlo e innovar.`, false);
+    addNapi(`¡Hola, **${currentUser.nombre || currentUser.email}**! Soy **NAPI**, tu Asistente de Proyectos de Título para **${currentUser.carrera || 'Ingeniería en Informática'}** (${currentUser.area || 'Inacap'}) en Sede Maipú.\n\nEscribe la **idea de tu proyecto de título** y te indicaré el porcentaje de coincidencia con proyectos previos y recomendaciones técnicas para diferenciarlo e innovar.`, false);
   } else if (currentUser && (isTeacherRole(userRole) || isAdminRole(userRole))) {
-    addNapi(`¡Hola **${currentUser.nombre || currentUser.email}**! Soy **NAPI** en **Modo ${isAdminRole(userRole) ? 'Administrador CRAI' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
+    addNapi(`¡Hola, **${currentUser.nombre || currentUser.email}**! Soy **NAPI** en **Modo ${isAdminRole(userRole) ? 'Administrador CRAI' : 'Docente'}**.\n\nPuedes consultar cualquier propuesta para evaluar similitud, originalidad y antecedentes en el repositorio institucional de Sede Maipú.`, false);
   } else {
-    addNapi(`¡Hola! Soy **NAPI**, el Asistente Institucional de INACAP Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te indicaré qué porcentaje de coincidencia tiene con el repositorio y cómo potenciar su propuesta técnica.`, false);
+    addNapi(`¡Hola! Soy **NAPI**, el Asistente Institucional de Inacap Sede Maipú.\n\nEscribe la **idea de tu proyecto** y te indicaré qué porcentaje de coincidencia tiene con el repositorio y cómo potenciar su propuesta técnica.`, false);
   }
 }
 
@@ -2635,7 +2635,7 @@ function iniciarDictadoVoz() {
         micBtn.classList.remove('bg-slate-100', 'text-slate-700');
         micBtn.classList.add('bg-red-500', 'text-white', 'animate-pulse');
       }
-      if (inputChat) inputChat.placeholder = 'Escuchando... hable ahora';
+      if (inputChat) inputChat.placeholder = 'Escuchando... habla ahora';
       toast('🎙️ Escuchando en español (es-CL)...');
     };
 
