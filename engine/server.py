@@ -147,6 +147,40 @@ def normalize_role(raw_role: Optional[str]) -> str:
 # ──────────────────────────────────────────
 # HELPER FUNCTIONS
 # ──────────────────────────────────────────
+# ──────────────────────────────────────────
+# VALIDACIÓN DE ARCHIVOS SUBIDOS
+# ──────────────────────────────────────────
+MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc"}
+
+def validar_documento_subido(filename: str, file_bytes: bytes) -> tuple[str, str]:
+    if not filename:
+        raise HTTPException(status_code=400, detail="Nombre de archivo no proporcionado.")
+    
+    clean_fn = filename.replace(" ", "_").replace("/", "_").replace("\\", "_")
+    _, ext = os.path.splitext(clean_fn)
+    ext = ext.lower()
+    
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Extensión no permitida: {ext}. Solo se admiten PDF y DOCX.")
+    
+    if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="El archivo excede el límite permitido de 100MB.")
+    
+    # Validar firma binaria (Magic bytes)
+    content_type = "application/octet-stream"
+    if ext == ".pdf":
+        if not file_bytes.startswith(b"%PDF"):
+            raise HTTPException(status_code=400, detail="Archivo PDF inválido o corrupto.")
+        content_type = "application/pdf"
+    elif ext in (".docx", ".doc"):
+        # ZIP magic bytes para .docx o compound file binary para .doc antiguo
+        if not (file_bytes.startswith(b"PK\x03\x04") or file_bytes.startswith(b"\xd0\xcf\x11\xe0")):
+            raise HTTPException(status_code=400, detail="Archivo Word inválido o corrupto.")
+        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document" if ext == ".docx" else "application/msword"
+        
+    return clean_fn, content_type
+
 def get_query_embedding(texto: str) -> list:
     texto_limpio = texto.strip().replace("\n", " ")
     res = gemini_client.models.embed_content(
@@ -826,6 +860,9 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
 
             file_item = form.get("archivo")
             if file_item and hasattr(file_item, "filename") and file_item.filename:
+                # Validar el documento ANTES de subirlo (extensión, tamaño y firma real del archivo)
+                file_bytes = await file_item.read()
+                clean_fn, content_type_file = validar_documento_subido(file_item.filename, file_bytes)
                 if db_admin:
                     try:
                         try:
@@ -833,11 +870,8 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
                         except Exception:
                             pass
 
-                        file_bytes = await file_item.read()
-                        if file_bytes and len(file_bytes) > 0:
-                            clean_fn = file_item.filename.replace(" ", "_").replace("/", "_").replace("\\", "_")
-                            safe_name = f"{uuid.uuid4().hex[:8]}_{clean_fn}"
-                            content_type_file = getattr(file_item, "content_type", None) or "application/octet-stream"
+                        if file_bytes:
+                            safe_name = f"{uuid.uuid4().hex}_{clean_fn}"
                             
                             db_admin.storage.from_("proyectos-docs").upload(
                                 path=safe_name,
@@ -870,6 +904,10 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
             stack = str(data.get("stack") or "").strip()
             estado = str(data.get("estado") or "Público").strip()
             archivo_url = data.get("archivo_url")
+            # Solo se aceptan URLs de documentos alojados en el Storage propio del proyecto
+            storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/proyectos-docs/"
+            if archivo_url and not str(archivo_url).startswith(storage_prefix):
+                raise HTTPException(status_code=400, detail="URL de documento no permitida.")
 
         # Validación de nota según normativa INACAP
         if nota is not None and (nota < 6.0 or nota > 7.0):
