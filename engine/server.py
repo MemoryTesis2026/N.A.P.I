@@ -19,7 +19,7 @@ import time
 import random
 import logging
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, status, Request
+from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -61,6 +61,13 @@ deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepsee
 groq_client     = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0) if GROQ_API_KEY else None
 db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
 db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
+
+# Seguridad: validación de sesiones (JWT de Supabase Auth) y control de acceso por rol
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+import security  # noqa: E402
+from security import AuthUser  # noqa: E402
+security.init(auth_client=db_anon or db_admin, profile_client=db_admin)
 
 import concurrent.futures
 gemini_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
