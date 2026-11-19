@@ -726,19 +726,33 @@ def clear_chat_history(email: str, role: Optional[str] = None, user: AuthUser = 
 
 # ── Proyectos ──
 @app.get("/api/projects")
-def get_projects(role: Optional[str] = None):
-    """Obtiene todos los proyectos registrados en Supabase. Si role es estudiante/student, filtra solo los públicos."""
+def get_projects(role: Optional[str] = None, user: Optional[AuthUser] = Depends(security.get_optional_user)):
+    """Obtiene los proyectos registrados en Supabase.
+    La visibilidad se decide con la sesión validada en el servidor (no con el parámetro 'role',
+    que puede ser manipulado): visitantes y estudiantes solo ven proyectos públicos."""
+    puede_ver_privados = bool(user and user.is_staff)
+    if role and role.strip().lower() in ("estudiante", "student"):
+        puede_ver_privados = False
     try:
         cols_full = "id, titulo, resumen, carrera, anio, autores, created_at, archivo_url, estado, area, stack, nota"
         cols_safe = "id, titulo, resumen, carrera, anio, autores, created_at, archivo_url"
         try:
             query = db_anon.table("proyectos_titulo").select(cols_full)
-            if role and role.strip().lower() in ("estudiante", "student"):
+            if not puede_ver_privados:
                 query = query.eq("estado", "Público")
             response = query.order("anio", desc=True).execute()
         except Exception:
             response = db_anon.table("proyectos_titulo").select(cols_safe).order("anio", desc=True).execute()
-        return {"projects": response.data}
+        projects = response.data or []
+        if not puede_ver_privados:
+            # Los estudiantes y visitantes no reciben la URL directa del documento completo:
+            # solo el nombre del archivo (para mostrar el tipo) y deben solicitar acceso al CRAI.
+            for p in projects:
+                url = p.get("archivo_url")
+                if url:
+                    p["archivo"] = url.split("?")[0].rstrip("/").split("/")[-1]
+                    p["archivo_url"] = None
+        return {"projects": projects}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
