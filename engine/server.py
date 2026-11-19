@@ -665,13 +665,20 @@ def admin_delete_user(user_id: str, admin: AuthUser = Depends(security.require_a
         raise HTTPException(status_code=400, detail=str(e))
 
 # ── Historial de Chat NAPI en Supabase (Aislamiento por Usuario y Rol) ──
+def _ensure_own_chat(user: AuthUser, email: str) -> str:
+    """Cada usuario solo puede leer, escribir o borrar su propio historial de conversación."""
+    clean_email = (email or "").strip().lower()
+    if not clean_email or clean_email != user.email:
+        raise HTTPException(status_code=403, detail="Solo puedes acceder a tu propio historial de chat.")
+    return clean_email
+
 @app.get("/api/chat/history")
-def get_chat_history(email: str, role: Optional[str] = None):
+def get_chat_history(email: str, role: Optional[str] = None, user: AuthUser = Depends(security.get_current_user)):
     """Recupera el historial de chat persistido en Supabase para el usuario y rol específicos."""
+    clean_email = _ensure_own_chat(user, email)
     try:
         if not db_admin:
             return {"messages": []}
-        clean_email = email.strip().lower()
         query = db_admin.table("napi_chat_history").select("*").eq("user_email", clean_email)
         if role:
             query = query.eq("user_role", role.strip().lower())
@@ -682,13 +689,14 @@ def get_chat_history(email: str, role: Optional[str] = None):
         return {"messages": []}
 
 @app.post("/api/chat/message")
-def save_chat_message(req: ChatMessageRequest):
+def save_chat_message(req: ChatMessageRequest, user: AuthUser = Depends(security.get_current_user)):
     """Guarda un mensaje en la base de datos Supabase para mantener los chats aislados en la nube."""
+    clean_email = _ensure_own_chat(user, req.email)
     try:
         if not db_admin:
             return {"success": False, "detail": "Supabase no conectado"}
         payload = {
-            "user_email": req.email.strip().lower(),
+            "user_email": clean_email,
             "user_role": req.role.strip().lower() if req.role else "estudiante",
             "sender": req.sender.strip().lower(),
             "message": req.message,
@@ -701,12 +709,12 @@ def save_chat_message(req: ChatMessageRequest):
         return {"success": False, "error": str(e)}
 
 @app.delete("/api/chat/history")
-def clear_chat_history(email: str, role: Optional[str] = None):
+def clear_chat_history(email: str, role: Optional[str] = None, user: AuthUser = Depends(security.get_current_user)):
     """Elimina el historial de chat del usuario en Supabase."""
+    clean_email = _ensure_own_chat(user, email)
     try:
         if not db_admin:
             return {"success": False}
-        clean_email = email.strip().lower()
         query = db_admin.table("napi_chat_history").delete().eq("user_email", clean_email)
         if role:
             query = query.eq("user_role", role.strip().lower())
