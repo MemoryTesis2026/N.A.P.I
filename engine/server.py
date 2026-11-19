@@ -18,7 +18,7 @@ import uuid
 import time
 import random
 import logging
-from typing import Optional, List
+from typing import Optional, List, Literal
 from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -764,14 +764,14 @@ class GuidelineUpdateRequest(BaseModel):
 
 
 @app.get("/api/admin/guidelines")
-def get_admin_guidelines(slug: str = "napi_chat_principal"):
+def get_admin_guidelines(slug: str = "napi_chat_principal", admin: AuthUser = Depends(security.require_admin)):
     """Obtiene la directriz de IA actual desde Supabase."""
     prompt, temp = get_cloud_guideline(slug)
     return {"slug": slug, "system_prompt": prompt, "temperature": temp, "is_active": True}
 
 
 @app.put("/api/admin/guidelines")
-def update_admin_guidelines(req: GuidelineUpdateRequest, slug: str = "napi_chat_principal"):
+def update_admin_guidelines(req: GuidelineUpdateRequest, slug: str = "napi_chat_principal", admin: AuthUser = Depends(security.require_admin)):
     """Actualiza la directriz de IA en Supabase (public.ai_guidelines) y limpia la caché."""
     if not db_admin:
         raise HTTPException(status_code=503, detail="Supabase Admin no configurado.")
@@ -1640,10 +1640,10 @@ class AccessRequestCreate(BaseModel):
     motivo: str
 
 class AccessRequestUpdate(BaseModel):
-    estado: str  # 'Aprobada' o 'Rechazada'
+    estado: Literal["Pendiente", "Aprobada", "Rechazada"]
 
 @app.get("/api/access-requests")
-def get_access_requests():
+def get_access_requests(admin: AuthUser = Depends(security.require_admin)):
     client_sb = db_admin or db_anon
     if not client_sb:
         return {"requests": []}
@@ -1655,7 +1655,10 @@ def get_access_requests():
         raise HTTPException(status_code=500, detail=f"Error obteniendo solicitudes: {str(e)}")
 
 @app.post("/api/access-requests")
-def create_access_request(payload: AccessRequestCreate):
+def create_access_request(payload: AccessRequestCreate, user: AuthUser = Depends(security.get_current_user)):
+    # Un usuario solo puede crear solicitudes a su propio nombre (el correo se toma de la sesión)
+    if not user.is_admin:
+        payload.student_email = user.email
     client_sb = db_admin or db_anon
     if not client_sb:
         raise HTTPException(status_code=503, detail="Servicio Supabase no configurado.")
@@ -1672,7 +1675,7 @@ def create_access_request(payload: AccessRequestCreate):
         raise HTTPException(status_code=500, detail=f"Error creando solicitud: {str(e)}")
 
 @app.put("/api/access-requests/{req_id}")
-def update_access_request(req_id: str, payload: AccessRequestUpdate):
+def update_access_request(req_id: str, payload: AccessRequestUpdate, admin: AuthUser = Depends(security.require_admin)):
     client_sb = db_admin or db_anon
     if not client_sb:
         raise HTTPException(status_code=503, detail="Servicio Supabase no configurado.")
@@ -1684,7 +1687,7 @@ def update_access_request(req_id: str, payload: AccessRequestUpdate):
         raise HTTPException(status_code=500, detail=f"Error actualizando solicitud: {str(e)}")
 
 @app.get("/api/metrics/summary")
-def get_metrics_summary():
+def get_metrics_summary(admin: AuthUser = Depends(security.require_admin)):
     client_sb = db_admin or db_anon
     if not client_sb:
         print("Error en métricas summary: cliente Supabase no inicializado")
