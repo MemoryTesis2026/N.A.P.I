@@ -1701,7 +1701,7 @@ def get_access_requests(admin: AuthUser = Depends(security.require_admin)):
         res = client_sb.table("napi_access_requests").select("*").order("created_at", desc=True).execute()
         return {"requests": res.data or []}
     except Exception as e:
-        print(f"Error obteniendo solicitudes: {e}")
+        log.error(f"Error obteniendo solicitudes: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo solicitudes: {str(e)}")
 
 @app.post("/api/access-requests")
@@ -1721,7 +1721,7 @@ def create_access_request(payload: AccessRequestCreate, user: AuthUser = Depends
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error creando solicitud: {e}")
+        log.error(f"Error creando solicitud: {e}")
         raise HTTPException(status_code=500, detail=f"Error creando solicitud: {str(e)}")
 
 @app.put("/api/access-requests/{req_id}")
@@ -1733,14 +1733,14 @@ def update_access_request(req_id: str, payload: AccessRequestUpdate, admin: Auth
         res = client_sb.table("napi_access_requests").update({"estado": payload.estado}).eq("id", req_id).execute()
         return {"success": True, "request": res.data[0] if res.data else None}
     except Exception as e:
-        print(f"Error actualizando solicitud: {e}")
+        log.error(f"Error actualizando solicitud: {e}")
         raise HTTPException(status_code=500, detail=f"Error actualizando solicitud: {str(e)}")
 
 @app.get("/api/metrics/summary")
 def get_metrics_summary(admin: AuthUser = Depends(security.require_admin)):
     client_sb = db_admin or db_anon
     if not client_sb:
-        print("Error en métricas summary: cliente Supabase no inicializado")
+        log.warning("Error en métricas summary: cliente Supabase no inicializado")
         return {"total_consultas_ia": 0, "solicitudes_pendientes": 0}
     try:
         # Total de registros acumulados en napi_chat_history
@@ -1756,7 +1756,6 @@ def get_metrics_summary(admin: AuthUser = Depends(security.require_admin)):
             "solicitudes_pendientes": int(total_req)
         }
     except Exception as e:
-        print("Error en métricas summary:", str(e))
         log.error(f"Error en métricas summary: {e}")
         return {"total_consultas_ia": 0, "solicitudes_pendientes": 0}
                        
