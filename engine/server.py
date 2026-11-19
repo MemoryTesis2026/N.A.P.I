@@ -77,12 +77,24 @@ EMBEDDING_DIMS  = 1536
 
 app = FastAPI(title="ArchivaIA RAG API", version="1.0.0")
 
-# Permitir CORS total para desarrollo local y despliegue en Render
+# Configuración de CORS segura (orígenes permitidos vía variable de entorno o localhost por defecto)
+ALLOWED_ORIGINS_ENV = os.environ.get("ALLOWED_ORIGINS", "")
+if ALLOWED_ORIGINS_ENV.strip():
+    allowed_origins = [orig.strip() for orig in ALLOWED_ORIGINS_ENV.split(",") if orig.strip()]
+else:
+    allowed_origins = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://n-a-p-i.onrender.com"
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
