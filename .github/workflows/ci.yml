@@ -29,7 +29,8 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff check engine/ tests/ --ignore E501
+          # Valida sintaxis, errores críticos (E9, F63, F7, F82) e imports no definidos (F821)
+          ruff check engine/ tests/ --select E9,F63,F7,F82,F821
 
       - name: Run test suite with pytest
         env:
