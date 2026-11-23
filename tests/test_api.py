@@ -107,3 +107,76 @@ def test_file_upload_validation_magic_bytes():
     fn, ct = validar_documento_subido("tesis_real.pdf", b"%PDF-1.4 contenido binario")
     assert fn == "tesis_real.pdf"
     assert ct == "application/pdf"
+
+
+def test_file_upload_sanitizes_unicode_filename():
+    """Asegura que los nombres con tildes, eñes, espacios o símbolos se normalicen a ASCII."""
+    from server import validar_documento_subido
+
+    fn, ct = validar_documento_subido("Tesis Ingeniería Diseño (2026).pdf", b"%PDF-1.4 contenido")
+    assert fn == "Tesis_Ingenieria_Diseno_2026.pdf"
+    assert fn.isascii()
+    assert ct == "application/pdf"
+
+    fn_empty_stem, _ = validar_documento_subido("🚀.pdf", b"%PDF-1.4 contenido")
+    assert fn_empty_stem == "documento.pdf"
+
+
+def test_create_project_uploads_without_create_bucket(monkeypatch):
+    """Verifica que POST /api/projects suba el archivo directamente sin invocar create_bucket()."""
+    from unittest.mock import MagicMock
+
+    staff_user = AuthUser(id="usr_teacher_test", email="docente@inacap.cl", role="teacher")
+    mock_bucket = MagicMock()
+    mock_bucket.get_public_url.side_effect = (
+        lambda name: f"{server.SUPABASE_URL}/storage/v1/object/public/{server.SUPABASE_STORAGE_BUCKET}/{name}"
+    )
+
+    inserted_payloads = []
+
+    def _fake_insert(payload):
+        inserted_payloads.append(payload)
+        exec_mock = MagicMock()
+        exec_mock.execute.return_value = MagicMock(data=[{"id": 999, **payload}])
+        return exec_mock
+
+    mock_db = MagicMock()
+    mock_db.storage.from_.return_value = mock_bucket
+    mock_db.table.return_value.insert.side_effect = _fake_insert
+
+    monkeypatch.setattr(server, "db_admin", mock_db)
+    monkeypatch.setattr(server, "get_doc_embedding", lambda _text: [0.0] * server.EMBEDDING_DIMS)
+    app.dependency_overrides[security.require_staff] = lambda: staff_user
+
+    try:
+        res = client.post(
+            "/api/projects",
+            data={
+                "titulo": "Sistema NAPI",
+                "resumen": "Resumen de prueba",
+                "carrera": "Ingeniería en Informática",
+                "anio": "2026",
+                "autores": "Equipo Prueba",
+                "nota": "6.5",
+            },
+            files={
+                "archivo": ("Memoria Diseño 2026.pdf", b"%PDF-1.4 dummy content", "application/pdf"),
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    assert body["project"]["archivo_url"].endswith("_Memoria_Diseno_2026.pdf")
+    assert len(inserted_payloads) == 1
+    assert inserted_payloads[0]["archivo_url"] == body["project"]["archivo_url"]
+
+    mock_db.storage.create_bucket.assert_not_called()
+    mock_db.storage.from_.assert_called_with(server.SUPABASE_STORAGE_BUCKET)
+    mock_bucket.upload.assert_called_once()
+    upload_kwargs = mock_bucket.upload.call_args.kwargs
+    assert upload_kwargs["path"].endswith("_Memoria_Diseno_2026.pdf")
+    assert upload_kwargs["file"] == b"%PDF-1.4 dummy content"
+    assert upload_kwargs["file_options"] == {"content-type": "application/pdf", "upsert": "true"}

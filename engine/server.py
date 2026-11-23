@@ -14,10 +14,12 @@ API Backend FastAPI – Motor RAG y Asistente NAPI
 """
 
 import os
+import re
 import uuid
 import time
 import random
 import logging
+import unicodedata
 from typing import Optional, List, Literal
 from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,9 +48,10 @@ DEEPSEEK_API_KEY     = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_MODEL       = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 GROQ_API_KEY         = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODELS          = [m.strip() for m in (os.environ.get("GROQ_MODEL") or "openai/gpt-oss-120b,qwen/qwen3.6-27b").split(",") if m.strip()]
-SUPABASE_URL         = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
-SUPABASE_ANON_KEY    = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_URL            = os.environ.get("SUPABASE_URL", "https://ovjsllepjamorjdjdteg.supabase.co").split('/rest')[0].rstrip('/')
+SUPABASE_SERVICE_KEY    = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+SUPABASE_ANON_KEY       = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+SUPABASE_STORAGE_BUCKET = (os.environ.get("SUPABASE_STORAGE_BUCKET") or "").strip() or "proyectos-docs"
 
 # Banderas globales para desactivar proveedores con fallos permanentes durante el ciclo de vida
 DEEPSEEK_DISABLED = False
@@ -166,15 +169,21 @@ MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc"}
 
 def validar_documento_subido(filename: str, file_bytes: bytes) -> tuple[str, str]:
-    if not filename:
+    if not filename or not filename.strip():
         raise HTTPException(status_code=400, detail="Nombre de archivo no proporcionado.")
-    
-    clean_fn = filename.replace(" ", "_").replace("/", "_").replace("\\", "_")
-    _, ext = os.path.splitext(clean_fn)
-    ext = ext.lower()
-    
+
+    raw_name = filename.strip().replace("/", "_").replace("\\", "_")
+    stem_raw, ext_raw = os.path.splitext(raw_name)
+    ext = ext_raw.lower()
+
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"Extensión no permitida: {ext}. Solo se admiten PDF y DOCX.")
+
+    ascii_stem = unicodedata.normalize("NFKD", stem_raw).encode("ascii", "ignore").decode("ascii")
+    ascii_stem = re.sub(r"\s+", "_", ascii_stem)
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]", "", ascii_stem)
+    safe_stem = re.sub(r"_+", "_", safe_stem).strip("._") or "documento"
+    clean_fn = f"{safe_stem}{ext}"
     
     if len(file_bytes) > MAX_FILE_SIZE_BYTES:
         raise HTTPException(status_code=400, detail="El archivo excede el límite permitido de 100 MB.")
@@ -870,40 +879,72 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
             stack = str(form.get("stack") or "").strip()
             estado = str(form.get("estado") or "Público").strip()
 
+            # Validación de nota según normativa Inacap antes de leer/subir el archivo
+            if nota is not None and (nota < 6.0 or nota > 7.0):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Normativa Inacap: Solo se pueden registrar proyectos con nota final igual o superior a 6.0."
+                )
+
             file_item = form.get("archivo")
             if file_item and hasattr(file_item, "filename") and file_item.filename:
                 # Validar el documento ANTES de subirlo (extensión, tamaño y firma real del archivo)
                 file_bytes = await file_item.read()
                 clean_fn, content_type_file = validar_documento_subido(file_item.filename, file_bytes)
-                if db_admin:
+                if not db_admin:
+                    log.error(
+                        "No se puede subir archivo a Supabase Storage: cliente db_admin no inicializado "
+                        "(revisa SUPABASE_SERVICE_KEY / SUPABASE_SERVICE_ROLE_KEY)."
+                    )
+                elif file_bytes:
+                    safe_name = f"{uuid.uuid4().hex}_{clean_fn}"
+
+                    def _upload_to_bucket() -> None:
+                        db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
+                            path=safe_name,
+                            file=file_bytes,
+                            file_options={"content-type": content_type_file, "upsert": "true"},
+                        )
+
                     try:
                         try:
-                            db_admin.storage.create_bucket("proyectos-docs", options={"public": True})
+                            _upload_to_bucket()
+                        except Exception as upload_err:
+                            err_str = str(upload_err).lower()
+                            if "bucket not found" in err_str or "404" in err_str:
+                                log.warning(
+                                    f"Bucket '{SUPABASE_STORAGE_BUCKET}' no encontrado al subir ({upload_err}). "
+                                    "Intentando crearlo..."
+                                )
+                                try:
+                                    db_admin.storage.create_bucket(
+                                        SUPABASE_STORAGE_BUCKET,
+                                        options={"public": True},
+                                    )
+                                except Exception as create_err:
+                                    log.warning(
+                                        f"Aviso al crear bucket '{SUPABASE_STORAGE_BUCKET}': {create_err}"
+                                    )
+                                _upload_to_bucket()
+                            else:
+                                raise
+
+                        try:
+                            url_res = db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(safe_name)
+                            if isinstance(url_res, dict):
+                                archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
+                            elif hasattr(url_res, "public_url"):
+                                archivo_url = url_res.public_url
+                            else:
+                                archivo_url = str(url_res)
                         except Exception:
-                            pass
-
-                        if file_bytes:
-                            safe_name = f"{uuid.uuid4().hex}_{clean_fn}"
-                            
-                            db_admin.storage.from_("proyectos-docs").upload(
-                                path=safe_name,
-                                file=file_bytes,
-                                file_options={"content-type": content_type_file}
-                            )
-
-                            try:
-                                url_res = db_admin.storage.from_("proyectos-docs").get_public_url(safe_name)
-                                if isinstance(url_res, dict):
-                                    archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
-                                elif hasattr(url_res, "public_url"):
-                                    archivo_url = url_res.public_url
-                                else:
-                                    archivo_url = str(url_res)
-                            except Exception:
-                                archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/proyectos-docs/{safe_name}"
-                            log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
+                            archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{safe_name}"
+                        log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
                     except Exception as upload_err:
-                        log.warning(f"Error subiendo archivo a Supabase Storage ({upload_err})")
+                        log.error(
+                            f"Error subiendo archivo a Supabase Storage (bucket='{SUPABASE_STORAGE_BUCKET}'): {upload_err}",
+                            exc_info=True,
+                        )
         else:
             data = await request.json()
             titulo = str(data.get("titulo") or "").strip()
@@ -917,7 +958,7 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
             estado = str(data.get("estado") or "Público").strip()
             archivo_url = data.get("archivo_url")
             # Solo se aceptan URLs de documentos alojados en el Storage propio del proyecto
-            storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/proyectos-docs/"
+            storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/"
             if archivo_url and not str(archivo_url).startswith(storage_prefix):
                 raise HTTPException(status_code=400, detail="URL de documento no permitida.")
 
