@@ -98,6 +98,15 @@ function getFileInfo(urlOrName) {
   return { isDoc: false, isPdf: false, label: 'Descargar Archivo', fullLabel: 'Oficial', badge: '📎 Archivo', ext: '' };
 }
 
+function getProjectDownloadUrl(p) {
+  if (!p) return '#';
+  const raw = p.archivo_url || p.archivo || '';
+  if (String(raw).includes('multipart=1') && p.id) {
+    return `${API_BASE_URL}/projects/${encodeURIComponent(p.id)}/download`;
+  }
+  return raw;
+}
+
 const shortC = c => c ? c.split('/')[0].trim() : '';
 
 // ──────────────────────────────────────────
@@ -1441,7 +1450,7 @@ function renderTable(list) {
         <div class="flex gap-1.5 items-center">
           ${(p.archivo_url || p.archivo) ? (() => {
       const fi = getFileInfo(p.archivo_url || p.archivo);
-      const downloadUrl = p.archivo_url || p.archivo;
+      const downloadUrl = getProjectDownloadUrl(p);
       const btnColor = fi.isDoc
         ? 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400'
         : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400';
@@ -1491,6 +1500,10 @@ function handleEditFile(e) {
   const nameLower = f.name.toLowerCase();
   if (!validExtensions.some(ext => nameLower.endsWith(ext))) {
     toast('⚠️ Formato no compatible. Adjunta un archivo PDF (.pdf) o Word (.docx, .doc)');
+    return;
+  }
+  if (f.size > 105 * 1024 * 1024) {
+    toast('⚠️ El archivo supera el límite máximo permitido de 100 MB.');
     return;
   }
   currentEditFile = f;
@@ -1853,7 +1866,7 @@ function processUploadedFile(file) {
     return;
   }
 
-  if (file.size > 100 * 1024 * 1024) {
+  if (file.size > 105 * 1024 * 1024) {
     toast('⚠️ El archivo supera el límite máximo permitido de 100 MB.');
     return;
   }
@@ -2143,7 +2156,7 @@ function renderCards(list) {
         <div class="flex items-center justify-between pt-3.5 border-t border-slate-200/80 dark:border-slate-700/60">
           ${(canDownloadDocuments() && (p.archivo_url || p.archivo)) ? (() => {
         const fi = getFileInfo(p.archivo_url || p.archivo);
-        const downloadUrl = p.archivo_url || p.archivo;
+        const downloadUrl = getProjectDownloadUrl(p);
         const btnClass = fi.isDoc
           ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60'
           : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60';
@@ -2208,6 +2221,7 @@ function openProjModal(id) {
   const reqBtn = document.getElementById('mRequestAccessBtn');
   const isDocenteOrAdmin = canDownloadDocuments();
   const fileTarget = p.archivo_url || p.archivo;
+  const downloadHref = getProjectDownloadUrl(p);
 
   if (isDocenteOrAdmin) {
     if (fileTarget) {
@@ -2223,7 +2237,7 @@ function openProjModal(id) {
           mFileTitle.textContent = `Documento Oficial Disponible (${fi.fullLabel})`;
         }
       }
-      if (dlBtn) dlBtn.href = fileTarget;
+      if (dlBtn) dlBtn.href = downloadHref;
       if (alertRestricted) alertRestricted.classList.add('hidden');
     } else {
       if (dlContainer) dlContainer.classList.add('hidden');

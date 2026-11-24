@@ -234,3 +234,52 @@ def test_update_project_uploads_file_to_storage(monkeypatch):
     assert updated_payloads[0]["archivo_url"] == body["project"]["archivo_url"]
     assert "embedding" not in updated_payloads[0]
     mock_bucket.upload.assert_called_once()
+
+
+def test_large_100mb_file_splits_and_downloads_seamlessly(monkeypatch):
+    """
+    Verifica que un documento de casi 100 MB (que supera el límite de 50 MB por objeto en Supabase Free)
+    se divida automáticamente en fragmentos <= 40 MB en Supabase Storage y se reensamble al descargarlo.
+    """
+    from unittest.mock import MagicMock
+
+    # Simular umbrales pequeños en memoria para probar el flujo multiparte sin reservar 100 MB en el test runner
+    monkeypatch.setattr(server, "SUPABASE_SINGLE_OBJECT_MAX_BYTES", 100)
+    monkeypatch.setattr(server, "STORAGE_PART_SIZE_BYTES", 60)
+
+    storage_objects: dict[str, bytes] = {}
+    mock_bucket = MagicMock()
+
+    def _fake_upload(path, file, file_options=None):
+        storage_objects[path] = file
+
+    def _fake_download(path):
+        return storage_objects[path]
+
+    mock_bucket.upload.side_effect = _fake_upload
+    mock_bucket.download.side_effect = _fake_download
+    mock_bucket.get_public_url.side_effect = (
+        lambda name: f"{server.SUPABASE_URL}/storage/v1/object/public/{server.SUPABASE_STORAGE_BUCKET}/{name}"
+    )
+
+    mock_db = MagicMock()
+    mock_db.storage.from_.return_value = mock_bucket
+    monkeypatch.setattr(server, "db_admin", mock_db)
+
+    raw_pdf = b"%PDF-1.4 " + (b"A" * 150)  # 159 bytes (> 100 bytes threshold -> 3 fragmentos de 60, 60 y 39 bytes)
+    url = server.upload_file_to_supabase_storage("Memoria 100MB.pdf", raw_pdf)
+
+    assert url.endswith("_Memoria_100MB.pdf?multipart=1")
+    part_keys = [k for k in storage_objects if k.startswith("parts/")]
+    assert len(part_keys) == 3
+
+    # Simular lectura del proyecto desde la tabla para probar GET /api/projects/{id}/download
+    mock_db.table.return_value.select.return_value.eq.return_value.limit.return_value.execute.return_value = MagicMock(
+        data=[{"id": "proj-100mb", "titulo": "Memoria 100MB", "archivo_url": url}]
+    )
+
+    dl_res = client.get("/api/projects/proj-100mb/download")
+    assert dl_res.status_code == 200
+    assert dl_res.content == raw_pdf
+    assert dl_res.headers["content-type"] == "application/pdf"
+    assert "Memoria_100MB.pdf" in dl_res.headers.get("content-disposition", "")

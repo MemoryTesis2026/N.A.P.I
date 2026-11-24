@@ -17,6 +17,8 @@ import os
 import re
 import uuid
 import time
+import json
+import zipfile
 import random
 import logging
 import unicodedata
@@ -24,13 +26,13 @@ from typing import Optional, List, Literal
 from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types as genai_types
 from openai import OpenAI
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
 
 # Cargar variables de entorno desde .env local y global
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -57,13 +59,14 @@ SUPABASE_STORAGE_BUCKET = (os.environ.get("SUPABASE_STORAGE_BUCKET") or "").stri
 DEEPSEEK_DISABLED = False
 OPENAI_DISABLED   = False
 
-# Clientes
+# Clientes (timeout de storage ampliado a 300s para soportar archivos de hasta 100 MB)
+_sb_options = ClientOptions(storage_client_timeout=300, postgrest_client_timeout=60)
 gemini_client   = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 openai_client   = OpenAI(api_key=OPENAI_API_KEY, max_retries=0) if OPENAI_API_KEY else None
 deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com", max_retries=0) if DEEPSEEK_API_KEY else None
 groq_client     = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0) if GROQ_API_KEY else None
-db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
-db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
+db_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY, options=_sb_options) if SUPABASE_URL and SUPABASE_SERVICE_KEY else None
+db_anon: Client  = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=_sb_options) if SUPABASE_URL and SUPABASE_ANON_KEY else None
 
 # Seguridad: validación de sesiones (JWT de Supabase Auth) y control de acceso por rol
 if current_dir not in sys.path:
@@ -163,9 +166,11 @@ def normalize_role(raw_role: Optional[str]) -> str:
 # HELPER FUNCTIONS
 # ──────────────────────────────────────────
 # ──────────────────────────────────────────
-# VALIDACIÓN DE ARCHIVOS SUBIDOS
+# VALIDACIÓN Y OPTIMIZACIÓN DE ARCHIVOS SUBIDOS (HASTA 100 MB)
 # ──────────────────────────────────────────
-MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
+MAX_FILE_SIZE_BYTES = 105 * 1024 * 1024  # ~105 MB de margen para archivos de "casi 100 MB"
+SUPABASE_SINGLE_OBJECT_MAX_BYTES = 45 * 1024 * 1024  # 45 MB por bloque (bajo el límite de 50 MB del plan Free de Supabase)
+STORAGE_PART_SIZE_BYTES = 40 * 1024 * 1024  # 40 MB por fragmento cuando se divide un archivo >45 MB
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc"}
 
 def validar_documento_subido(filename: str, file_bytes: bytes) -> tuple[str, str]:
@@ -201,6 +206,68 @@ def validar_documento_subido(filename: str, file_bytes: bytes) -> tuple[str, str
         content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document" if ext == ".docx" else "application/msword"
         
     return clean_fn, content_type
+
+
+def optimize_large_document(clean_fn: str, file_bytes: bytes) -> bytes:
+    """
+    Si el archivo supera los 45 MB, intenta reducir su peso sin pérdida funcional:
+    - En .docx: recomprime el contenedor ZIP con compresión máxima y reduce imágenes incrustadas muy pesadas (>1.5 MB).
+    """
+    if len(file_bytes) <= SUPABASE_SINGLE_OBJECT_MAX_BYTES:
+        return file_bytes
+
+    _, ext = os.path.splitext(clean_fn.lower())
+    if ext == ".docx" and file_bytes.startswith(b"PK\x03\x04"):
+        try:
+            try:
+                from PIL import Image as _PILImage
+            except Exception:
+                _PILImage = None
+
+            src_buf = io.BytesIO(file_bytes)
+            out_buf = io.BytesIO()
+            with zipfile.ZipFile(src_buf, "r") as zin, zipfile.ZipFile(
+                out_buf, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+            ) as zout:
+                for item in zin.infolist():
+                    data = zin.read(item.filename)
+                    lower_name = item.filename.lower()
+                    if (
+                        _PILImage is not None
+                        and lower_name.startswith("word/media/")
+                        and len(data) > 500 * 1024
+                        and lower_name.endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff"))
+                    ):
+                        try:
+                            img = _PILImage.open(io.BytesIO(data))
+                            max_dim = 1920
+                            if max(img.size) > max_dim:
+                                img.thumbnail((max_dim, max_dim))
+                            img_out = io.BytesIO()
+                            if lower_name.endswith((".jpg", ".jpeg")):
+                                if img.mode not in ("RGB", "L"):
+                                    img = img.convert("RGB")
+                                img.save(img_out, format="JPEG", quality=78, optimize=True)
+                            elif lower_name.endswith(".png"):
+                                img.save(img_out, format="PNG", optimize=True)
+                            else:
+                                img.save(img_out, format=img.format or "PNG")
+                            compressed_img = img_out.getvalue()
+                            if 0 < len(compressed_img) < len(data):
+                                data = compressed_img
+                        except Exception:
+                            pass
+                    zout.writestr(item, data)
+            optimized = out_buf.getvalue()
+            if 0 < len(optimized) < len(file_bytes):
+                log.info(
+                    f"Documento DOCX optimizado de {len(file_bytes) / 1048576:.1f} MB a {len(optimized) / 1048576:.1f} MB"
+                )
+                return optimized
+        except Exception as opt_err:
+            log.warning(f"No se pudo optimizar DOCX grande ({opt_err}); se usará el archivo original.")
+    return file_bytes
+
 
 def get_query_embedding(texto: str) -> Optional[list]:
     if not gemini_client:
@@ -238,8 +305,83 @@ def get_doc_embedding(texto: str) -> Optional[list]:
         log.warning(f"Error generando document embedding con Gemini: {e}")
         return None
 
+
+def _ensure_and_upload_object(object_path: str, payload_bytes: bytes, content_type_file: str) -> str:
+    """Sube un objeto individual al bucket de Supabase Storage (creando el bucket si no existiera) y devuelve su URL pública."""
+    def _do_upload() -> None:
+        db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
+            path=object_path,
+            file=payload_bytes,
+            file_options={"content-type": content_type_file, "upsert": "true"},
+        )
+
+    try:
+        _do_upload()
+    except Exception as upload_err:
+        err_str = str(upload_err).lower()
+        if "bucket not found" in err_str or "404" in err_str:
+            log.warning(
+                f"Bucket '{SUPABASE_STORAGE_BUCKET}' no encontrado al subir ({upload_err}). Intentando crearlo..."
+            )
+            try:
+                db_admin.storage.create_bucket(
+                    SUPABASE_STORAGE_BUCKET,
+                    options={"public": True},
+                )
+            except Exception as create_err:
+                log.warning(f"Aviso al crear bucket '{SUPABASE_STORAGE_BUCKET}': {create_err}")
+            _do_upload()
+        else:
+            raise
+
+    archivo_url = None
+    try:
+        url_res = db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(object_path)
+        if isinstance(url_res, dict):
+            archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
+        elif hasattr(url_res, "public_url"):
+            archivo_url = url_res.public_url
+        else:
+            archivo_url = str(url_res)
+    except Exception:
+        archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{object_path}"
+    if not archivo_url:
+        archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{object_path}"
+    return archivo_url
+
+
+def _upload_as_multipart_in_supabase(safe_name: str, clean_fn: str, content_type_file: str, file_bytes: bytes) -> str:
+    """
+    Divide un archivo grande (>45 MB, ej. 100 MB) en partes de <=40 MB dentro de Supabase Storage
+    y guarda un manifiesto JSON ligero bajo `safe_name`, permitiendo almacenar documentos de hasta 100 MB
+    en proyectos Supabase cuyo límite por objeto individual es de 50 MB.
+    """
+    parts_paths: List[str] = []
+    total_size = len(file_bytes)
+    for idx, offset in enumerate(range(0, total_size, STORAGE_PART_SIZE_BYTES)):
+        chunk = file_bytes[offset : offset + STORAGE_PART_SIZE_BYTES]
+        part_path = f"parts/{safe_name}.part{idx:03d}"
+        _ensure_and_upload_object(part_path, chunk, "application/octet-stream")
+        parts_paths.append(part_path)
+        log.info(f"Subido fragmento {idx + 1} ({len(chunk) / 1048576:.1f} MB) -> {part_path}")
+
+    manifest = {
+        "napi_multipart": True,
+        "filename": clean_fn,
+        "content_type": content_type_file,
+        "total_size": total_size,
+        "parts": parts_paths,
+    }
+    manifest_bytes = json.dumps(manifest, ensure_ascii=False).encode("utf-8")
+    manifest_url = _ensure_and_upload_object(safe_name, manifest_bytes, "application/json")
+    log.info(
+        f"Archivo de {total_size / 1048576:.1f} MB almacenado en Supabase Storage en {len(parts_paths)} fragmentos: {manifest_url}?multipart=1"
+    )
+    return f"{manifest_url}?multipart=1"
+
+
 def upload_file_to_supabase_storage(filename: str, file_bytes: bytes) -> str:
-    """Valida, sanitiza y sube un documento (PDF o Word) a Supabase Storage, devolviendo su URL pública."""
+    """Valida, sanitiza, optimiza y sube un documento (PDF o Word de hasta 100 MB) a Supabase Storage."""
     clean_fn, content_type_file = validar_documento_subido(filename, file_bytes)
     if not file_bytes:
         raise HTTPException(status_code=400, detail="El archivo subido está vacío.")
@@ -253,51 +395,26 @@ def upload_file_to_supabase_storage(filename: str, file_bytes: bytes) -> str:
             detail="Supabase Storage no está configurado en el servidor (falta SUPABASE_SERVICE_KEY).",
         )
 
+    file_bytes = optimize_large_document(clean_fn, file_bytes)
     safe_name = f"{uuid.uuid4().hex}_{clean_fn}"
 
-    def _upload_to_bucket() -> None:
-        db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
-            path=safe_name,
-            file=file_bytes,
-            file_options={"content-type": content_type_file, "upsert": "true"},
-        )
-
     try:
-        try:
-            _upload_to_bucket()
-        except Exception as upload_err:
-            err_str = str(upload_err).lower()
-            if "bucket not found" in err_str or "404" in err_str:
-                log.warning(
-                    f"Bucket '{SUPABASE_STORAGE_BUCKET}' no encontrado al subir ({upload_err}). "
-                    "Intentando crearlo..."
-                )
-                try:
-                    db_admin.storage.create_bucket(
-                        SUPABASE_STORAGE_BUCKET,
-                        options={"public": True},
-                    )
-                except Exception as create_err:
-                    log.warning(f"Aviso al crear bucket '{SUPABASE_STORAGE_BUCKET}': {create_err}")
-                _upload_to_bucket()
-            else:
-                raise
+        if len(file_bytes) > SUPABASE_SINGLE_OBJECT_MAX_BYTES:
+            return _upload_as_multipart_in_supabase(safe_name, clean_fn, content_type_file, file_bytes)
 
-        archivo_url = None
         try:
-            url_res = db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(safe_name)
-            if isinstance(url_res, dict):
-                archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
-            elif hasattr(url_res, "public_url"):
-                archivo_url = url_res.public_url
-            else:
-                archivo_url = str(url_res)
-        except Exception:
-            archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{safe_name}"
-        if not archivo_url:
-            archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{safe_name}"
-        log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
-        return archivo_url
+            archivo_url = _ensure_and_upload_object(safe_name, file_bytes, content_type_file)
+            log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
+            return archivo_url
+        except Exception as single_err:
+            err_lower = str(single_err).lower()
+            if "413" in err_lower or "payload too large" in err_lower or "exceeded the maximum allowed size" in err_lower:
+                log.warning(
+                    f"Supabase rechazó subida directa por límite de tamaño ({single_err}). "
+                    "Almacenando mediante particionamiento automático en Supabase Storage..."
+                )
+                return _upload_as_multipart_in_supabase(safe_name, clean_fn, content_type_file, file_bytes)
+            raise
     except HTTPException:
         raise
     except Exception as upload_err:
@@ -1103,6 +1220,108 @@ async def update_project(project_id: str, request: Request, admin: AuthUser = De
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def _remove_storage_file_and_parts(file_url: str) -> None:
+    """Elimina un archivo de Supabase Storage y, si fue guardado como manifiesto multiparte, elimina también sus fragmentos."""
+    if not db_admin or not file_url:
+        return
+    storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/"
+    raw_url = str(file_url)
+    if not raw_url.startswith(storage_prefix):
+        return
+    is_multipart = "multipart=1" in raw_url
+    obj_path = raw_url[len(storage_prefix):].split("?")[0]
+    if not obj_path:
+        return
+    paths_to_remove = [obj_path]
+    if is_multipart:
+        try:
+            manifest_raw = db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).download(obj_path)
+            manifest = json.loads(manifest_raw.decode("utf-8"))
+            if isinstance(manifest, dict) and isinstance(manifest.get("parts"), list):
+                paths_to_remove.extend([str(p) for p in manifest["parts"] if p])
+        except Exception as mf_err:
+            log.warning(f"No se pudo leer manifiesto multiparte al eliminar {obj_path}: {mf_err}")
+    db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).remove(paths_to_remove)
+
+
+@app.get("/api/projects/{project_id}/download")
+def download_project_document(project_id: str):
+    """
+    Descarga y reensambla en streaming documentos grandes (>45 MB, hasta 100 MB) almacenados en fragmentos
+    en Supabase Storage, o redirige/sirve el archivo original con su nombre y Content-Type oficial.
+    """
+    client_sb = db_admin or db_anon
+    if not client_sb:
+        raise HTTPException(status_code=503, detail="Servicio Supabase no configurado.")
+    res = (
+        client_sb.table("proyectos_titulo")
+        .select("id, titulo, archivo_url")
+        .eq("id", project_id)
+        .limit(1)
+        .execute()
+    )
+    if not res.data or not res.data[0].get("archivo_url"):
+        raise HTTPException(status_code=404, detail="Este proyecto no posee documento adjunto.")
+
+    archivo_url = str(res.data[0]["archivo_url"])
+    storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/"
+    if not archivo_url.startswith(storage_prefix):
+        raise HTTPException(status_code=400, detail="URL de documento inválida.")
+
+    obj_path = archivo_url[len(storage_prefix):].split("?")[0]
+    storage_bucket = (db_admin or db_anon).storage.from_(SUPABASE_STORAGE_BUCKET)
+
+    try:
+        first_obj = storage_bucket.download(obj_path)
+    except Exception as dl_err:
+        log.error(f"Error descargando objeto {obj_path} de Supabase Storage: {dl_err}")
+        raise HTTPException(status_code=404, detail="Archivo no encontrado en Supabase Storage.")
+
+    # Verificar si es un manifiesto multiparte JSON
+    is_manifest = "multipart=1" in archivo_url or first_obj.startswith(b'{"napi_multipart":')
+    if is_manifest:
+        try:
+            manifest = json.loads(first_obj.decode("utf-8"))
+        except Exception:
+            manifest = None
+        if isinstance(manifest, dict) and manifest.get("napi_multipart") and isinstance(manifest.get("parts"), list):
+            clean_filename = manifest.get("filename") or obj_path.split("_", 1)[-1] or "documento.pdf"
+            media_type = manifest.get("content_type") or "application/octet-stream"
+            total_size = manifest.get("total_size")
+            part_list = list(manifest["parts"])
+
+            def _stream_parts():
+                for part_path in part_list:
+                    yield storage_bucket.download(part_path)
+
+            headers = {
+                "Content-Disposition": f'attachment; filename="{clean_filename}"',
+            }
+            if isinstance(total_size, int) and total_size > 0:
+                headers["Content-Length"] = str(total_size)
+            return StreamingResponse(_stream_parts(), media_type=media_type, headers=headers)
+
+    clean_filename = obj_path.split("_", 1)[-1] if "_" in obj_path else obj_path
+    ext = os.path.splitext(clean_filename.lower())[1]
+    media_type = (
+        "application/pdf"
+        if ext == ".pdf"
+        else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        if ext == ".docx"
+        else "application/msword"
+        if ext == ".doc"
+        else "application/octet-stream"
+    )
+    return Response(
+        content=first_obj,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{clean_filename}"',
+            "Content-Length": str(len(first_obj)),
+        },
+    )
+
+
 @app.delete("/api/projects/{project_id}")
 def delete_project(project_id: str, admin: AuthUser = Depends(security.require_admin)):
     """Elimina un proyecto del repositorio en Supabase y su archivo asociado en Storage si existe."""
@@ -1117,12 +1336,7 @@ def delete_project(project_id: str, admin: AuthUser = Depends(security.require_a
                     .execute()
                 )
                 if existing.data and existing.data[0].get("archivo_url"):
-                    file_url = str(existing.data[0]["archivo_url"])
-                    storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/"
-                    if file_url.startswith(storage_prefix):
-                        obj_path = file_url[len(storage_prefix):].split("?")[0]
-                        if obj_path:
-                            db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).remove([obj_path])
+                    _remove_storage_file_and_parts(str(existing.data[0]["archivo_url"]))
             except Exception as st_err:
                 log.warning(f"No se pudo eliminar archivo en Storage para proyecto {project_id}: {st_err}")
             db_admin.table("proyectos_titulo").delete().eq("id", project_id).execute()
