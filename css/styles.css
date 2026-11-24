@@ -1454,12 +1454,10 @@ html.dark .badge-cyan {
    ══════════════════════════════════════════════════════════════ */
 html:not(.dark):not(.theme-dark) .border-slate-200 {
   border-color: #CBD5E1 !important;
-  border-width: 1.5px;
 }
 
 html:not(.dark):not(.theme-dark) .border-slate-300 {
   border-color: #B0C4DE !important;
-  border-width: 1.5px;
 }
 
 html:not(.dark):not(.theme-dark) .overflow-x-auto.border,
