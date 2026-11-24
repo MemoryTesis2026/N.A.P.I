@@ -1567,28 +1567,50 @@ async function saveEdit() {
   }
 
   const stackArr = stackStr ? stackStr.split(',').map(s => s.trim()).filter(Boolean) : ['General'];
+  let updatedProjectServer = null;
 
   try {
-    const resp = await fetch(`${API_BASE_URL}/projects/${p.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        titulo: nombre,
-        area: area,
-        carrera: carrera,
-        autores: autores,
-        anio: anio,
-        nota: nota,
-        stack: stackArr.join(', '),
-        resumen: desc || p.desc,
-        estado: estado
-      })
-    });
+    let resp;
+    if (currentEditFile) {
+      const formData = new FormData();
+      formData.append('titulo', nombre);
+      formData.append('area', area);
+      formData.append('carrera', carrera);
+      formData.append('autores', autores);
+      formData.append('anio', anio);
+      formData.append('nota', nota);
+      formData.append('stack', stackArr.join(', '));
+      formData.append('resumen', desc || p.desc);
+      formData.append('estado', estado);
+      formData.append('archivo', currentEditFile);
+      resp = await fetch(`${API_BASE_URL}/projects/${p.id}`, {
+        method: 'PUT',
+        body: formData
+      });
+    } else {
+      resp = await fetch(`${API_BASE_URL}/projects/${p.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: nombre,
+          area: area,
+          carrera: carrera,
+          autores: autores,
+          anio: anio,
+          nota: nota,
+          stack: stackArr.join(', '),
+          resumen: desc || p.desc,
+          estado: estado
+        })
+      });
+    }
     if (!resp.ok) {
       const errJson = await resp.json().catch(() => ({}));
       toast(`⚠️ Error al guardar en Supabase: ${errJson.detail || 'Error del servidor'}`);
       return;
     }
+    const respData = await resp.json().catch(() => ({}));
+    updatedProjectServer = respData?.project || (Array.isArray(respData?.data) ? respData.data[0] : null);
   } catch (e) {
     toast('⚠️ No se pudo conectar a Render para guardar los cambios en Supabase.');
     return;
@@ -1605,9 +1627,10 @@ async function saveEdit() {
   p.estado = estado;
 
   if (currentEditFile) {
-    p.archivo = currentEditFile.name;
-    p.archivo_url = URL.createObjectURL(currentEditFile);
-    logActivity('📎', `Documento actualizado para "${p.nombre}": ${currentEditFile.name}`);
+    const newUrl = updatedProjectServer?.archivo_url || p.archivo_url;
+    p.archivo_url = newUrl;
+    p.archivo = newUrl ? newUrl.split('?')[0].split('/').pop() : currentEditFile.name;
+    logActivity('📎', `Documento actualizado en Supabase Storage para "${p.nombre}": ${currentEditFile.name}`);
   }
 
   closeEdit();

@@ -202,29 +202,113 @@ def validar_documento_subido(filename: str, file_bytes: bytes) -> tuple[str, str
         
     return clean_fn, content_type
 
-def get_query_embedding(texto: str) -> list:
-    texto_limpio = texto.strip().replace("\n", " ")
-    res = gemini_client.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=texto_limpio,
-        config=genai_types.EmbedContentConfig(
-            task_type="RETRIEVAL_QUERY",
-            output_dimensionality=EMBEDDING_DIMS
+def get_query_embedding(texto: str) -> Optional[list]:
+    if not gemini_client:
+        return None
+    try:
+        texto_limpio = texto.strip().replace("\n", " ")
+        res = gemini_client.models.embed_content(
+            model=EMBEDDING_MODEL,
+            contents=texto_limpio,
+            config=genai_types.EmbedContentConfig(
+                task_type="RETRIEVAL_QUERY",
+                output_dimensionality=EMBEDDING_DIMS
+            )
         )
-    )
-    return list(res.embeddings[0].values)
+        return list(res.embeddings[0].values)
+    except Exception as e:
+        log.warning(f"Error generando query embedding con Gemini: {e}")
+        return None
 
-def get_doc_embedding(texto: str) -> list:
-    texto_limpio = texto.strip().replace("\n", " ")
-    res = gemini_client.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=texto_limpio,
-        config=genai_types.EmbedContentConfig(
-            task_type="RETRIEVAL_DOCUMENT",
-            output_dimensionality=EMBEDDING_DIMS
+def get_doc_embedding(texto: str) -> Optional[list]:
+    if not gemini_client:
+        return None
+    try:
+        texto_limpio = texto.strip().replace("\n", " ")
+        res = gemini_client.models.embed_content(
+            model=EMBEDDING_MODEL,
+            contents=texto_limpio,
+            config=genai_types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT",
+                output_dimensionality=EMBEDDING_DIMS
+            )
         )
-    )
-    return list(res.embeddings[0].values)
+        return list(res.embeddings[0].values)
+    except Exception as e:
+        log.warning(f"Error generando document embedding con Gemini: {e}")
+        return None
+
+def upload_file_to_supabase_storage(filename: str, file_bytes: bytes) -> str:
+    """Valida, sanitiza y sube un documento (PDF o Word) a Supabase Storage, devolviendo su URL pública."""
+    clean_fn, content_type_file = validar_documento_subido(filename, file_bytes)
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="El archivo subido está vacío.")
+    if not db_admin:
+        log.error(
+            "No se puede subir archivo a Supabase Storage: cliente db_admin no inicializado "
+            "(revisa SUPABASE_SERVICE_KEY / SUPABASE_SERVICE_ROLE_KEY)."
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase Storage no está configurado en el servidor (falta SUPABASE_SERVICE_KEY).",
+        )
+
+    safe_name = f"{uuid.uuid4().hex}_{clean_fn}"
+
+    def _upload_to_bucket() -> None:
+        db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
+            path=safe_name,
+            file=file_bytes,
+            file_options={"content-type": content_type_file, "upsert": "true"},
+        )
+
+    try:
+        try:
+            _upload_to_bucket()
+        except Exception as upload_err:
+            err_str = str(upload_err).lower()
+            if "bucket not found" in err_str or "404" in err_str:
+                log.warning(
+                    f"Bucket '{SUPABASE_STORAGE_BUCKET}' no encontrado al subir ({upload_err}). "
+                    "Intentando crearlo..."
+                )
+                try:
+                    db_admin.storage.create_bucket(
+                        SUPABASE_STORAGE_BUCKET,
+                        options={"public": True},
+                    )
+                except Exception as create_err:
+                    log.warning(f"Aviso al crear bucket '{SUPABASE_STORAGE_BUCKET}': {create_err}")
+                _upload_to_bucket()
+            else:
+                raise
+
+        archivo_url = None
+        try:
+            url_res = db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(safe_name)
+            if isinstance(url_res, dict):
+                archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
+            elif hasattr(url_res, "public_url"):
+                archivo_url = url_res.public_url
+            else:
+                archivo_url = str(url_res)
+        except Exception:
+            archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{safe_name}"
+        if not archivo_url:
+            archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{safe_name}"
+        log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
+        return archivo_url
+    except HTTPException:
+        raise
+    except Exception as upload_err:
+        log.error(
+            f"Error subiendo archivo a Supabase Storage (bucket='{SUPABASE_STORAGE_BUCKET}'): {upload_err}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=f"No se pudo subir el documento a Supabase Storage: {upload_err}",
+        )
 # ──────────────────────────────────────────
 # DIRECTRICES EN LA NUBE (SUPABASE + CACHÉ)
 # ──────────────────────────────────────────
@@ -529,44 +613,6 @@ def admin_create_user(req: UserCreateAdminRequest, admin: AuthUser = Depends(sec
         auth_rol = normalize_role(req.rol)
         clean_area = req.area.strip() if req.area else "Informática, Ciberseguridad y Telecomunicaciones"
         clean_carrera = req.carrera.strip() if req.carrera else "Ingeniería en Informática"
-
-        user_id = None
-        # 1. Crear en Supabase Auth (o recuperar su ID si ya existía en Auth)
-        try:
-            res = db_admin.auth.admin.create_user({
-                "email": clean_email,
-                "password": req.password.strip(),
-                "email_confirm": True,
-                "user_metadata": {
-                    "nombre": clean_nombre,
-                    "rol": auth_rol,
-                    "area": clean_area,
-                    "carrera": clean_carrera
-                }
-            })
-            if res and hasattr(res, 'user') and res.user:
-                user_id = res.user.id
-        except Exception as auth_e:
-            log.warning(f"Aviso al crear en Supabase Auth ({auth_e}). Buscando si ya existe en Auth...")
-            try:
-                users_res = db_admin.auth.admin.list_users()
-                users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
-                for u in users:
-                    if getattr(u, 'email', '').lower() == clean_email:
-                        user_id = getattr(u, 'id', None)
-                        db_admin.auth.admin.update_user_by_id(user_id, {
-                            "password": req.password.strip(),
-                            "email_confirm": True,
-                            "user_metadata": {
-                                "nombre": clean_nombre,
-                                "rol": auth_rol,
-                                "area": clean_area,
-                                "carrera": clean_carrera
-                            }
-                        })
-                        break
-            except Exception as list_e:
-                log.warning(f"No se pudo recuperar usuario existente en Auth: {list_e}")
 
         user_id = None
         last_auth_err = ""
@@ -888,63 +934,8 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
 
             file_item = form.get("archivo")
             if file_item and hasattr(file_item, "filename") and file_item.filename:
-                # Validar el documento ANTES de subirlo (extensión, tamaño y firma real del archivo)
                 file_bytes = await file_item.read()
-                clean_fn, content_type_file = validar_documento_subido(file_item.filename, file_bytes)
-                if not db_admin:
-                    log.error(
-                        "No se puede subir archivo a Supabase Storage: cliente db_admin no inicializado "
-                        "(revisa SUPABASE_SERVICE_KEY / SUPABASE_SERVICE_ROLE_KEY)."
-                    )
-                elif file_bytes:
-                    safe_name = f"{uuid.uuid4().hex}_{clean_fn}"
-
-                    def _upload_to_bucket() -> None:
-                        db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
-                            path=safe_name,
-                            file=file_bytes,
-                            file_options={"content-type": content_type_file, "upsert": "true"},
-                        )
-
-                    try:
-                        try:
-                            _upload_to_bucket()
-                        except Exception as upload_err:
-                            err_str = str(upload_err).lower()
-                            if "bucket not found" in err_str or "404" in err_str:
-                                log.warning(
-                                    f"Bucket '{SUPABASE_STORAGE_BUCKET}' no encontrado al subir ({upload_err}). "
-                                    "Intentando crearlo..."
-                                )
-                                try:
-                                    db_admin.storage.create_bucket(
-                                        SUPABASE_STORAGE_BUCKET,
-                                        options={"public": True},
-                                    )
-                                except Exception as create_err:
-                                    log.warning(
-                                        f"Aviso al crear bucket '{SUPABASE_STORAGE_BUCKET}': {create_err}"
-                                    )
-                                _upload_to_bucket()
-                            else:
-                                raise
-
-                        try:
-                            url_res = db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(safe_name)
-                            if isinstance(url_res, dict):
-                                archivo_url = url_res.get("publicUrl") or url_res.get("public_url")
-                            elif hasattr(url_res, "public_url"):
-                                archivo_url = url_res.public_url
-                            else:
-                                archivo_url = str(url_res)
-                        except Exception:
-                            archivo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{safe_name}"
-                        log.info(f"Archivo subido exitosamente a Supabase Storage: {archivo_url}")
-                    except Exception as upload_err:
-                        log.error(
-                            f"Error subiendo archivo a Supabase Storage (bucket='{SUPABASE_STORAGE_BUCKET}'): {upload_err}",
-                            exc_info=True,
-                        )
+                archivo_url = upload_file_to_supabase_storage(file_item.filename, file_bytes)
         else:
             data = await request.json()
             titulo = str(data.get("titulo") or "").strip()
@@ -978,8 +969,9 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
             "carrera": carrera,
             "anio": anio,
             "autores": autores,
-            "embedding": embedding
         }
+        if embedding is not None:
+            payload["embedding"] = embedding
         if archivo_url:
             payload["archivo_url"] = archivo_url
         if area:
@@ -1004,8 +996,9 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
                         "carrera": carrera,
                         "anio": anio,
                         "autores": autores,
-                        "embedding": embedding
                     }
+                    if embedding is not None:
+                        safe_payload["embedding"] = embedding
                     if archivo_url:
                         safe_payload["archivo_url"] = archivo_url
                     res = db_admin.table("proyectos_titulo").insert(safe_payload).execute()
@@ -1026,35 +1019,112 @@ async def create_project(request: Request, staff: AuthUser = Depends(security.re
 
 @app.put("/api/projects/{project_id}")
 async def update_project(project_id: str, request: Request, admin: AuthUser = Depends(security.require_admin)):
-    """Actualiza metadatos de un proyecto (incluyendo visibilidad y estado)."""
+    """Actualiza metadatos de un proyecto (incluyendo visibilidad, estado y documento adjunto opcional)."""
     try:
-        data = await request.json()
+        content_type = request.headers.get("content-type", "")
         update_data = {}
-        for field in ["titulo", "resumen", "carrera", "anio", "autores", "estado", "area", "stack", "nota"]:
-            if field in data and data[field] is not None:
-                update_data[field] = data[field]
+
+        if "multipart/form-data" in content_type:
+            form = await request.form()
+            for field in ["titulo", "resumen", "carrera", "autores", "estado", "area", "stack"]:
+                val = form.get(field)
+                if val is not None and str(val).strip() != "":
+                    update_data[field] = str(val).strip()
+            if form.get("anio") is not None and str(form.get("anio")).strip() != "":
+                try:
+                    update_data["anio"] = int(form.get("anio"))
+                except (ValueError, TypeError):
+                    pass
+            if form.get("nota") is not None and str(form.get("nota")).strip() != "":
+                try:
+                    nota_val = float(form.get("nota"))
+                    if nota_val < 6.0 or nota_val > 7.0:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Normativa Inacap: La nota final debe ser entre 6.0 y 7.0.",
+                        )
+                    update_data["nota"] = nota_val
+                except (ValueError, TypeError):
+                    pass
+
+            file_item = form.get("archivo")
+            if file_item and hasattr(file_item, "filename") and file_item.filename:
+                file_bytes = await file_item.read()
+                update_data["archivo_url"] = upload_file_to_supabase_storage(file_item.filename, file_bytes)
+        else:
+            data = await request.json()
+            for field in ["titulo", "resumen", "carrera", "anio", "autores", "estado", "area", "stack", "nota"]:
+                if field in data and data[field] is not None:
+                    update_data[field] = data[field]
+            if "nota" in update_data and update_data["nota"] is not None:
+                nota_val = float(update_data["nota"])
+                if nota_val < 6.0 or nota_val > 7.0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Normativa Inacap: La nota final debe ser entre 6.0 y 7.0.",
+                    )
+            if "archivo_url" in data and data["archivo_url"]:
+                storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/"
+                if not str(data["archivo_url"]).startswith(storage_prefix):
+                    raise HTTPException(status_code=400, detail="URL de documento no permitida.")
+                update_data["archivo_url"] = data["archivo_url"]
 
         if "titulo" in update_data and "resumen" in update_data:
             texto = f"{update_data['titulo']}. {update_data['resumen']}"
-            update_data["embedding"] = get_doc_embedding(texto)
+            emb = get_doc_embedding(texto)
+            if emb is not None:
+                update_data["embedding"] = emb
 
         if db_admin and update_data:
             try:
                 res = db_admin.table("proyectos_titulo").update(update_data).eq("id", project_id).execute()
-                return {"success": True, "data": res.data}
+                return {
+                    "success": True,
+                    "data": res.data,
+                    "project": res.data[0] if res.data else update_data,
+                }
             except Exception as db_e:
-                safe_update = {k: v for k, v in update_data.items() if k in ["titulo", "resumen", "carrera", "anio", "autores", "embedding"]}
+                log.warning(f"Aviso actualizando proyecto ({db_e}). Reintentando con campos base...")
+                safe_update = {
+                    k: v
+                    for k, v in update_data.items()
+                    if k in ["titulo", "resumen", "carrera", "anio", "autores", "embedding", "archivo_url"]
+                }
                 if safe_update:
-                    db_admin.table("proyectos_titulo").update(safe_update).eq("id", project_id).execute()
-        return {"success": True}
+                    res = db_admin.table("proyectos_titulo").update(safe_update).eq("id", project_id).execute()
+                    return {
+                        "success": True,
+                        "data": res.data,
+                        "project": res.data[0] if res.data else update_data,
+                    }
+        return {"success": True, "project": update_data}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/projects/{project_id}")
 def delete_project(project_id: str, admin: AuthUser = Depends(security.require_admin)):
-    """Elimina un proyecto del repositorio en Supabase."""
+    """Elimina un proyecto del repositorio en Supabase y su archivo asociado en Storage si existe."""
     try:
         if db_admin:
+            try:
+                existing = (
+                    db_admin.table("proyectos_titulo")
+                    .select("archivo_url")
+                    .eq("id", project_id)
+                    .limit(1)
+                    .execute()
+                )
+                if existing.data and existing.data[0].get("archivo_url"):
+                    file_url = str(existing.data[0]["archivo_url"])
+                    storage_prefix = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/"
+                    if file_url.startswith(storage_prefix):
+                        obj_path = file_url[len(storage_prefix):].split("?")[0]
+                        if obj_path:
+                            db_admin.storage.from_(SUPABASE_STORAGE_BUCKET).remove([obj_path])
+            except Exception as st_err:
+                log.warning(f"No se pudo eliminar archivo en Storage para proyecto {project_id}: {st_err}")
             db_admin.table("proyectos_titulo").delete().eq("id", project_id).execute()
         return {"success": True, "message": "Proyecto eliminado correctamente de Supabase."}
     except Exception as e:
@@ -1384,19 +1454,21 @@ def analyze_project(req: AnalyzeRequest):
 
     try:
         # 1. Intentar búsqueda semántica con Gemini Embeddings + Supabase pgvector (solo en el primer mensaje)
-        if not is_followup and gemini_client and db_anon and get_time_left() > 2.0:
-            try:
-                emb = get_query_embedding(req.query)
-                rpc_params = {
-                    "query_embedding": emb,
-                    "match_threshold": req.umbral or 0.35,
-                    "match_count": req.limite or 3,
-                    "filtro_carrera": req.carrera
-                }
-                res = db_anon.rpc("buscar_proyectos_similares", rpc_params).execute()
-                similares = res.data or []
-            except Exception as emb_err:
-                log.warning(f"Búsqueda vectorial no disponible ({emb_err}). Probando búsqueda por texto.")
+        if not is_followup and db_anon and get_time_left() > 2.0:
+            emb = get_query_embedding(req.query) if gemini_client else None
+            if emb:
+                try:
+                    rpc_params = {
+                        "query_embedding": emb,
+                        "match_threshold": req.umbral or 0.35,
+                        "match_count": req.limite or 3,
+                        "filtro_carrera": req.carrera
+                    }
+                    res = db_anon.rpc("buscar_proyectos_similares", rpc_params).execute()
+                    similares = res.data or []
+                except Exception as emb_err:
+                    log.warning(f"Búsqueda vectorial no disponible ({emb_err}). Probando búsqueda por texto.")
+            if not similares:
                 try:
                     words = [w for w in req.query.strip().split() if len(w) > 3][:3]
                     if words:

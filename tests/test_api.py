@@ -180,3 +180,57 @@ def test_create_project_uploads_without_create_bucket(monkeypatch):
     assert upload_kwargs["path"].endswith("_Memoria_Diseno_2026.pdf")
     assert upload_kwargs["file"] == b"%PDF-1.4 dummy content"
     assert upload_kwargs["file_options"] == {"content-type": "application/pdf", "upsert": "true"}
+
+
+def test_update_project_uploads_file_to_storage(monkeypatch):
+    """Verifica que PUT /api/projects/{id} soporte multipart/form-data y suba el archivo a Supabase Storage."""
+    from unittest.mock import MagicMock
+
+    admin_user = AuthUser(id="usr_admin_test", email="admin@inacap.cl", role="admin")
+    mock_bucket = MagicMock()
+    mock_bucket.get_public_url.side_effect = (
+        lambda name: f"{server.SUPABASE_URL}/storage/v1/object/public/{server.SUPABASE_STORAGE_BUCKET}/{name}"
+    )
+
+    updated_payloads = []
+
+    def _fake_update(payload):
+        updated_payloads.append(payload)
+        eq_mock = MagicMock()
+        eq_mock.eq.return_value.execute.return_value = MagicMock(data=[{"id": "proj-1", **payload}])
+        return eq_mock
+
+    mock_db = MagicMock()
+    mock_db.storage.from_.return_value = mock_bucket
+    mock_db.table.return_value.update.side_effect = _fake_update
+
+    monkeypatch.setattr(server, "db_admin", mock_db)
+    monkeypatch.setattr(server, "get_doc_embedding", lambda _text: None)
+    app.dependency_overrides[security.require_admin] = lambda: admin_user
+
+    try:
+        res = client.put(
+            "/api/projects/proj-1",
+            data={
+                "titulo": "Proyecto Actualizado",
+                "resumen": "Resumen actualizado",
+                "carrera": "Ingeniería en Informática",
+                "anio": "2026",
+                "autores": "Equipo Prueba",
+                "nota": "6.8",
+            },
+            files={
+                "archivo": ("Informe Final (2026).pdf", b"%PDF-1.4 updated content", "application/pdf"),
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    assert body["project"]["archivo_url"].endswith("_Informe_Final_2026.pdf")
+    assert len(updated_payloads) == 1
+    assert updated_payloads[0]["archivo_url"] == body["project"]["archivo_url"]
+    assert "embedding" not in updated_payloads[0]
+    mock_bucket.upload.assert_called_once()
